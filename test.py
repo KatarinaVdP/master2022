@@ -6,3 +6,4 @@ print(a+b)
 
 print("Er jeg nå i riktig branch?")
 c=4
+
