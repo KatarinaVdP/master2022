@@ -183,9 +183,10 @@ def main(input_FileName, firstStageSolution_FileName, scenarios_FileName):
     print(mss_table)
     print(Qtranspose)
 
-pathName                        =   "Greedy Construction Heuristic"
-input_FileName                  =   pathName + "/Input/"+"model_input.xlsx"
-firstStageSolution_FileName     =   pathName + "/Input/First Stage Solutions/"+"FirstStageSolution_25_groups_1_scen1_0.1_flex_10_sec.txt"
-scenarios_FileName              =   pathName + "/Input/Scenarios/"+"Q_groups_25_scenarios_10_Poisson_1.txt"
+pathName                        =   "Greedy Construction Heuristic/Input/"
+input_FileName                  =   pathName +"model_input.xlsx"
+firstStageSolution_FileName     =   pathName + "First Stage Solutions/"+"FirstStageSolution_25_groups_1_scen1_0.1_flex_10_sec.txt"
+scenarios_FileName              =   pathName + "Scenarios/"+"Q_groups_25_scenarios_10_Poisson_1.txt"
 
 main(input_FileName, firstStageSolution_FileName, scenarios_FileName)
+

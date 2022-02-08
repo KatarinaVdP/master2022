@@ -3,6 +3,8 @@ import math
 import xlwt
 from xlwt import Workbook
 import numpy as np
+from numpy import random
+from scipy.stats import poisson
 
 
 print("Importing read_input.py")
@@ -70,15 +72,28 @@ def write_param_1i(path, indices, param, name):
             file.write("\n" + str(indices[i]) + " " + str(param[i]))
         file.write("\n;\n \n")
 
-def write_param_2i(path, ind1, days, param, name):
+def write_param_2i(path, ind1, ind2, param, name):
     with open(path, 'a') as file:
         file.write("param " + name + " : ")
-        for index in range(days):
-            file.write(str(index+1) + " ")
+        for index in range(len(ind2)):
+            file.write(str(ind2[index]) + " ")
         file.write(":=\n")
         for i in range(len(ind1)):
             file.write(str(ind1[i]))
-            for j in range(days):
+            for j in range(len(ind2)):
+                file.write(str(" " + str(int(param[j][i]))))
+            file.write("\n")
+        file.write(";\n\n")
+
+def write_param_scenarios(path, ind1, groups, param, name):
+    with open(path, 'a') as file:
+        file.write("param " + name + " : ")
+        for index in range(len(groups)):
+            file.write(groups[index] + " ")
+        file.write(":=\n")
+        for i in range(len(ind1)):
+            file.write(str(ind1[i]))
+            for j in range(groups):
                 file.write(str(" " + str(int(param[j][i]))))
             file.write("\n")
         file.write(";\n\n")
@@ -101,6 +116,27 @@ def write_param_3i(path, groups, wards, days, param, name):
                 file.write("\n")
         file.write(";\n\n")
 
+def retrive_ScenarioData(fileName):
+    QTransposeFound             =   False
+    file                        =   open(fileName, 'r')
+    scenariosMatrix             =   []
+
+    for line in file:
+        string_list         =   line.split()
+        if string_list:
+            if string_list[0] == ']' and QTransposeFound:
+                QTransposeFound   =   False  
+            if string_list[0] == 'Pi:':
+                PI                  = float(string_list[1])
+            if QTransposeFound:
+                map_object              = map(int, string_list)
+                list_of_integers        = list(map_object)
+                scenariosMatrix.append(list_of_integers)
+
+            if  string_list[0] == 'QTranspose:':
+                QTransposeFound = True  
+    return scenariosMatrix, PI
+
 def write_scenarios(path, groups, TargetTroughput, nScenarios, seed,name):
     with open(path, 'a') as file:
         file.write("param " + name + " : ")
@@ -115,12 +151,24 @@ def write_scenarios(path, groups, TargetTroughput, nScenarios, seed,name):
                 x= np.random.poisson(TargetTroughput[i])
                 file.write(str(" " + str(x)))
             file.write("\n")
-        file.write(";\n\n")
+        file.write(";\n\n") 
 
-def main(file_name,nScenarios,seed):
-    print("Running main from read_input_Iterative.py")
+def generate_scenarios(groups, TargetTroughput, nScenarios, seed):
+    scenarioMatrix=[]
+    np.random.seed(seed)
+    for i in range(nScenarios):
+        randVec=np.random.rand(1,len(groups))
+        scenarioPre=poisson.ppf(randVec, TargetTroughput)
+        scenario=[]
+        for group in range(len(groups)):
+            scenario.append(int(scenarioPre[0][group]))
+        scenarioMatrix.append(scenario)
+    return scenarioMatrix
+
+def main(file_name,scenarios_FileName,nScenarios,seed):
+
     file = file_name
-    overview = pd.read_excel(file, sheet_name='Overview', encoding="latin-1")  
+    overview = pd.read_excel(file, sheet_name='Overview')  
 
 # ----- Reading Sets -----
     G = read_list(overview, "Surgery groups")                   #Surgery Groups
@@ -146,36 +194,30 @@ def main(file_name,nScenarios,seed):
     E   = int(overview["Extended time"].values[0])              #Extended time
     TC  = int(overview["Cleaning time"].values[0])              #Cleaning Time
     I   = int(overview["Cycles in PP"].values[0])               #Cycles in Planning Period
-
     B   =   read_matrix(overview,"B",nDays)                     #Bedward Capacity
     H   =   read_matrix(overview, "H", nDays)                   #Opening hours
     K   =   read_matrix(overview,"K",nDays)                     #Team Capacity per day
-
     L   =   read_list(overview,"Surgery duration")              #Surgery uration
     M_L =   read_list(overview,"Max long days")                 #Max long days
-
+    N   =   []
+    for day in D:
+        if (day)%7 == 0 or (day)%7 == 6:
+            N.append(0) 
+        else:
+            N.append(7)     
     T   =   read_list(overview,"Target Troughput")
-    PI  =   1/nScenarios
     Co   =   [element+TC for element in L]
 # ----- Scenario generation -----
-    filepathScenarios = "input_scenarios_"+str(len(G))+"g_"+str(nScenarios)+"c_"+str(seed)+".txt"
-
-    with open(filepathScenarios, 'w') as file:
-        file.write("param " + "Q" + " : ")
-        for i in range(nScenarios):
-            file.write(str(i+1) + " ")
-        file.write(":=\n")
-        np.random.seed(seed)
-        for i in range(len(G)):
-            file.write(str(G[i]))
-            for j in range(1,nScenarios+1):
-                x= np.random.poisson(T[i])
-                file.write(str(" " + str(x)))
-            file.write("\n")
-        file.write(";\n\n")
+    #filepathScenarios = "input_scenarios_"+str(len(G))+"g_"+str(nScenarios)+"c_"+str(seed)+".txt"
+    #Qtranspose, PI = retrive_ScenarioData(scenarios_FileName) #Scenarios and probability of occurance 
+    Qtranspose = generate_scenarios(G,T,nScenarios,seed)
+    Pi=[]
+    for scenario in C:
+        Pi.append(1/nScenarios)
+    print(Qtranspose)
+    print(K)
     
-    filepath = "input_file_prosjektoppgave.txt"
-
+    filepath = "Old Model/Input/input_model.txt"
     with open(filepath, "w") as file:
         pass
 # ----- Write sets --- #
@@ -190,22 +232,29 @@ def main(file_name,nScenarios,seed):
     write_set(filepath, D, "D")                         #D
                                                         #C
 # ----- Write params --- #
-    write_range(filepath,PI,"PI")                       #PI_(c)
+    write_range(filepath,Pi,"Pi")                       #PI_(c)
     write_param_1i(filepath,G,Co,"Co")                  #C_g
     write_range(filepath, TC, "TC")                     #TC
     write_param_1i(filepath,G,L,"L")                    #L^SD_(g)
     write_range(filepath, FF, "FF")                     #F
-                                                        #N_(d)
-    write_param_1i(filepath,S,M_L,"U")                #U^X_(s)
+    write_param_1i(filepath,D,N,"N")                    #N_(d)
+    write_param_1i(filepath,S,M_L,"U")                  #U^X_(s)
     write_range(filepath, I, "I")                       #I
-    write_param_2i(filepath,S,nDays,K,"K")              #K_(s,d)
-    write_param_2i(filepath,R,nDays,H,"H")              #H_(r,d) ???
+    write_param_2i(filepath,S,D,K,"K")              #K_(s,d)
+    write_param_2i(filepath,R,D,H,"H")              #H_(r,d) ???
     write_range(filepath, E, "E")                       #E
-    write_scenarios(filepath,G,T,nScenarios,seed,"Q")   #Q_(g,c)
+    #write_param_2i(filepath,C,G,Qtranspose,"Qtranspose")#Q_(g,c)
+    #write_scenarios(filepath,G,T,nScenarios,seed,"Q")   #Q_(g,c)
                                                         #J_(w)
-    write_param_2i(filepath,W,nDays,B,"B")              #B_(w,d)
+    write_param_2i(filepath,W,D,B,"B")              #B_(w,d)
 
+    #write_scenarios("Old Model/Input/Scenarios_test.txt",G,T,10,1,"Qtranspose")
+    
+    print(Qtranspose)
+    print(K)
+    
     with open(filepath, "a") as file:
         file.close()
-
-main("model_input_prosjektoppgave.xlsx",10,1)
+pathName= "Old Model/Input/model_input.xlsx"
+scenarios_filename = "Old Model/Input/Scenarios/Q_groups_25_scenarios_10_Poisson_1.txt"
+main(pathName,scenarios_filename,10,1)
