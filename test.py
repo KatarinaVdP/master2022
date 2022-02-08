@@ -9,3 +9,4 @@ c=4
 
 print("Dette er en test fra Erlend")
 
+g=5
