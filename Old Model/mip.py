@@ -9,7 +9,6 @@ import statistics
 import read_model_input
 
 
-input_file = 'model_input.xlsx'
 
 model = pyo.AbstractModel()
 
@@ -26,7 +25,7 @@ model.D     =   pyo.Set()                           #   D       =   Days in plan
 model.C     =   pyo.Set()                           #   C       =   Scenarios, index c
 
 #--------- Declaration of parameters -----------
-model.PI    =   pyo.Param(model.C)                  #   PI_c    =   Probability of scenario c occurring
+model.Pi    =   pyo.Param(model.C)                  #   Pi_c    =   Probability of scenario c occurring
 model.Co    =   pyo.Param(model.G)                  #   C_g     =   Unit cost of not meeting the demand of surgery group g
 model.TC    =   pyo.Param()                         #   T^C     =   Cleaning time post surgery
 model.L     =   pyo.Param(model.G)                  #   L_g     =   Surgery duration of a patient in surgery group g
@@ -51,14 +50,13 @@ model.a         =   pyo.Var(model.G, model.C, domain=pyo.Binary)                
 model.v         =   pyo.Var(model.W, model.D, domain=pyo.NonNegativeReals)                          # Expected number of occupied beds in ward w on the night following day d in the next ...
                                                                                                     # ...planning period, by patients operated in the current planning period
 
-input_file = "input_file_prosjektoppgave.dat"
+input_file = "Old Model/Input/input_model.dat"
 instance = model.create_instance(input_file)
-
-print("Instance created")
+print("Instance created in MIP model")
 
 "--------- Objective function ----------"
 def objective_rule(m):                                                                              # Is the objective function, and minimizes the total expected cost of unmet demand.
-    return sum(m.PI[c] *(sum(m.Co[g]*m.a[g,c] for g in m.G)) for c in m.C)
+    return sum(m.Pi[c] *(sum(m.Co[g]*m.a[g,c] for g in m.G)) for c in m.C)
 model.OBJ = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 "--------- Constraints ----------"
@@ -68,9 +66,7 @@ model.PercentFixedRooms_Constraint    =  pyo.Constraint(rule=PercentFixedRooms_r
 
 def LongDaysLegal_rule(m,s,r,d):                                # A.3                                       # Ensures that a speciality can only extend a slot if it is assigned to that slot in the fixed schedule.
     return  m.lamda[s,r,d]   <=  m.gamma[s,r,d]
-
-for s in model.RS:
-    model.LongDaysLegal_Constraint  =   pyo.Constraint(model.S,model.RS[s],model.D,rule=LongDaysLegal_rule)
+model.LongDaysLegal_Constraint  =   pyo.Constraint(model.S,model.RS,model.D,rule=LongDaysLegal_rule)
 
 def LongDaysMax_rule(m,s):                                      # A.4                                       # Ensures that the number of extended slots on a given day is not greater than this day's maximum.
     return  sum(sum(m.lamda[s,r,d] for d in m.D) for r in m.RS[s])  <=  m.U
@@ -104,11 +100,11 @@ def OnlyFlexibleIfOperationScheduled_rule(m,r,d,c):              # A.10         
 model.OnlyFlexibleIfOperationScheduled_Constraint   =   pyo.Constraint(model.R,model.D,model.C,rule=OnlyFlexibleIfOperationScheduled_rule)
 
 def BedOccupationCapacity_rule(m,w,d,c):                        # A.11                                      # Ensures the expected bed utilization on each ward and night does not exceed the number of bed available. This constraint takes into account the expected number of beds occupied by patients operated in the previous period.
-    return  sum(sum(sum(m.P[w,g,d-dd+1]*m.x[g,r,dd,c]   for dd in range(max(1,d+len(m.D+1-m.J[w])))) for r in m.R)  for g in m.GW[w])  <=  m.B[w,d]    -   m.v[w,d]
+    return  sum(sum(sum(m.P[w,g,d-dd+1]*m.x[g,r,dd,c]   for dd in range(max(1,d+len(m.D)+1-m.J[w]))) for r in m.R)  for g in m.GW[w])  <=  m.B[w,d]    -   m.v[w,d]
 model.BedOccupationCapacity_Constraint  =   pyo.Constraint(model.W,model.D,model.C,rule=BedOccupationCapacity_rule)
 
 def BedOccupationBoundaries_rule(m,w,d):                        # A.12                                      # Keep track of the expected number of beds occupied by patients operated in this period in a ward on the night following day d, in the next period.
-    return  sum(m.PI[c]* sum(sum(sum(m.P[w,g,d + len(m.D)+1-dd] * m.x[g,r,dd,c]    for dd in range(1,d+len(m.D)+1-m.J[w])   )  for r in m.R)   for g in m.GW[w]) for c in m.C) == m.v[w,d]
+    return  sum(m.Pi[c]* sum(sum(sum(m.P[w,g,d + len(m.D)+1-dd] * m.x[g,r,dd,c]    for dd in range(1,d+len(m.D)+1-m.J[w])   )  for r in m.R)   for g in m.GW[w]) for c in m.C) == m.v[w,d]
 for w in model.J:
     model.BedOccupationBoundaries_Constraint    =   pyo.Constraint(model.W,model.J[w],rule=BedOccupationBoundaries_rule)
 
