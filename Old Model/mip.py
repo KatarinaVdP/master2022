@@ -66,7 +66,9 @@ model.PercentFixedRooms_Constraint    =  pyo.Constraint(rule=PercentFixedRooms_r
 
 def LongDaysLegal_rule(m,s,r,d):                                # A.3                                       # Ensures that a speciality can only extend a slot if it is assigned to that slot in the fixed schedule.
     return  m.lamda[s,r,d]   <=  m.gamma[s,r,d]
-model.LongDaysLegal_Constraint  =   pyo.Constraint(model.S,model.RS,model.D,rule=LongDaysLegal_rule)
+
+for s in range(model.S):   
+    model.LongDaysLegal_Constraint  =   pyo.Constraint(model.S,model.RS[s],model.D,rule=LongDaysLegal_rule)
 
 def LongDaysMax_rule(m,s):                                      # A.4                                       # Ensures that the number of extended slots on a given day is not greater than this day's maximum.
     return  sum(sum(m.lamda[s,r,d] for d in m.D) for r in m.RS[s])  <=  m.U
