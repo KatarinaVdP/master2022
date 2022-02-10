@@ -100,7 +100,8 @@ all_codes=[]
 stuer = ["GA-1", "GA-2", "GA-3", "GA-4F", "GA-5", "GA-6", "GA-7"]
 
 # Codes that often result in ICU stays
-kompleks = ["JLC", "JCC", "JJB", "JGB", "JFH", "KCC", "BCA", "PAG", "PDG", "PAF"]
+#kompleks = ["JLC", "JCC", "JJB", "JGB", "JFH", "KCC", "BCA", "PAG", "PDG", "PAF"]
+kompleks = []
 counting = 0
 
 #Iterating through all elective surgeries 2019, and creating code objects
@@ -295,7 +296,7 @@ for code in all_codes:
     points = []
     points.append(normalize(code.surg_average, surg_max, surg_min))
     points.append(normalize(code.LOSS_average, wlos_max, wlos_min))
-    points.append(normalize(code.LOSI_average, ilos_max, ilos_min))
+#   points.append(normalize(code.LOSI_average, ilos_max, ilos_min))
     points.append(normalize(code.LOST_average, tlos_max, tlos_min))
     code.points = points
     objects[str(code.speciality)].append(code)
