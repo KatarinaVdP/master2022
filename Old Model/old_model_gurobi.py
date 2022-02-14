@@ -331,12 +331,11 @@ def main(file_name,nScenarios,seed,newInput=True):
     print(len(P[1]))
     print(len(P[0][0]))
     m.addConstrs(
-        (quicksum( Pi[c] * quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
-                                for g in GWi[w]
-                                for r in Ri
-                                for dd in range(max(0,d+1-J[w]),d+1))
-                for c in Ci)
-        <= B[w][d] - v[w,d]
+        (quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
+                for g in GWi[w]
+                for r in Ri
+                for dd in range(max(0,d+1-J[w]),d+1)) <=
+        B[w][d] - v[w,d]
         for w in Wi
         for d in Di
         for c in Ci),
@@ -344,10 +343,11 @@ def main(file_name,nScenarios,seed,newInput=True):
     )
 
     m.addConstrs(
-        (quicksum(P[w][g][d+nDays+1-dd] * x[g,r,dd,c] 
-                for g in GWi[w]
-                for r in Ri
-                for dd in range(d+nDays+1-J[w],nDays)) ==
+        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays+1-dd] * x[g,r,dd,c] 
+                                for g in GWi[w]
+                                for r in Ri
+                                for dd in range(d+nDays+1-J[w],nDays))
+                for c in Ci) ==
         v[w,d]
         for w in Wi
         for d in range(J[w])
