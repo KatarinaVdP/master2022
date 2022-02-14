@@ -350,8 +350,7 @@ def main(file_name,nScenarios,seed,newInput=True):
                 for c in Ci) ==
         v[w,d]
         for w in Wi
-        for d in range(J[w])
-        for c in Ci),
+        for d in range(J[w])-1),
     name = "Con_BedOccupationBoundaries",
     )
     
