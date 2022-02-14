@@ -28,21 +28,22 @@ def read_list(sheet, name,integerVal=False):
                 list.append(value)
     return list
 
-def read_matrix(sheet, prefix, colombs):
-    matrix = []
-    for i in range(colombs):
+def read_matrix(sheet, prefix, numColombs):
+    matrix_trans = []
+    for i in range(numColombs):
         column = sheet[prefix + str(i + 1)].values
         sublist = []
         for j in column:
             if not math.isnan(j):
                 sublist.append(j)
-        matrix.append(sublist)
+        matrix_trans.append(sublist)
+    matrix =  list(map(list, np.transpose(matrix_trans)))    
     return matrix
 
-def read_3d(sheets, prefix, nDays):
+def read_3d(sheets, prefix, numColombs):
     cube = []
     for sheet in sheets:
-        matrix = read_matrix(sheet, prefix, nDays)
+        matrix = read_matrix(sheet, prefix, numColombs) 
         cube.append(matrix)
     return cube
 
@@ -104,16 +105,14 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("Gi:=")
     print(Gi)
     '--- Subset of Groups in Wards ---'
-    WardGroup           =   read_matrix(sets,"Gr",len(G))
-    GroupWard           =   list(map(list, np.transpose(WardGroup)))
+    GroupWard           =   read_matrix(sets,"Gr",len(G))
     GW , GWi            =   read_subset(GroupWard,G,W)                         
     print("GW:=")
     print(GW)
     print("GWi:=")
     print(GWi)
     '--- Subset of Groups in Specialties ---'    
-    SpecialtyGroup      =   read_matrix(sets,"G",len(G))
-    GroupSpecialty      =   list(map(list, np.transpose(SpecialtyGroup)))
+    GroupSpecialty      =   read_matrix(sets,"G",len(G))
     GS, GSi             =   read_subset(GroupSpecialty,G,S)
     print("GS:=")
     print(GS)
@@ -127,8 +126,8 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("Ri:=")
     print(Ri)                                      
     '--- Subset of Rooms in Specialties ---' 
-    SpecialtyRoom       =   read_matrix(sets,"R",len(R))
-    RoomSpecialty       =   list(map(list, np.transpose(SpecialtyRoom)))   
+    RoomSpecialty       =   read_matrix(sets,"R",len(R))
+    #RoomSpecialty       =   list(map(list, np.transpose(SpecialtyRoom)))   
     RS, RSi             =   read_subset(RoomSpecialty,R,S)                 
     print("RS:=")
     print(RS)  
@@ -196,7 +195,8 @@ def main(file_name,nScenarios,seed,newInput=True):
     P           =   read_3d([MC, IC], "J", max(J))                          #Probabilies                P_(g,w,d)
     
     # ----- Scenario generation ----- #
-    Q = generate_scenarios(G,T,nScenarios,seed)                             #Demand                     Q^T_(g,c)
+    Q_trans     =   generate_scenarios(G,T,nScenarios,seed)                 #Demand                     Q_(c,g)
+    Q           =   list(map(list, np.transpose(Q_trans)))                  #Demand                     Q_(g,c)
     Pi=[]                                                                   #Probability of scenario    PI_(c)
     for c in Ci:
         Pi.append(1/nScenarios)
@@ -269,7 +269,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         for c in Ci),
         name= "Con_NoRoomDoubleBooking",
     )
-    
+
     m.addConstrs(
         (quicksum(gamm[s,r,d]+delt[s,r,d,c]
                 for r in RSi[s][:])
@@ -300,7 +300,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         for c in Ci),
         name = "Con_AvalibleTimeInRoom",
     )
-    
+
     m.addConstrs(
         (quicksum(x[g,r,d,c]+a[g,c]
                 for r in Ri
@@ -321,27 +321,40 @@ def main(file_name,nScenarios,seed,newInput=True):
         for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
-    
+    print("Wi:=")
+    print(Wi)
+    print("Di:=")
+    print(Di)
+    print("Ci:=")
+    print(Ci)
+    print("GWi:=")
+    print(GWi)
+    print("Ri:=")
+    print(Ri)
+    print("nDays:=")
+    print(nDays)
+    print("J:=")
+    print(J)                
     m.addConstrs(
         (quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
                 for g in GWi[w][:]
                 for r in Ri
-                for dd in range(max(1,d+nDays+1-J[w]),d)) <=
-        B[w][d] - v[w][d]
+                for dd in range(max(0,d+nDays+1-J[w]),d+1)) <=
+        B[w][d] - v[w,d]
         for w in Wi
         for d in Di
         for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
-    
+
     m.addConstrs(
         (quicksum(P[w][g][d+nDays+1-dd] * x[g,r,dd,c] 
                 for g in GWi[w][:]
                 for r in Ri
                 for dd in range(d+nDays+1-J[w],nDays)) ==
-        v[w][d]
+        v[w,d]
         for w in Wi
-        for d in range(1,J[w]-1)
+        for d in range(J[w])
         for c in Ci),
     name = "Con_BedOccupationBoundaries",
     )
@@ -386,3 +399,4 @@ def main(file_name,nScenarios,seed,newInput=True):
     
     
 main("Old Model/Input/model_input.xlsx",10,1,true)
+
