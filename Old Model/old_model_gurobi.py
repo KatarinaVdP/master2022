@@ -7,7 +7,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
-from sympy import DiagonalMatrix, true
+
 
 # ------------ Reading from excel file ------------
 def read_list(sheet, name,integerVal=False):
@@ -77,8 +77,7 @@ def main(file_name,nScenarios,seed,newInput=True):
 # ----- Reading/Creting sets -----
     '--- Set of Wards ---'
     W                   =   read_list(sets, "Wards")
-    Wi                  =   [i for i in range(len(W))]
-    wards = {w: W[i] for i, w in enumerate(W)}                  
+    Wi                  =   [i for i in range(len(W))]           
     print("W:=")
     print(W)
     print("Wi:=")
@@ -119,8 +118,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("Ri:=")
     print(Ri)                                      
     '--- Subset of Rooms in Specialties ---' 
-    RoomSpecialty       =   read_matrix(sets,"R",len(R))
-    #RoomSpecialty       =   list(map(list, np.transpose(SpecialtyRoom)))   
+    RoomSpecialty       =   read_matrix(sets,"R",len(R)) 
     RS, RSi             =   read_subset(RoomSpecialty,R,S)                 
     print("RS:=")
     print(RS)  
@@ -132,8 +130,8 @@ def main(file_name,nScenarios,seed,newInput=True):
     for g in range(len(G)):
         sublist = []
         for s in range(len(S)):
-            if G[g] in GS[s][:]:
-                sublist=RS[s][:]
+            if G[g] in GS[s]:
+                sublist=RS[s]
                 sublistIndex = []
                 for i in range(len(sublist)):
                     j = R.index(sublist[i])
@@ -208,7 +206,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
     
     for s in Si:
-        for r in (list(set(Ri)^set(RSi[s][:]))):
+        for r in (list(set(Ri)^set(RSi[s]))):
             for d in Di:
                 gamm[s,r,d].lb=0
                 gamm[s,r,d].ub=0
@@ -217,24 +215,21 @@ def main(file_name,nScenarios,seed,newInput=True):
                     delt[s,r,d,c].lb=0
     '--- Objective ---' 
     m.setObjective(
-                quicksum(Pi[1] * Co[g] * a[g,c] 
+                quicksum(Pi[c] * Co[g] * a[g,c] 
                 for g in Gi 
                 for c in Ci)
     )
     m.ModelSense = GRB.MINIMIZE
     
     '--- Constraints ---'
-    m.addConstrs(
-        (quicksum(gamm[s,r,d] - (1-F) * 
-                quicksum(N[d] 
-                        for d in Di)
-                for s in Si
-                for r in Ri
-                for d in Di)<=
-        0 
-        for i in range(1)),
-        name = "Con_PercentFixedRooms",
-    )
+    m.addConstr(
+        quicksum(gamm[s,r,d]
+            for s in Si
+            for r in Ri
+            for d in Di) 
+        - (1-F) * quicksum(N[d] for d in Di)  
+        >= 0,
+        name = "Con_PercentFixedRooms")
 
     m.addConstrs(
         (lamb[s,r,d] <= gamm[s,r,d] 
@@ -246,7 +241,7 @@ def main(file_name,nScenarios,seed,newInput=True):
 
     m.addConstrs(
         (quicksum(lamb[s,r,d]
-                for r in RSi[s][:]
+                for r in RSi[s]
                 for d in Di)
         <= U[s] 
         for s in Si),
@@ -257,7 +252,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         (quicksum(gamm[s,r,d]+delt[s,r,d,c]
                 for s in Si)
         <= 1
-        for r in RSi[s][:]
+        for r in RSi[s]
         for d in Di
         for c in Ci),
         name= "Con_NoRoomDoubleBooking",
@@ -265,7 +260,7 @@ def main(file_name,nScenarios,seed,newInput=True):
 
     m.addConstrs(
         (quicksum(gamm[s,r,d]+delt[s,r,d,c]
-                for r in RSi[s][:])
+                for r in RSi[s])
         <= K[s][d]
         for s in Si
         for d in Di
@@ -284,21 +279,23 @@ def main(file_name,nScenarios,seed,newInput=True):
     )
     
     m.addConstrs(
-        (quicksum((L[g]+TC) * x[g,r,d,c] - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) - E*lamb[s,r,d]
-                for g in GSi[s][:])
-                <= 0
-        for r in RSi[s][:]
-        for s in Si
+        (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) 
+        - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) 
+        - E*lamb[s,r,d]
+        <= 0
+        for r in RSi[s]              # burde disse bytte plass?
+        for s in Si                  # burde disse bytte plass?
         for d in Di
         for c in Ci),
         name = "Con_AvalibleTimeInRoom",
     )
 
     m.addConstrs(
-        (quicksum(x[g,r,d,c]+a[g,c]
+        (quicksum(x[g,r,d,c]
                 for r in Ri
-                for d in Di) ==
-        Q[g][c]
+                for d in Di)
+        +   a[g,c] 
+        ==  Q[g][c]
         for g in Gi
         for c in Ci),
         name= "Con_Demand",
@@ -327,13 +324,19 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("nDays:=")
     print(nDays)
     print("J:=")
-    print(J)                
+    print(J)
+    print("P:=")
+    print(P)
+    print(len(P[0]))
+    print(len(P[1]))
+    print(len(P[0][0]))
     m.addConstrs(
-        (quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
-                for g in GWi[w][:]
-                for r in Ri
-                for dd in range(max(0,d+nDays+1-J[w]),d+1)) <=
-        B[w][d] - v[w,d]
+        (quicksum( Pi[c] * quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
+                                for g in GWi[w]
+                                for r in Ri
+                                for dd in range(max(0,d+1-J[w]),d+1))
+                for c in Ci)
+        <= B[w][d] - v[w,d]
         for w in Wi
         for d in Di
         for c in Ci),
@@ -342,7 +345,7 @@ def main(file_name,nScenarios,seed,newInput=True):
 
     m.addConstrs(
         (quicksum(P[w][g][d+nDays+1-dd] * x[g,r,dd,c] 
-                for g in GWi[w][:]
+                for g in GWi[w]
                 for r in Ri
                 for dd in range(d+nDays+1-J[w],nDays)) ==
         v[w,d]
@@ -355,14 +358,14 @@ def main(file_name,nScenarios,seed,newInput=True):
     m.addConstrs(
         (gamm[s,r,d]==gamm[s,r,nDays/I+d]
         for s in Si
-        for r in RSi[s][:]
+        for r in RSi[s]
         for d in range(1,nDays-nDays/I)),
     name = "Con_RollingFixedSlotCycles",
     )
         
     m.addConstrs(
         (lamb[s,r,d]==lamb[s,r,nDays/I+d]
-        for r in RSi[s][:]
+        for r in RSi[s]
         for s in Si
         for d in range(1,nDays-nDays/I)),
     name = "Con_RollingFixedSlotCycles",
@@ -372,7 +375,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         
 """    m.addConstrs(
         gamm[s,r,d]==0
-        for r in (Ri - RSi[s][:])
+        for r in (Ri - RSi[s])
         for s in Si
         for d in D)
     name = "Con_FixingIllegalGammas"
@@ -380,7 +383,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     
     m.addConstrs(
         delt[s,r,d,c]==0
-        for r in (Ri - RSi[s][:])
+        for r in (Ri - RSi[s])
         for s in Si
         for d in D
         for c in C)
@@ -391,5 +394,5 @@ def main(file_name,nScenarios,seed,newInput=True):
     
     
     
-main("Old Model/Input/model_input.xlsx",10,1,true)
+main("Old Model/Input/model_input.xlsx",10,1,True)
 
