@@ -358,7 +358,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         (gamm[s,r,d]==gamm[s,r,nDays/I+d]
         for s in Si
         for r in RSi[s]
-        for d in range(1,nDays-nDays/I)),
+        for d in range(0,nDays-nDays/I)),
     name = "Con_RollingFixedSlotCycles",
     )
         
@@ -366,8 +366,8 @@ def main(file_name,nScenarios,seed,newInput=True):
         (lamb[s,r,d]==lamb[s,r,nDays/I+d]
         for r in RSi[s]
         for s in Si
-        for d in range(1,nDays-nDays/I)),
-    name = "Con_RollingFixedSlotCycles",
+        for d in range(0,nDays-nDays/I)),
+    name = "Con_RollingExtendedSlotCycles",
     )
 
     m.optimize()
