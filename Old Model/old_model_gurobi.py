@@ -64,139 +64,130 @@ def generate_scenarios(groups, TargetTroughput, nScenarios, seed):
         for group in range(len(groups)):
             scenario.append(int(scenarioPre[0][group]))
         scenarioMatrix.append(scenario)
-    return scenarioMatrix
+    Ci  =   [c for c in range(nScenarios)] #DemandQ_(g,c)
+    Pi  =   [1/nScenarios]*nScenarios                                                                   #Probability of scenario    PI_(c)
+    transposed_matrix = list(map(list, np.transpose(scenarioMatrix))) 
+    
+    return transposed_matrix, Ci, Pi
 
-def main(file_name,nScenarios,seed,newInput=True):
-
+def read_input(file_name):
+    input_dict ={}
     file        =   file_name
     parameters  =   pd.read_excel(file, sheet_name='Parameters')
     sets        =   pd.read_excel(file, sheet_name='Sets')
     MC          =   pd.read_excel(file, sheet_name='MC')    
     IC          =   pd.read_excel(file, sheet_name='IC')  
                         
-# ----- Reading/Creting sets -----
+# ----- Reading/Creating sets -----
     '--- Set of Wards ---'
-    W                   =   read_list(sets, "Wards")
-    Wi                  =   [i for i in range(len(W))]           
-    print("W:=")
-    print(W)
-    print("Wi:=")
-    print(Wi)
+    input_dict["W"]     =   read_list(sets, "Wards")
+    input_dict["Wi"]    =   [i for i in range(len(input_dict["W"]))]        
     '--- Set of Specialties ---'
-    S                   =   read_list(sets, "Specialties")  
-    Si                  =   [i for i in range(len(S))]              
-    print("S:=")
-    print(S)
-    print("Si:=")
-    print(Si)
+    input_dict["S"]     =   read_list(sets, "Specialties")  
+    input_dict["Si"]    =   [i for i in range(len(input_dict["S"]))]              
     '--- Set of Surgery Groups ---'
-    G                   =   read_list(sets, "Surgery Groups")             
-    Gi                  =   [i for i in range(len(G))]
-    print("G:=")
-    print(G)
-    print("Gi:=")
-    print(Gi)
+    input_dict["G"]     =   read_list(sets, "Surgery Groups")             
+    input_dict["Gi"]    =   [i for i in range(len(input_dict["G"]))]
     '--- Subset of Groups in Wards ---'
-    GroupWard           =   read_matrix(sets,"Gr",len(G))
-    GW , GWi            =   read_subset(GroupWard,G,W)                         
-    print("GW:=")
-    print(GW)
-    print("GWi:=")
-    print(GWi)
+    GroupWard           =   read_matrix(sets,"Gr",len(input_dict["G"]))
+    input_dict["GW"] , input_dict["GWi"]    =   read_subset(GroupWard,input_dict["G"],input_dict["W"])                         
     '--- Subset of Groups in Specialties ---'    
-    GroupSpecialty      =   read_matrix(sets,"G",len(G))
-    GS, GSi             =   read_subset(GroupSpecialty,G,S)
-    print("GS:=")
-    print(GS)
-    print("GSi:=")
-    print(GSi)
+    GroupSpecialty      =   read_matrix(sets,"G",len(input_dict["G"]))
+    input_dict["GS"], input_dict["GSi"]     =   read_subset(GroupSpecialty,input_dict["G"],input_dict["S"])
     '--- Set of Rooms ---'   
-    R                   =   read_list(sets, "Operating Rooms") 
-    print("R:=")
-    print(R)
-    Ri                  =   [i for i in range(len(R))]
-    print("Ri:=")
-    print(Ri)                                      
+    input_dict["R"]     =   read_list(sets, "Operating Rooms") 
+    input_dict["Ri"]    =   [i for i in range(len(input_dict["R"]))]                             
     '--- Subset of Rooms in Specialties ---' 
-    RoomSpecialty       =   read_matrix(sets,"R",len(R)) 
-    RS, RSi             =   read_subset(RoomSpecialty,R,S)                 
-    print("RS:=")
-    print(RS)  
-    print("RSi:=")
-    print(RSi)    
+    RoomSpecialty       =   read_matrix(sets,"R",len(input_dict["R"])) 
+    input_dict["RS"], input_dict["RSi"]     =   read_subset(RoomSpecialty,input_dict["R"],input_dict["S"])                 
     '--- Subset of Rooms for Groups ---'     
-    RG                  =   []
-    RGi                 =   []
-    for g in range(len(G)):
+    input_dict["RG"] = []
+    input_dict["RGi"] = []
+    for g in range(len(input_dict["G"])):
         sublist = []
-        for s in range(len(S)):
-            if G[g] in GS[s]:
-                sublist=RS[s]
+        for s in range(len(input_dict["S"])):
+            if input_dict["G"][g] in input_dict["GS"][s]:
+                sublist=input_dict["RS"][s]
                 sublistIndex = []
                 for i in range(len(sublist)):
-                    j = R.index(sublist[i])
+                    j = input_dict["R"].index(sublist[i])
                     sublistIndex.append(j)
                 break
-        RG.append(sublist)
-        RGi.append(sublistIndex)
-    print("RG:=")
-    print(RG)
-    print("RGi:=")
-    print(RGi)
+        input_dict["RG"].append(sublist)   
+        input_dict["RGi"].append(sublistIndex)   
     '--- Set of Days ---'  
-    D                   =   []
-    Di = []
     nDays = int(parameters["Planning Days"].values[0])
-    for d in range(1,nDays+1):
-        D.append(d) 
-    print("D:=")
-    print(D)
-    Di=[d for d in range(nDays)]
-    print("Di:=")
-    print(Di)
-    '--- Set of Scenarios ---'
-    C                   =   []                                                                                 
-    for scenario in range(1,nScenarios+1):
-        C.append(scenario)  
-    print("C:=")
-    print(C)
-    Ci=[c for c in range(nScenarios)]
-    print("Ci:=")
-    print(Ci)   
+    input_dict["Di"]=[d for d in range(nDays)]
 
 # ----- Reading/Creating Parameters ----- #
-    F           =   float(parameters["Flexible Share"].values[0])           #Flexible Share             F
-    E           =   int(parameters["Extended Time"].values[0])              #Extended time              E
-    TC          =   int(parameters["Cleaning Time"].values[0])              #Cleaning Time              T^C
-    I           =   int(parameters["Cycles in PP"].values[0])               #Cycles in Planning Period  I
-    B           =   read_matrix(parameters,"B",nDays)                       #Bedward Capacity           B_(w,d)
-    H           =   read_list(parameters, "Opening Hours")                  #Opening hours              H_(d)
-    K           =   read_matrix(parameters,"K",nDays)                       #Team Capacity per day      K_(s,d)
-    L           =   read_list(parameters,"Surgery Duration")                #Surgery uration            L_(g)
-    U           =   read_list(parameters,"Max Extended Days")               #Max long days              U_(s)
-    N           =   []                                                      #Open ORs each days         N_(d)
-    for day in D:
+    input_dict["F"]     =   float(parameters["Flexible Share"].values[0])           #Flexible Share             F
+    input_dict["E"]     =   int(parameters["Extended Time"].values[0])              #Extended time              E
+    input_dict["TC"]    =   int(parameters["Cleaning Time"].values[0])              #Cleaning Time              T^C
+    input_dict["I"]     =   int(parameters["Cycles in PP"].values[0])               #Cycles in Planning Period  I
+    input_dict["B"]     =   read_matrix(parameters,"B",nDays)                       #Bedward Capacity           B_(w,d)
+    input_dict["H"]     =   read_list(parameters, "Opening Hours")                  #Opening hours              H_(d)
+    input_dict["K"]     =   read_matrix(parameters,"K",nDays)                       #Team Capacity per day      K_(s,d)
+    input_dict["L"]     =   read_list(parameters,"Surgery Duration")                #Surgery uration            L_(g)
+    input_dict["U"]     =   read_list(parameters,"Max Extended Days")               #Max long days              U_(s)
+    
+    input_dict["N"]     =   []                                                      #Open ORs each days         N_(d)
+    for day in range(1,len(input_dict["Di"])+1):
         if day%7 == 0 or day%7 == 6:
-            N.append(0) 
+            input_dict["N"].append(0) 
         else:
-            N.append(len(R))     
-    T           =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
-    Co          =   [element+TC for element in L]                           #Cost                       C_(g)
-    J           =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
-    P           =   read_3d([MC, IC], "J", max(J))                          #Probabilies                P_(g,w,d)
+            input_dict["N"].append(len(input_dict["R"]))
+    input_dict["T"]           =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
+    input_dict["Co"]          =   [element+input_dict["TC"] for element in input_dict["L"]]                           #Cost                       C_(g)
+    input_dict["J"]            =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
+    input_dict["P"]            =   read_3d([MC, IC], "J", max(input_dict["J"]))                          #Probabilies                P_(g,w,d)
+    return input_dict
+
+def run_model(input_dict, nScenarios, seed, time_limit):
+    input = input_dict
     
     # ----- Scenario generation ----- #
-    Q_trans     =   generate_scenarios(G,T,nScenarios,seed)                 #Demand                     Q_(c,g)
-    Q           =   list(map(list, np.transpose(Q_trans)))                  #Demand                     Q_(g,c)
-    Pi=[]                                                                   #Probability of scenario    PI_(c)
-    for c in Ci:
-        Pi.append(1/nScenarios)
+    input["Q"], input["Ci"], input["Pi"]  =   generate_scenarios(input["G"],input["T"], nScenarios, seed)                 #Demand                     Q_(c,g) 
+    print("Scenarios Created")
     
-    print("New Instances created")
-#----- Model ----- #
+    for i in input:
+        print(i)
+        print(input[i])
+    #----- Model ----- #
     m = gp.Model("mss_mip")
-    m.setParam("TimeLimit", 60)
+    m.setParam("TimeLimit", time_limit)
     
+    #----- Sets ----- #  
+    Wi  =   input["Wi"]
+    Si  =   input["Si"]
+    Gi  =   input["Gi"]
+    GWi =   input["GWi"]
+    GSi =   input["GSi"]    
+    Ri  =   input["Ri"]
+    RSi =   input["RSi"]
+    RGi =   input["RGi"]
+    Di  =   input["Di"]
+    Ci  =   input["Ci"]
+
+    #----- Parameter ----- #  
+    F   =   input["F"]
+    E   =   input["E"]
+    TC  =   input["TC"]
+    I   =   input["I"]
+    B   =   input["B"]
+    H   =   input["H"]
+    K   =   input["K"]
+    L   =   input["L"]
+    U   =   input["U"]
+    N   =   input["N"]
+    T   =   input["T"]
+    Co  =   input["Co"]
+    J   =   input["J"]
+    P   =   input["P"]
+    Pi  =   input["Pi"]
+    Q   =   input["Q"]
+    nDays = len(Di)
+
+
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
     lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
@@ -232,7 +223,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         name = "Con_LongDaysCap",
     )
     m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 for r in RSi[s] for d in Di for c in Ci),
+        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 for r in Ri for d in Di for c in Ci),
         name= "Con_NoRoomDoubleBooking",
     )
     m.addConstrs(
@@ -274,7 +265,14 @@ def main(file_name,nScenarios,seed,newInput=True):
     name = "Con_RollingExtendedSlotCycles",
     )
 
+    m.write("formulation.rlp")
     m.optimize()
 
-main("Old Model/Input/model_input.xlsx",10,1,True)
+def main(file_name, nScenarios, seed, time_limit, new_input=True):
+    if new_input:
+        input = read_input(file_name)
+        print("New Instances created")
+    run_model(input, nScenarios, seed, time_limit)
+
+main("Old Model/Input/model_input.xlsx",10,1,60)
 
