@@ -3,7 +3,7 @@ import pandas as pd
 import math
 import numpy as np
 from numpy import random
-from scipy.stats import poisson
+#from scipy.stats import poisson
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import multidict
