@@ -195,7 +195,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("New Instances created")
 #----- Model ----- #
     m = gp.Model("mss_mip")
-    m.setParam("TimeLimit", 30)
+    m.setParam("TimeLimit", 120)
     
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
@@ -311,27 +311,8 @@ def main(file_name,nScenarios,seed,newInput=True):
         for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
-    print("Wi:=")
-    print(Wi)
-    print("Di:=")
-    print(Di)
-    print("Ci:=")
-    print(Ci)
-    print("GWi:=")
-    print(GWi)
-    print("Ri:=")
-    print(Ri)
-    print("nDays:=")
-    print(nDays)
-    print("J:=")
-    print(J)
-    print("P:=")
-    print(P)
-    print(len(P[0]))
-    print(len(P[1]))
-    print(len(P[0][0]))
     m.addConstrs(
-        (quicksum(P[w][g][d-dd+1] * x[g,r,dd,c] 
+        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] 
                 for g in GWi[w]
                 for r in Ri
                 for dd in range(max(0,d+1-J[w]),d+1)) <=
@@ -343,14 +324,14 @@ def main(file_name,nScenarios,seed,newInput=True):
     )
 
     m.addConstrs(
-        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays+1-dd] * x[g,r,dd,c] 
+        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] 
                                 for g in GWi[w]
                                 for r in Ri
                                 for dd in range(d+nDays+1-J[w],nDays))
                 for c in Ci) ==
         v[w,d]
         for w in Wi
-        for d in range(J[w])-1),
+        for d in range(J[w]-1)),
     name = "Con_BedOccupationBoundaries",
     )
     
@@ -358,7 +339,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         (gamm[s,r,d]==gamm[s,r,nDays/I+d]
         for s in Si
         for r in RSi[s]
-        for d in range(0,nDays-nDays/I)),
+        for d in range(0,int(nDays-nDays/I))),
     name = "Con_RollingFixedSlotCycles",
     )
         
@@ -366,7 +347,7 @@ def main(file_name,nScenarios,seed,newInput=True):
         (lamb[s,r,d]==lamb[s,r,nDays/I+d]
         for r in RSi[s]
         for s in Si
-        for d in range(0,nDays-nDays/I)),
+        for d in range(0,int(nDays-nDays/I))),
     name = "Con_RollingExtendedSlotCycles",
     )
 
@@ -389,6 +370,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     name = "Con_FixingIllegalDeltas"
     )"""
     
+   
     
     
     
