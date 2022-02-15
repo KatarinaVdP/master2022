@@ -195,7 +195,7 @@ def main(file_name,nScenarios,seed,newInput=True):
     print("New Instances created")
 #----- Model ----- #
     m = gp.Model("mss_mip")
-    m.setParam("TimeLimit", 120)
+    m.setParam("TimeLimit", 60)
     
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
@@ -215,165 +215,66 @@ def main(file_name,nScenarios,seed,newInput=True):
                     delt[s,r,d,c].lb=0
     '--- Objective ---' 
     m.setObjective(
-                quicksum(Pi[c] * Co[g] * a[g,c] 
-                for g in Gi 
-                for c in Ci)
+                quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
     )
-    m.ModelSense = GRB.MINIMIZE
-    
+    m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
     m.addConstr(
-        quicksum(gamm[s,r,d]
-            for s in Si
-            for r in Ri
-            for d in Di) 
-        - (1-F) * quicksum(N[d] for d in Di)  
-        >= 0,
-        name = "Con_PercentFixedRooms")
-
+        quicksum(gamm[s,r,d] for s in Si for r in RSi[s] for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
+        name = "Con_PercentFixedRooms"
+        )
     m.addConstrs(
-        (lamb[s,r,d] <= gamm[s,r,d] 
-        for s in Si
-        for r in Ri
-        for d in Di),
+        (lamb[s,r,d] <= gamm[s,r,d] for s in Si for r in Ri for d in Di), 
         name = "Con_RollingFixedSlotCycles",
-    )
-
+        )
     m.addConstrs(
-        (quicksum(lamb[s,r,d]
-                for r in RSi[s]
-                for d in Di)
-        <= U[s] 
-        for s in Si),
+        (quicksum(lamb[s,r,d]for r in RSi[s] for d in Di) <= U[s] for s in Si),
         name = "Con_LongDaysCap",
     )
-
     m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c]
-                for s in Si)
-        <= 1
-        for r in RSi[s]
-        for d in Di
-        for c in Ci),
+        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 for r in RSi[s] for d in Di for c in Ci),
         name= "Con_NoRoomDoubleBooking",
     )
-
     m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c]
-                for r in RSi[s])
-        <= K[s][d]
-        for s in Si
-        for d in Di
-        for c in Ci),
+        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for r in RSi[s]) <= K[s][d] for s in Si for d in Di for c in Ci),
         name= "Con_NoTeamDoubleBooking",
     )
-    
     m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c]
-                for s in Si
-                for r in Ri)
-        <= N[d]
-        for d in Di
-        for c in Ci),
+        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si for r in Ri) <= N[d] for d in Di for c in Ci),
         name= "Con_TotalRoomsInUse",
     )
-    
     m.addConstrs(
-        (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) 
-        - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) 
-        - E*lamb[s,r,d]
-        <= 0
-        for r in RSi[s]              # burde disse bytte plass?
-        for s in Si                  # burde disse bytte plass?
-        for d in Di
-        for c in Ci),
-        name = "Con_AvalibleTimeInRoom",
+        (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) - E*lamb[s,r,d]<= 0 for r in RSi[s] for s in Si for d in Di for c in Ci),
+        name = "Con_AvalibleTimeInRoom",        # burde disse bytte plass?
     )
-
     m.addConstrs(
-        (quicksum(x[g,r,d,c]
-                for r in Ri
-                for d in Di)
-        +   a[g,c] 
-        ==  Q[g][c]
-        for g in Gi
-        for c in Ci),
+        (quicksum(x[g,r,d,c] for r in Ri for d in Di) + a[g,c] ==  Q[g][c] for g in Gi for c in Ci),
         name= "Con_Demand",
     )
-    
     m.addConstrs(
-        (quicksum(delt[s,r,d,c]
-                for s in Si) <=
-        quicksum(x[g,r,d,c]
-                for g in Gi)
-        for r in Ri
-        for d in Di
-        for c in Ci),
+        (quicksum(delt[s,r,d,c] for s in Si) <=
+        quicksum(x[g,r,d,c] for g in Gi) for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
     m.addConstrs(
-        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] 
-                for g in GWi[w]
-                for r in Ri
-                for dd in range(max(0,d+1-J[w]),d+1)) <=
-        B[w][d] - v[w,d]
-        for w in Wi
-        for d in Di
-        for c in Ci),
+        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
-
     m.addConstrs(
-        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] 
-                                for g in GWi[w]
-                                for r in Ri
-                                for dd in range(d+nDays+1-J[w],nDays))
-                for c in Ci) ==
-        v[w,d]
-        for w in Wi
-        for d in range(J[w]-1)),
+        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+        == v[w,d] for w in Wi for d in range(J[w]-1)),
     name = "Con_BedOccupationBoundaries",
     )
-    
     m.addConstrs(
-        (gamm[s,r,d]==gamm[s,r,nDays/I+d]
-        for s in Si
-        for r in RSi[s]
-        for d in range(0,int(nDays-nDays/I))),
+        (gamm[s,r,d]==gamm[s,r,nDays/I+d] for s in Si for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
     name = "Con_RollingFixedSlotCycles",
-    )
-        
+    )   
     m.addConstrs(
-        (lamb[s,r,d]==lamb[s,r,nDays/I+d]
-        for r in RSi[s]
-        for s in Si
-        for d in range(0,int(nDays-nDays/I))),
+        (lamb[s,r,d]==lamb[s,r,nDays/I+d] for r in RSi[s] for s in Si for d in range(0,int(nDays-nDays/I))),
     name = "Con_RollingExtendedSlotCycles",
     )
 
     m.optimize()
-        
-"""    m.addConstrs(
-        gamm[s,r,d]==0
-        for r in (Ri - RSi[s])
-        for s in Si
-        for d in D)
-    name = "Con_FixingIllegalGammas"
-    )
-    
-    m.addConstrs(
-        delt[s,r,d,c]==0
-        for r in (Ri - RSi[s])
-        for s in Si
-        for d in D
-        for c in C)
-    name = "Con_FixingIllegalDeltas"
-    )"""
-    
-   
-    
-    
-    
-    
+
 main("Old Model/Input/model_input.xlsx",10,1,True)
 
