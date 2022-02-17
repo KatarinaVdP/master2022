@@ -1,4 +1,6 @@
 
+from typing import IO
+from matplotlib.cbook import delete_masked_points
 import pandas as pd
 import math
 import numpy as np
@@ -7,38 +9,41 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
+from sympy import gammasimp
+import pickle
+import abc
 
 
 # ------------ Reading from excel file ------------
 def read_list(sheet, name,integerVal=False):
-    set =  sheet[name].values
-    list = []
-    for value in set:
-        if not str(value) == "nan":
-            if integerVal:
-                list.append(int(value))
-            else:
-                list.append(value)
-    return list
+        set =  sheet[name].values
+        list = []
+        for value in set:
+            if not str(value) == "nan":
+                if integerVal:
+                    list.append(int(value))
+                else:
+                    list.append(value)
+        return list
 
 def read_matrix(sheet, prefix, numColombs):
-    matrix_trans = []
-    for i in range(numColombs):
-        column = sheet[prefix + str(i + 1)].values
-        sublist = []
-        for j in column:
-            if not math.isnan(j):
-                sublist.append(j)
-        matrix_trans.append(sublist)
-    matrix =  list(map(list, np.transpose(matrix_trans)))    
-    return matrix
+        matrix_trans = []
+        for i in range(numColombs):
+            column = sheet[prefix + str(i + 1)].values
+            sublist = []
+            for j in column:
+                if not math.isnan(j):
+                    sublist.append(j)
+            matrix_trans.append(sublist)
+        matrix =  list(map(list, np.transpose(matrix_trans)))    
+        return matrix
 
 def read_3d(sheets, prefix, numColombs):
-    cube = []
-    for sheet in sheets:
-        matrix = read_matrix(sheet, prefix, numColombs) 
-        cube.append(matrix)
-    return cube
+        cube = []
+        for sheet in sheets:
+            matrix = read_matrix(sheet, prefix, numColombs) 
+            cube.append(matrix)
+        return cube
 
 def read_subset(matrix, affiliating_set, index_set):
         subset=[]
@@ -53,226 +58,372 @@ def read_subset(matrix, affiliating_set, index_set):
             subset.append(subsublist) 
             subsetIndex.append(subsublistIndex)
         return subset, subsetIndex
-    
-def generate_scenarios(groups, TargetTroughput, nScenarios, seed):
-    scenarioMatrix=[]
-    np.random.seed(seed)
-    for i in range(nScenarios):
-        randVec=np.random.rand(1,len(groups))
-        scenarioPre=poisson.ppf(randVec, TargetTroughput)
-        scenario=[]
-        for group in range(len(groups)):
-            scenario.append(int(scenarioPre[0][group]))
-        scenarioMatrix.append(scenario)
-    Ci  =   [c for c in range(nScenarios)] #DemandQ_(g,c)
-    Pi  =   [1/nScenarios]*nScenarios                                                                   #Probability of scenario    PI_(c)
-    transposed_matrix = list(map(list, np.transpose(scenarioMatrix))) 
-    
-    return transposed_matrix, Ci, Pi
 
-def read_input(file_name):
-    input_dict ={}
-    file        =   file_name
-    parameters  =   pd.read_excel(file, sheet_name='Parameters')
-    sets        =   pd.read_excel(file, sheet_name='Sets')
-    MC          =   pd.read_excel(file, sheet_name='MC')    
-    IC          =   pd.read_excel(file, sheet_name='IC')  
-                        
-# ----- Reading/Creating sets -----
-    '--- Set of Wards ---'
-    input_dict["W"]     =   read_list(sets, "Wards")
-    input_dict["Wi"]    =   [i for i in range(len(input_dict["W"]))]        
-    '--- Set of Specialties ---'
-    input_dict["S"]     =   read_list(sets, "Specialties")  
-    input_dict["Si"]    =   [i for i in range(len(input_dict["S"]))]              
-    '--- Set of Surgery Groups ---'
-    input_dict["G"]     =   read_list(sets, "Surgery Groups")             
-    input_dict["Gi"]    =   [i for i in range(len(input_dict["G"]))]
-    '--- Subset of Groups in Wards ---'
-    GroupWard           =   read_matrix(sets,"Gr",len(input_dict["G"]))
-    input_dict["GW"] , input_dict["GWi"]    =   read_subset(GroupWard,input_dict["G"],input_dict["W"])                         
-    '--- Subset of Groups in Specialties ---'    
-    GroupSpecialty      =   read_matrix(sets,"G",len(input_dict["G"]))
-    input_dict["GS"], input_dict["GSi"]     =   read_subset(GroupSpecialty,input_dict["G"],input_dict["S"])
-    '--- Set of Rooms ---'   
-    input_dict["R"]     =   read_list(sets, "Operating Rooms") 
-    input_dict["Ri"]    =   [i for i in range(len(input_dict["R"]))]                             
-    '--- Subset of Rooms in Specialties ---' 
-    RoomSpecialty       =   read_matrix(sets,"R",len(input_dict["R"])) 
-    input_dict["RS"], input_dict["RSi"]     =   read_subset(RoomSpecialty,input_dict["R"],input_dict["S"])                 
-    '--- Subset of Rooms for Groups ---'     
-    input_dict["RG"] = []
-    input_dict["RGi"] = []
-    for g in range(len(input_dict["G"])):
-        sublist = []
-        for s in range(len(input_dict["S"])):
-            if input_dict["G"][g] in input_dict["GS"][s]:
-                sublist=input_dict["RS"][s]
-                sublistIndex = []
-                for i in range(len(sublist)):
-                    j = input_dict["R"].index(sublist[i])
-                    sublistIndex.append(j)
-                break
-        input_dict["RG"].append(sublist)   
-        input_dict["RGi"].append(sublistIndex)   
-    '--- Set of Days ---'  
-    nDays = int(parameters["Planning Days"].values[0])
-    input_dict["Di"]=[d for d in range(nDays)]
-
-# ----- Reading/Creating Parameters ----- #
-    input_dict["F"]     =   float(parameters["Flexible Share"].values[0])           #Flexible Share             F
-    input_dict["E"]     =   int(parameters["Extended Time"].values[0])              #Extended time              E
-    input_dict["TC"]    =   int(parameters["Cleaning Time"].values[0])              #Cleaning Time              T^C
-    input_dict["I"]     =   int(parameters["Cycles in PP"].values[0])               #Cycles in Planning Period  I
-    input_dict["B"]     =   read_matrix(parameters,"B",nDays)                       #Bedward Capacity           B_(w,d)
-    input_dict["H"]     =   read_list(parameters, "Opening Hours")                  #Opening hours              H_(d)
-    input_dict["K"]     =   read_matrix(parameters,"K",nDays)                       #Team Capacity per day      K_(s,d)
-    input_dict["L"]     =   read_list(parameters,"Surgery Duration")                #Surgery uration            L_(g)
-    input_dict["U"]     =   read_list(parameters,"Max Extended Days")               #Max long days              U_(s)
-    
-    input_dict["N"]     =   []                                                      #Open ORs each days         N_(d)
-    for day in range(1,len(input_dict["Di"])+1):
-        if day%7 == 0 or day%7 == 6:
-            input_dict["N"].append(0) 
-        else:
-            input_dict["N"].append(len(input_dict["R"]))
-    input_dict["T"]           =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
-    input_dict["Co"]          =   [element+input_dict["TC"] for element in input_dict["L"]]                           #Cost                       C_(g)
-    input_dict["J"]            =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
-    input_dict["P"]            =   read_3d([MC, IC], "J", max(input_dict["J"]))                          #Probabilies                P_(g,w,d)
-    return input_dict
-
-def run_model(input_dict, nScenarios, seed, time_limit):
-    input = input_dict
-    
-    # ----- Scenario generation ----- #
-    input["Q"], input["Ci"], input["Pi"]  =   generate_scenarios(input["G"],input["T"], nScenarios, seed)                 #Demand                     Q_(c,g) 
-    print("Scenarios Created")
-    
-    for i in input:
-        print(i)
-        print(input[i])
-    #----- Model ----- #
-    m = gp.Model("mss_mip")
-    m.setParam("TimeLimit", time_limit)
-    
-    #----- Sets ----- #  
-    Wi  =   input["Wi"]
-    Si  =   input["Si"]
-    Gi  =   input["Gi"]
-    GWi =   input["GWi"]
-    GSi =   input["GSi"]    
-    Ri  =   input["Ri"]
-    RSi =   input["RSi"]
-    RGi =   input["RGi"]
-    Di  =   input["Di"]
-    Ci  =   input["Ci"]
-
-    #----- Parameter ----- #  
-    F   =   input["F"]
-    E   =   input["E"]
-    TC  =   input["TC"]
-    I   =   input["I"]
-    B   =   input["B"]
-    H   =   input["H"]
-    K   =   input["K"]
-    L   =   input["L"]
-    U   =   input["U"]
-    N   =   input["N"]
-    T   =   input["T"]
-    Co  =   input["Co"]
-    J   =   input["J"]
-    P   =   input["P"]
-    Pi  =   input["Pi"]
-    Q   =   input["Q"]
-    nDays = len(Di)
+def generate_scenarios(groups, targetTroughput, nScenarios, seed):
+        scenarioMatrix=[]
+        np.random.seed(seed)
+        for i in range(nScenarios):
+            randVec=np.random.rand(1,len(groups))
+            scenarioPre=poisson.ppf(randVec, targetTroughput)
+            scenario=[]
+            for group in range(len(groups)):
+                scenario.append(int(scenarioPre[0][group]))
+            scenarioMatrix.append(scenario)
+        Ci  =   [c for c in range(nScenarios)] #DemandQ_(g,c)
+        Pi  =   [1/nScenarios]*nScenarios                                                                   #Probability of scenario    PI_(c)
+        transposed_matrix = list(map(list, np.transpose(scenarioMatrix))) 
+        return transposed_matrix, Ci, Pi
 
 
-    '--- Variables ---'
-    gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
-    lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
-    delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
-    x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
-    a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
-    v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
+class old_model:
+    def __init__(self):
+        '--- Sets ---'
+        self.W      =   []
+        self.Wi     =   []
+        self.S      =   []
+        self.Si     =   []
+        self.G      =   []
+        self.Gi     =   []
+        self.GW     =   []
+        self.GWi    =   []
+        self.GS     =   []
+        self.GSi    =   []
+        self.R      =   []
+        self.Ri     =   []
+        self.RSi    =   []
+        self.RG     =   []
+        self.RGi    =   []
+        self.Di     =   []
+        self.Ci     =   []
+        '--- Parameters ---'
+        self.F      =   0
+        self.E      =   0
+        self.TC     =   0
+        self.I      =   0
+        self.B      =   []
+        self.H      =   []
+        self.K      =   []
+        self.L      =   []
+        self.U      =   []
+        self.N      =   []
+        self.T      =   []
+        self.Co     =   []
+        self.J      =   []
+        self.P      =   []
+        self.Q      =   []
+        self.Pi     =   []
+        
+        '--- others ---'
+        self.nDays       =   0
+        self.nSpecialties =  0
+        self.nGroups     =   0
+        self.nRooms      =   0
+        
+        self.fixedSlot   =   []
+        self.flexSlot    =   []
+        self.extSlot     =   []
+        
+        '--- Last solution ---'
+        self.gamm    = []
+        self.delt    = []
+        self.lamb    = []
+        self.x       = []
+        self.a       = []
+        self.v       = []
+        
+    def read_input(self,file_name):
+        file        =   file_name
+        parameters  =   pd.read_excel(file, sheet_name='Parameters')
+        sets        =   pd.read_excel(file, sheet_name='Sets')
+        MC          =   pd.read_excel(file, sheet_name='MC')    
+        IC          =   pd.read_excel(file, sheet_name='IC')  
+                            
+    # ----- Reading/Creating sets -----
+        '--- Set of Wards ---'
+        self.W     =   read_list(sets, "Wards")
+        self.nWards =  len(self.W)
+        self.Wi    =   [i for i in range(self.nWards)]    
+        '--- Set of Specialties ---'
+        self.S     =   read_list(sets, "Specialties")
+        self.nSpecialties = len(self.S)
+        self.Si    =   [i for i in range(self.nSpecialties)]              
+        '--- Set of Surgery Groups ---'
+        self.G     =   read_list(sets, "Surgery Groups")
+        self.nGroups = len(self.G)             
+        self.Gi    =   [i for i in range(self.nGroups)]
+        '--- Subset of Groups in Wards ---'
+        GroupWard           =   read_matrix(sets,"Gr",self.nGroups)
+        self.GW , self.GWi    =   read_subset(GroupWard,self.G,self.W)                         
+        '--- Subset of Groups in Specialties ---'    
+        GroupSpecialty      =   read_matrix(sets,"G",self.nGroups)
+        self.GS, self.GSi     =   read_subset(GroupSpecialty,self.G,self.S)
+        '--- Set of Rooms ---'   
+        self.R     =   read_list(sets, "Operating Rooms") 
+        self.nRooms=    len(self.R)
+        self.Ri    =   [i for i in range(self.nRooms)]                             
+        '--- Subset of Rooms in Specialties ---' 
+        RoomSpecialty       =   read_matrix(sets,"R",self.nRooms) 
+        self.RS, self.RSi     =   read_subset(RoomSpecialty,self.R,self.S)                 
+        '--- Subset of Rooms for Groups ---'     
+        for g in range(len(self.G)):
+            sublist = []
+            for s in range(len(self.S)):
+                if self.G[g] in self.GS[s]:
+                    sublist=self.RS[s]
+                    sublistIndex = []
+                    for i in range(len(sublist)):
+                        j = self.R.index(sublist[i])
+                        sublistIndex.append(j)
+                    break
+            self.RG.append(sublist)   
+            self.RGi.append(sublistIndex)
+        '--- Set of Days ---'  
+        self.nDays = int(parameters["Planning Days"].values[0])
+        self.Di=[d for d in range(self.nDays)]
+
+    # ----- Reading/Creating Parameters ----- #
+        self.F     =   float(parameters["Flexible Share"].values[0])           #Flexible Share             F
+        self.E     =   int(parameters["Extended Time"].values[0])              #Extended time              E
+        self.TC    =   int(parameters["Cleaning Time"].values[0])              #Cleaning Time              T^C
+        self.I     =   int(parameters["Cycles in PP"].values[0])               #Cycles in Planning Period  I
+        self.B     =   read_matrix(parameters,"B",self.nDays)                       #Bedward Capacity           B_(w,d)
+        self.H     =   read_list(parameters, "Opening Hours")                  #Opening hours              H_(d)
+        self.K     =   read_matrix(parameters,"K",self.nDays)                       #Team Capacity per day      K_(s,d)
+        self.L     =   read_list(parameters,"Surgery Duration")                #Surgery uration            L_(g)
+        self.U     =   read_list(parameters,"Max Extended Days")               #Max long days              U_(s)
+                                                            #Open ORs each days         N_(d)
+        for day in range(1,self.nDays+1):
+            if day%7 == 0 or day%7 == 6:
+                self.N.append(0) 
+            else:
+                self.N.append(self.nRooms)
+        self.T           =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
+        self.Co          =   [element+self.TC for element in self.L]                           #Cost                       C_(g)
+        self.J            =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
+        self.P            =   read_3d([MC, IC], "J", max(self.J))                          #Probabilies                P_(g,w,d)
+
+    def cathegorize_slots(self):
+        daysInCycle = int(self.nDays/self.I)
+        for r in self.Ri:
+            dayInCycle=0
+            for d in self.Di:
+                dayInCycle+=dayInCycle
+                if dayInCycle>daysInCycle:
+                    dayInCycle=1
+                if sum(self.delt[s][r][d][c] for s in self.Si for c in self.Ci)>0.5:
+                    self.flexSlot[r][d]=1
+                    for dd in self.Di:
+                        if (dd % daysInCycle) == dayInCycle:
+                            self.flexSlot[r][dd]=1
+                if sum(self.gamm[s][r][d] for s in self.Si)>0.5:
+                    self.fixedSlot[r][d]=1
+                    if sum(self.lamb[s][r][d] for s in self.Si)>0.5:
+                        self.extSlot[r][d]=1
+                if (self.fixedSlot[r][d]<0.5) and (self.flexSlot[r][d]<0.5):
+                    self.unassSlot[r][d]=1
+            
+    def run_model(self, nScenarios, seed, time_limit):
     
-    for s in Si:
-        for r in (list(set(Ri)^set(RSi[s]))):
-            for d in Di:
-                gamm[s,r,d].lb=0
-                gamm[s,r,d].ub=0
-                for c in Ci:
-                    delt[s,r,d,c].lb=0
-                    delt[s,r,d,c].lb=0
-    '--- Objective ---' 
-    m.setObjective(
-                quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
-    )
-    m.ModelSense = GRB.MINIMIZE 
-    '--- Constraints ---'
-    m.addConstr(
-        quicksum(gamm[s,r,d] for s in Si for r in RSi[s] for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
-        name = "Con_PercentFixedRooms"
+        # ----- Scenario generation ----- #
+        self.Q, self.Ci, self.Pi  =   generate_scenarios(self.G, self.T, nScenarios, seed)                 #Demand                     Q_(c,g) 
+        print("Scenarios Created")
+        
+        #----- Model ----- #
+        m = gp.Model("mss_mip")
+        m.setParam("TimeLimit", time_limit)
+        
+        #----- Sets ----- #  
+        Wi  =   self.Wi
+        Si  =   self.Si
+        Gi  =   self.Gi
+        GWi =   self.GWi
+        GSi =   self.GSi   
+        Ri  =   self.Ri
+        RSi =   self.RSi
+        RGi =   self.RGi
+        Di  =   self.Di
+        Ci  =   self.Ci
+
+        #----- Parameter ----- #  
+        F   =   self.F
+        E   =   self.E
+        TC  =   self.TC
+        I   =   self.I
+        B   =   self.B
+        H   =   self.H
+        K   =   self.K
+        L   =   self.L
+        U   =   self.U
+        N   =   self.N
+        T   =   self.T
+        Co  =   self.Co
+        J   =   self.J
+        P   =   self.P
+        Pi  =   self.Pi
+        Q   =   self.Q
+        nDays = self.nDays
+
+
+        '--- Variables ---'
+        gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
+        lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
+        delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
+        x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
+        a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
+        v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
+        
+        for s in Si:
+            for r in (list(set(Ri)^set(RSi[s]))):
+                for d in Di:
+                    gamm[s,r,d].lb=0
+                    gamm[s,r,d].ub=0
+                    for c in Ci:
+                        delt[s,r,d,c].lb=0
+                        delt[s,r,d,c].lb=0
+        '--- Objective ---' 
+        m.setObjective(
+                    quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
         )
-    m.addConstrs(
-        (lamb[s,r,d] <= gamm[s,r,d] for s in Si for r in Ri for d in Di), 
+        m.ModelSense = GRB.MINIMIZE 
+        '--- Constraints ---'
+        m.addConstr(
+            quicksum(gamm[s,r,d] for s in Si for r in RSi[s] for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
+            name = "Con_PercentFixedRooms"
+            )
+        m.addConstrs(
+            (lamb[s,r,d] <= gamm[s,r,d] for s in Si for r in Ri for d in Di), 
+            name = "Con_RollingFixedSlotCycles",
+            )
+        m.addConstrs(
+            (quicksum(lamb[s,r,d]for r in RSi[s] for d in Di) <= U[s] for s in Si),
+            name = "Con_LongDaysCap",
+        )
+        print('still Creating Model-0')
+        m.addConstrs(
+            (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 for r in Ri for d in Di for c in Ci),
+            name= "Con_NoRoomDoubleBooking",
+        )
+        m.addConstrs(
+            (quicksum(gamm[s,r,d]+delt[s,r,d,c] for r in RSi[s]) <= K[s][d] for s in Si for d in Di for c in Ci),
+            name= "Con_NoTeamDoubleBooking",
+        )
+        m.addConstrs(
+            (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si for r in Ri) <= N[d] for d in Di for c in Ci),
+            name= "Con_TotalRoomsInUse",
+        )
+        m.addConstrs(
+            (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) - E*lamb[s,r,d]<= 0 for r in RSi[s] for s in Si for d in Di for c in Ci),
+            name = "Con_AvalibleTimeInRoom",        # burde disse bytte plass?
+        )
+        print('still Creating Model0')
+        m.addConstrs(
+            (quicksum(x[g,r,d,c] for r in Ri for d in Di) + a[g,c] ==  Q[g][c] for g in Gi for c in Ci),
+            name= "Con_Demand",
+        )
+        m.addConstrs(
+            (quicksum(delt[s,r,d,c] for s in Si) <=
+            quicksum(x[g,r,d,c] for g in Gi) for r in Ri for d in Di for c in Ci),
+            name= "Con_OnlyAssignIfNecessary",
+        )
+        m.addConstrs(
+            (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] for w in Wi for d in Di for c in Ci),
+        name = "Con_BedOccupationCapacity",
+        )
+        print('still Creating Model1')
+        m.addConstrs(
+            (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+            == v[w,d] for w in Wi for d in range(J[w]-1)),
+        name = "Con_BedOccupationBoundaries",
+        )
+        m.addConstrs(
+            (gamm[s,r,d]==gamm[s,r,nDays/I+d] for s in Si for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
         name = "Con_RollingFixedSlotCycles",
+        )   
+        m.addConstrs(
+            (lamb[s,r,d]==lamb[s,r,nDays/I+d] for r in RSi[s] for s in Si for d in range(0,int(nDays-nDays/I))),
+        name = "Con_RollingExtendedSlotCycles",
         )
-    m.addConstrs(
-        (quicksum(lamb[s,r,d]for r in RSi[s] for d in Di) <= U[s] for s in Si),
-        name = "Con_LongDaysCap",
-    )
-    m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 for r in Ri for d in Di for c in Ci),
-        name= "Con_NoRoomDoubleBooking",
-    )
-    m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for r in RSi[s]) <= K[s][d] for s in Si for d in Di for c in Ci),
-        name= "Con_NoTeamDoubleBooking",
-    )
-    m.addConstrs(
-        (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si for r in Ri) <= N[d] for d in Di for c in Ci),
-        name= "Con_TotalRoomsInUse",
-    )
-    m.addConstrs(
-        (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) - H[d] * (gamm[s,r,d] + delt[s,r,d,c]) - E*lamb[s,r,d]<= 0 for r in RSi[s] for s in Si for d in Di for c in Ci),
-        name = "Con_AvalibleTimeInRoom",        # burde disse bytte plass?
-    )
-    m.addConstrs(
-        (quicksum(x[g,r,d,c] for r in Ri for d in Di) + a[g,c] ==  Q[g][c] for g in Gi for c in Ci),
-        name= "Con_Demand",
-    )
-    m.addConstrs(
-        (quicksum(delt[s,r,d,c] for s in Si) <=
-        quicksum(x[g,r,d,c] for g in Gi) for r in Ri for d in Di for c in Ci),
-        name= "Con_OnlyAssignIfNecessary",
-    )
-    m.addConstrs(
-        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] for w in Wi for d in Di for c in Ci),
-    name = "Con_BedOccupationCapacity",
-    )
-    m.addConstrs(
-        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
-        == v[w,d] for w in Wi for d in range(J[w]-1)),
-    name = "Con_BedOccupationBoundaries",
-    )
-    m.addConstrs(
-        (gamm[s,r,d]==gamm[s,r,nDays/I+d] for s in Si for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
-    name = "Con_RollingFixedSlotCycles",
-    )   
-    m.addConstrs(
-        (lamb[s,r,d]==lamb[s,r,nDays/I+d] for r in RSi[s] for s in Si for d in range(0,int(nDays-nDays/I))),
-    name = "Con_RollingExtendedSlotCycles",
-    )
+        print('still Creating Model2')
 
-    m.write("formulation.rlp")
-    m.optimize()
+        '''v=m.getVars()
+        print(v)'''
+        m.write("formulation.rlp")
+        m.optimize()
+        
+        self.flexSlot = [[0]*self.nRooms]*self.nDays
+        self.fixedSlot = [[0]*self.nRooms]*self.nDays        
+        self.extSlot = [[0]*self.nRooms]*self.nDays
+        self.unassSlot = [[0]*self.nRooms]*self.nDays
+                    
+        self.gamm    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.lamb    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.delt    = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.x       = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.a       = [[0]*nScenarios]*self.nGroups
+        self.v       = [[0]*self.nDays]*self.nWards
+        
+        
+        for s in self.Si:
+            for r in self.Ri:
+                for d in self.Di:
+                    self.gamm[s][r][d] = gamm[s,r,d].X
+                    self.lamb[s][r][d] = lamb[s,r,d].X
+                    for c in self.Ci:
+                        self.delt[s][r][d][c] = delt[s,r,d,c].X
+                        self.x[s][r][d][c] = x[s,r,d,c].X
+        for g in self.Gi:
+            for c in self.Ci:
+                self.a[g][c] = a[g,c].X
+        for w in self.Wi:
+            for d in self.Di:
+                self.v[w][d] = v[w,d].X
+                
+        '''--pickeling--'
+        variablesSaved=variables_saved()
+        old_model.read_input(variablesSaved,"Old Model/Input/model_input.xlsx")
+        for s in self.Si:
+            for r in self.Ri:
+                for d in self.Di:
+                    variablesSaved.gamm[s][r][d] = gamm[s,r,d].X
+                    variablesSaved.lamb[s][r][d] = lamb[s,r,d].X
+                    for c in self.Ci:
+                        variablesSaved.delt[s][r][d][c] = delt[s,r,d,c].X
+                        variablesSaved.x[s][r][d][c] = x[s,r,d,c].X
+        for g in self.Gi:
+            for c in self.Ci:
+                variablesSaved.a[g][c] = a[g,c].X
+        for w in self.Wi:
+            for d in self.Di:
+                variablesSaved.v[w][d] = v[w,d].X
+        return variablesSaved'''
 
 def main(file_name, nScenarios, seed, time_limit, new_input=True):
+    oldModel = old_model()
     if new_input:
-        input = read_input(file_name)
+        old_model.read_input(oldModel,file_name)
         print("New Instances created")
-    run_model(input, nScenarios, seed, time_limit)
+        
+    try:
+        with open("file.pkl","rb") as f:
+            variablesSaved = pickle.load(f)
+            
+            print(variablesSaved.x)
+            old_model.cathegorize_slots(variablesSaved)
+            
+    except IOError:
+        old_model.run_model(oldModel,nScenarios, seed, time_limit)
+        
+        with open("file.pkl","wb") as f:
+            pickle.dump(oldModel,f)
+    
+    
+        
+    '''with open("file.pkl","rb") as f:
+        VariablesSaved = pickle.load(f)'''
+    '''print(variablesSaved.x)
+    old_model.cathegorize_slots(variablesSaved)
+    print(oldModel.flexSlots)'''
 
-main("Old Model/Input/model_input.xlsx",10,1,60)
+
+main("Old Model/Input/model_input.xlsx",10,1,15)
 
