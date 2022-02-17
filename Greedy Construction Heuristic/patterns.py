@@ -29,6 +29,10 @@ for i in range(1, len(groups)):                             #operere med Gi slik
     else:
         durations_per_specialty[groups[i][0:2]].append(duration[i] + cleaning_time)
 
+print("Durations per specialty:")
+print(durations_per_specialty)
+print()
+
 # Data om lengde på vanlig slot og extended slot. Bør hentes fra Excel-fil
 slot_time = 450                 # Importere H[0] fra excel
 slot_time_extended = 540        # Importere som H[0] + E fra Excel
@@ -41,34 +45,35 @@ for group in durations_per_specialty:
     max_operations_per_specialty.append(math.floor(slot_time/min(durations_per_specialty[group])))
     max_operations_per_specialty_extended.append(math.floor(slot_time_extended/min(durations_per_specialty[group])))
       
-all_combinations = {}
+combinations_per_group = {}
 for specialty, durations in durations_per_specialty.items():
-    all_combinations[specialty] = [duration for i in range(1, max_operations_per_specialty[0]+1)
+    combinations_per_group[specialty] = [duration for i in range(1, max_operations_per_specialty[0]+1)
           for duration in itertools.combinations_with_replacement(durations, i)
           if sum(duration) <= slot_time]
 
-print("All combinations:")
-print(all_combinations)
+print("Combinations per group:")
+print(combinations_per_group)
 
-number_per_group = {}
-for specialty, combinations in all_combinations.items():
-    number_per_group[specialty] = {}
-    pattern_id = 1
-    for duration in durations_per_specialty[specialty]:
-        print("Duration:")
-        print(duration)
-        number_per_group[specialty][pattern_id] = {}
-        number_per_group[specialty][pattern_id][duration] = 0
-        #print(number_per_group)
-        pattern_id += 1
-"""    for pattern in combinations:
-        for operation in pattern:
-            number_per_group[specialty][pattern_id][operation - cleaning_time] += 1"""
-        
+patterns_per_group = {}
+for specialty, combinations in combinations_per_group.items():
+    patterns_per_group[specialty] = []
+    for i, combination in enumerate(combinations):
+        patterns_per_group[specialty].append({})
+        for duration in durations_per_specialty[specialty]:
+            patterns_per_group[specialty][i][duration - cleaning_time] = 0
+            
+for specialty, patterns in patterns_per_group.items():
+    for i in range(len(patterns)):
+        for duration, numbers in patterns[i].items():
+            for specialty2 in combinations_per_group.values():
+                for j in range(len(specialty2)):
+                    for duration2 in specialty2[j]:
+                        if i == j and duration == duration2 - cleaning_time:
+                            patterns[i][duration] += 1        
 
 print(    )
-print("Number per group:")
-print(number_per_group)
+print("Patterns per group:")
+print(patterns_per_group)
         
 
 # Koden under gjør det samme som "patterns = ..."
