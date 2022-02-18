@@ -12,6 +12,7 @@ from gurobipy import quicksum
 from sympy import gammasimp
 import pickle
 import abc
+#from output_functions import categorize_slots
 
 
 # ------------ Reading from excel file ------------
@@ -119,17 +120,19 @@ class old_model:
         self.nGroups     =   0
         self.nRooms      =   0
         
+        # Skriv om så matrisene ikke er hardkodet
         self.fixedSlot   =   []
         self.flexSlot    =   []
         self.extSlot     =   []
+        self.unassSlot   =   []
         
         '--- Last solution ---'
-        self.gamm    = []
-        self.delt    = []
-        self.lamb    = []
-        self.x       = []
-        self.a       = []
-        self.v       = []
+        self.gamm_sol    = []
+        self.delt_sol    = []
+        self.lamb_sol    = []
+        self.x_sol       = []
+        self.a_sol       = []
+        self.v_sol       = []
         
     def read_input(self,file_name):
         file        =   file_name
@@ -202,12 +205,12 @@ class old_model:
         self.J            =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
         self.P            =   read_3d([MC, IC], "J", max(self.J))                          #Probabilies                P_(g,w,d)
 
-    def cathegorize_slots(self):
+    """def cathegorize_slots(self):
         daysInCycle = int(self.nDays/self.I)
         for r in self.Ri:
             dayInCycle=0
             for d in self.Di:
-                dayInCycle+=dayInCycle
+                dayInCycle=dayInCycle+1
                 if dayInCycle>daysInCycle:
                     dayInCycle=1
                 if sum(self.delt[s][r][d][c] for s in self.Si for c in self.Ci)>0.5:
@@ -220,7 +223,7 @@ class old_model:
                     if sum(self.lamb[s][r][d] for s in self.Si)>0.5:
                         self.extSlot[r][d]=1
                 if (self.fixedSlot[r][d]<0.5) and (self.flexSlot[r][d]<0.5):
-                    self.unassSlot[r][d]=1
+                    self.unassSlot[r][d]=1"""
             
     def run_model(self, nScenarios, seed, time_limit):
     
@@ -350,72 +353,109 @@ class old_model:
         m.write("formulation.rlp")
         m.optimize()
         
-        self.flexSlot = [[0]*self.nRooms]*self.nDays
-        self.fixedSlot = [[0]*self.nRooms]*self.nDays        
-        self.extSlot = [[0]*self.nRooms]*self.nDays
-        self.unassSlot = [[0]*self.nRooms]*self.nDays
+        self.flexSlot = [[0]*self.nDays]*self.nRooms
+        self.fixedSlot = [[0]*self.nDays]*self.nRooms     
+        self.extSlot = [[0]*self.nDays]*self.nRooms
+        self.unassSlot = [[0]*self.nDays]*self.nRooms
                     
-        self.gamm    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
-        self.lamb    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
-        self.delt    = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
-        self.x       = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
-        self.a       = [[0]*nScenarios]*self.nGroups
-        self.v       = [[0]*self.nDays]*self.nWards
+        self.gamm_sol    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.lamb_sol    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.delt_sol    = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.x_sol       = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.a_sol       = [[0]*nScenarios]*self.nGroups
+        self.v_sol       = [[0]*self.nDays]*self.nWards
         
-        
+        print("Copying varable values and printing a:")
         for s in self.Si:
             for r in self.Ri:
                 for d in self.Di:
-                    self.gamm[s][r][d] = gamm[s,r,d].X
-                    self.lamb[s][r][d] = lamb[s,r,d].X
+                    self.gamm_sol[s][r][d] = gamm[s,r,d].X
+                    self.lamb_sol[s][r][d] = lamb[s,r,d].X
                     for c in self.Ci:
-                        self.delt[s][r][d][c] = delt[s,r,d,c].X
-                        self.x[s][r][d][c] = x[s,r,d,c].X
+                        self.delt_sol[s][r][d][c] = delt[s,r,d,c].X
+                        self.x_sol[s][r][d][c] = x[s,r,d,c].X
         for g in self.Gi:
             for c in self.Ci:
-                self.a[g][c] = a[g,c].X
+                self.a_sol[g][c] = a[g,c].X
+                print()
+                print(a[g,c].X)
+                print(self.a_sol[g][c])
+                print()
         for w in self.Wi:
             for d in self.Di:
-                self.v[w][d] = v[w,d].X
+                self.v_sol[w][d] = v[w,d].X
                 
-        '''--pickeling--'
-        variablesSaved=variables_saved()
-        old_model.read_input(variablesSaved,"Old Model/Input/model_input.xlsx")
-        for s in self.Si:
-            for r in self.Ri:
-                for d in self.Di:
-                    variablesSaved.gamm[s][r][d] = gamm[s,r,d].X
-                    variablesSaved.lamb[s][r][d] = lamb[s,r,d].X
-                    for c in self.Ci:
-                        variablesSaved.delt[s][r][d][c] = delt[s,r,d,c].X
-                        variablesSaved.x[s][r][d][c] = x[s,r,d,c].X
-        for g in self.Gi:
-            for c in self.Ci:
-                variablesSaved.a[g][c] = a[g,c].X
-        for w in self.Wi:
-            for d in self.Di:
-                variablesSaved.v[w][d] = v[w,d].X
-        return variablesSaved'''
+
+
+def categorize_slots(objekt):
+        daysInCycle = int(objekt.nDays/objekt.I)
+        for r in objekt.Ri:
+            dayInCycle=0
+            for d in objekt.Di:
+                dayInCycle=dayInCycle+1
+                if dayInCycle>daysInCycle:
+                    dayInCycle=1
+                if sum(objekt.delt_sol[s][r][d][c] for s in objekt.Si for c in objekt.Ci)>0.5:
+                    objekt.flexSlot[r][d]=1
+                    for dd in objekt.Di:
+                        if (dd % daysInCycle) == dayInCycle:
+                            objekt.flexSlot[r][dd]=1
+                if sum(objekt.gamm_sol[s][r][d] for s in objekt.Si)>0.5:
+                    objekt.fixedSlot[r][d]=1
+                    if sum(objekt.lamb_sol[s][r][d] for s in objekt.Si)>0.5:
+                        objekt.extSlot[r][d]=1
+                if (objekt.fixedSlot[r][d]<0.5) and (objekt.flexSlot[r][d]<0.5):
+                    objekt.unassSlot[r][d]=1
+
 
 def main(file_name, nScenarios, seed, time_limit, new_input=True):
-    oldModel = old_model()
+    """oldModel = old_model()
     if new_input:
         old_model.read_input(oldModel,file_name)
-        print("New Instances created")
+        print("New Instances created")"""
         
     try:
         with open("file.pkl","rb") as f:
             variablesSaved = pickle.load(f)
             
-            print(variablesSaved.x)
-            old_model.cathegorize_slots(variablesSaved)
+            print(variablesSaved.Ri)
+            print(variablesSaved.Di)
+            print(variablesSaved.flexSlot)
+            print(variablesSaved.fixedSlot)
+            print(variablesSaved.extSlot)
+            print(variablesSaved.unassSlot)
+            print()
+            print("Trying to categorize slots:")
+            categorize_slots(variablesSaved)
+            print(variablesSaved.flexSlot)
+            print(variablesSaved.fixedSlot)
+            print(variablesSaved.extSlot)
+            print()
+            print("Printing gammas:")
+            print(variablesSaved.gamm_sol)
+            print("Printing a:")
+            print(variablesSaved.a_sol)
+            
             
     except IOError:
+        oldModel = old_model()
+    
+        old_model.read_input(oldModel,file_name)
+        print("Input has been read")
+        
         old_model.run_model(oldModel,nScenarios, seed, time_limit)
+        print("Model run finished")
+        
+        for g in oldModel.Gi:
+            for c in oldModel.Ci:
+                print()
+                print(oldModel.a_sol[g][c])
+                print()
         
         with open("file.pkl","wb") as f:
             pickle.dump(oldModel,f)
-    
+        print("Do you see the pickle?")
+        
     
         
     '''with open("file.pkl","rb") as f:
@@ -426,4 +466,3 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
 
 
 main("Old Model/Input/model_input.xlsx",10,1,15)
-

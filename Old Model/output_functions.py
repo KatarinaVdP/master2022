@@ -1,11 +1,29 @@
 
 if __name__=="__main__":
-    print("Hello world")
+    a = [[0]*28]*7
+    print(a)
+    print(a[6][27])
 
 
-def getFixedSlots(self):
-    fixedSlot = [[0 for d in range(self.nDays)] for r in range(len(self.Ri))]
-    return fixedSlot
+def categorize_slots(objekt):
+        daysInCycle = int(objekt.nDays/objekt.I)
+        for r in objekt.Ri:
+            dayInCycle=0
+            for d in objekt.Di:
+                dayInCycle=dayInCycle+1
+                if dayInCycle>daysInCycle:
+                    dayInCycle=1
+                if sum(objekt.delt[s][r][d][c] for s in objekt.Si for c in objekt.Ci)>0.5:
+                    objekt.flexSlot[r][d]=1
+                    for dd in objekt.Di:
+                        if (dd % daysInCycle) == dayInCycle:
+                            objekt.flexSlot[r][dd]=1
+                if sum(objekt.gamm[s][r][d] for s in objekt.Si)>0.5:
+                    objekt.fixedSlot[r][d]=1
+                    if sum(objekt.lamb[s][r][d] for s in objekt.Si)>0.5:
+                        objekt.extSlot[r][d]=1
+                if (objekt.fixedSlot[r][d]<0.5) and (objekt.flexSlot[r][d]<0.5):
+                    objekt.unassSlot[r][d]=1
 
 def print_MSS(self):
     print("Planning period modified MSS")
