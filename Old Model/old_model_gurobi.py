@@ -361,11 +361,10 @@ class old_model:
         self.gamm_sol    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
         self.lamb_sol    = [[[0]*self.nDays]*self.nRooms]*self.nSpecialties
         self.delt_sol    = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
-        self.x_sol       = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nSpecialties
+        self.x_sol       = [[[[0]*nScenarios]*self.nDays]*self.nRooms]*self.nGroups
         self.a_sol       = [[0]*nScenarios]*self.nGroups
         self.v_sol       = [[0]*self.nDays]*self.nWards
         
-        print("Copying varable values and printing a:")
         for s in self.Si:
             for r in self.Ri:
                 for d in self.Di:
@@ -373,14 +372,23 @@ class old_model:
                     self.lamb_sol[s][r][d] = lamb[s,r,d].X
                     for c in self.Ci:
                         self.delt_sol[s][r][d][c] = delt[s,r,d,c].X
-                        self.x_sol[s][r][d][c] = x[s,r,d,c].X
+        
+        print("Copying x-values and printing inside run_model:")
+        for g in self.Gi:
+            for r in self.Ri:
+                for d in self.Di:
+                    for c in self.Ci:
+                        self.x_sol[g][r][d][c] = x[g,r,d,c].X
+                        val = self.x_sol[g][r][d][c]
+                        if val > 0.5:
+                            print("x[%d][%d][%d][%d] = %d" % (g,r,d,c,val))
+        
         for g in self.Gi:
             for c in self.Ci:
                 self.a_sol[g][c] = a[g,c].X
         for w in self.Wi:
             for d in self.Di:
                 self.v_sol[w][d] = v[w,d].X
-                
 
 
 def categorize_slots(objekt):
@@ -405,12 +413,39 @@ def categorize_slots(objekt):
 
 
 def main(file_name, nScenarios, seed, time_limit, new_input=True):
-    """oldModel = old_model()
-    if new_input:
-        old_model.read_input(oldModel,file_name)
-        print("New Instances created")"""
-        
-    try:
+    
+    oldModel = old_model()
+    
+    oldModel.read_input(file_name)
+    print("Input has been read")
+    
+    oldModel.run_model(nScenarios, seed, time_limit)
+    print("Model run finished")
+    
+    for g in oldModel.Gi:
+        for c in oldModel.Ci:
+            print(oldModel.a_sol[g][c])  
+    
+    
+    
+    print("These gamma-values survived:")    
+    for s in oldModel.Si:
+        for r in oldModel.Ri:
+            for d in oldModel.Di:
+                val = oldModel.gamm_sol[s][r][d]
+                if val > 0.5:
+                    print("gamma[%d][%d][%d] = %d" % (s,r,d,val))
+                    
+    print("These delta-values survived:")    
+    for s in oldModel.Si:
+        for r in oldModel.Ri:
+            for d in oldModel.Di:
+                for c in oldModel.Ci:
+                        val = oldModel.delt_sol[s][r][d][c]
+                        if val > 0.5:
+                            print("delta[%d][%d][%d][%d] = %d" % (s,r,d,c,val))
+  
+    """try:
         with open("file.pkl","rb") as f:
             variablesSaved = pickle.load(f)
             
@@ -430,10 +465,10 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
             print("Printing gammas:")
             print(variablesSaved.gamm_sol)
             print("Printing a:")
-            print(variablesSaved.a_sol)
+            print(variablesSaved.a_sol)"""
             
             
-    except IOError:
+    """except IOError:
         oldModel = old_model()
     
         oldModel.read_input(file_name)
@@ -448,15 +483,8 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         
         with open("file.pkl","wb") as f:
             pickle.dump(oldModel,f)
-        print("Do you see the pickle?")
+        print("Do you see the pickle?")"""
         
-    
-        
-    '''with open("file.pkl","rb") as f:
-        VariablesSaved = pickle.load(f)'''
-    '''print(variablesSaved.x)
-    old_model.cathegorize_slots(variablesSaved)
-    print(oldModel.flexSlots)'''
 
 
 main("Old Model/Input/model_input.xlsx",10,1,15)
