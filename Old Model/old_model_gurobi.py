@@ -377,10 +377,6 @@ class old_model:
         for g in self.Gi:
             for c in self.Ci:
                 self.a_sol[g][c] = a[g,c].X
-                print()
-                print(a[g,c].X)
-                print(self.a_sol[g][c])
-                print()
         for w in self.Wi:
             for d in self.Di:
                 self.v_sol[w][d] = v[w,d].X
@@ -440,17 +436,15 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
     except IOError:
         oldModel = old_model()
     
-        old_model.read_input(oldModel,file_name)
+        oldModel.read_input(file_name)
         print("Input has been read")
         
-        old_model.run_model(oldModel,nScenarios, seed, time_limit)
+        oldModel.run_model(nScenarios, seed, time_limit)
         print("Model run finished")
         
         for g in oldModel.Gi:
             for c in oldModel.Ci:
-                print()
                 print(oldModel.a_sol[g][c])
-                print()
         
         with open("file.pkl","wb") as f:
             pickle.dump(oldModel,f)
