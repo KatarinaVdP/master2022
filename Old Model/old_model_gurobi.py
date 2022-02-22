@@ -296,12 +296,30 @@ def run_model(input_dict, time_limit):
     result_dict["x"]    = {k:v.X for k,v in x.items()}
     result_dict["a"]    = {k:v.X for k,v in a.items()}
     result_dict["v"]    = {k:v.X for k,v in v.items()}
+    
+    print("inside run_model(): gamm")
+    for s in input["Si"]:
+        for r in input["Ri"]:
+            for d in input["Di"]:    
+                if gamm[s,r,d].X>0:
+                    print("key", (s,r,d))
+                    print("value",gamm[s,r,d].X)
+                    
+    print("inside model from dictionary")
+    gamm_sol = result_dict["gamm"]
+    for s in input["Si"]:
+        for r in input["Ri"]:
+            for d in input["Di"]:    
+                if gamm_sol[s,r,d]>0:
+                    print("key", (s,r,d))
+                    print("value",gamm_sol[s,r,d])
 
     return result_dict
     
 def categorize_slots(input_dict, output_dict):
         
         fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        nameFixedSlot = [[]*input_dict["nDays"]]*input_dict["nRooms"]
         flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
         extSlot     =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
         unassSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
@@ -321,6 +339,9 @@ def categorize_slots(input_dict, output_dict):
                             flexSlot[r][dd]=1
                 if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
                     fixedSlot[r][d]=1
+                    for s in input_dict["Si"]:
+                        if output_dict["gamm"][(s,r,d)]>0.5:
+                            nameFixedSlot[r][d] = input_dict["S"][s]
                     if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
                         extSlot[r][d]=1
                 if (fixedSlot[r][d]<0.5) and (flexSlot[r][d]<0.5):
@@ -341,18 +362,30 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         input           = read_input(file_name)
         input_update    = generate_scenarios(input,nScenarios,seed)
         results_update  = categorize_slots(input_update, results_saved )
-        
+    
         print(results_update["fixedSlot"])
+        print(results_update["fixedNameSlot"])
         print(results_update["flexSlot"])
-        """print("outside run_model():")
-        x_sol = results_saved["x"]
+        print(results_update["extSlot"])
+        print(results_update["unassSlot"])
+
+        """print("outside run_model():")"""
+        """x_sol = results_saved["x"]
         for g in input_update["Gi"]:
             for r in input_update["Ri"]:
                 for d in input_update["Di"]:
                     for c in input_update["Ci"]:     
                         if x_sol[(g,r,d,c)]>0:
-                            print("key", (g,r,c,d))
+                            print("key", (g,r,d,c))
                             print("value",x_sol[(g,r,d,c)])"""
+
+        """ gamm_sol = results_saved["gamm"]
+        for s in input_update["Si"]:
+            for r in input_update["Ri"]:
+                for d in input_update["Di"]:    
+                    if gamm_sol[(s,r,d)]>0:
+                        print("key", (s,r,d))
+                        print("value",gamm_sol[(s,r,d)])"""
                     
                 
     except IOError:
@@ -362,17 +395,28 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         input_update = generate_scenarios(input,nScenarios,seed)
 
         results = run_model(input_update,time_limit)
-        print("Model run finished")
+        results_update  = categorize_slots(input_update, results_saved )
+        print(results_update["fixedSlot"])
 
-        print("outside run_model():")
-        x_sol = results["x"]
+
+        """print("outside run_model():")
+        
+        gamm_sol = results["gamm"]
+        for s in input_update["Si"]:
+            for r in input_update["Ri"]:
+                for d in input_update["Di"]:    
+                    if gamm_sol[(s,r,d)]>0:
+                        print("key", (s,r,d))
+                        print("value",gamm_sol[(s,r,d)])"""
+        
+        """x_sol = results["x"]
         for g in input_update["Gi"]:
             for r in input_update["Ri"]:
                 for d in input_update["Di"]:
                     for c in input_update["Ci"]:     
                         if x_sol[(g,r,d,c)]>0:
                             print("key", (g,r,c,d))
-                            print("value",x_sol[(g,r,d,c)])
+                            print("value",x_sol[(g,r,d,c)])"""
         with open("file.pkl","wb") as f:
             pickle.dump(results,f)
 
