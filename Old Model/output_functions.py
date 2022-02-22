@@ -1,29 +1,40 @@
+def categorize_slots(input_dict, output_dict):
+        
+        fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        nameFixedSlot = [[""]*input_dict["nDays"]]*input_dict["nRooms"]
+        flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        extSlot     =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        unassSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
 
-if __name__=="__main__":
-    a = [[0]*28]*7
-    print(a)
-    print(a[6][27])
-
-
-def categorize_slots(objekt):
-        daysInCycle = int(objekt.nDays/objekt.I)
-        for r in objekt.Ri:
+        daysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        
+        for r in input_dict["Ri"]:
             dayInCycle=0
-            for d in objekt.Di:
+            for d in input_dict["Di"]:
                 dayInCycle=dayInCycle+1
                 if dayInCycle>daysInCycle:
                     dayInCycle=1
-                if sum(objekt.delt[s][r][d][c] for s in objekt.Si for c in objekt.Ci)>0.5:
-                    objekt.flexSlot[r][d]=1
-                    for dd in objekt.Di:
+                if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+                    flexSlot[r][d]=1
+                    for dd in input_dict["Di"]:
                         if (dd % daysInCycle) == dayInCycle:
-                            objekt.flexSlot[r][dd]=1
-                if sum(objekt.gamm[s][r][d] for s in objekt.Si)>0.5:
-                    objekt.fixedSlot[r][d]=1
-                    if sum(objekt.lamb[s][r][d] for s in objekt.Si)>0.5:
-                        objekt.extSlot[r][d]=1
-                if (objekt.fixedSlot[r][d]<0.5) and (objekt.flexSlot[r][d]<0.5):
-                    objekt.unassSlot[r][d]=1
+                            flexSlot[r][dd]=1
+                if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                    fixedSlot[r][d]=1
+                    for s in input_dict["Si"]:
+                        if output_dict["gamm"][(s,r,d)]>0.5:
+                            nameFixedSlot[r][d] = input_dict["S"][s]
+                    if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                        extSlot[r][d]=1
+                if (fixedSlot[r][d]<0.5) and (flexSlot[r][d]<0.5):
+                    unassSlot[r][d]=1
+        
+        output_dict["fixedSlot"]    = fixedSlot
+        output_dict["flexSlot"]     = flexSlot
+        output_dict["extSlot"]      = extSlot
+        output_dict["unassSlot"]    = unassSlot
+        output_dict["nameFixedSlot"]    = nameFixedSlot
+        return output_dict
 
 def print_MSS(self):
     print("Planning period modified MSS")
