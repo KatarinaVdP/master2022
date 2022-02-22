@@ -299,26 +299,38 @@ def run_model(input_dict, time_limit):
 
     return result_dict
     
-def categorize_slots(objekt):
-        daysInCycle = int(objekt.nDays/objekt.I)
-        for r in objekt.Ri:
+def categorize_slots(input_dict, output_dict):
+        
+        fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        extSlot     =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        unassSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+
+        daysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        
+        for r in input_dict["Ri"]:
             dayInCycle=0
-            for d in objekt.Di:
+            for d in input_dict["Di"]:
                 dayInCycle=dayInCycle+1
                 if dayInCycle>daysInCycle:
                     dayInCycle=1
-                if sum(objekt.delt_sol[s][r][d][c] for s in objekt.Si for c in objekt.Ci)>0.5:
-                    objekt.flexSlot[r][d]=1
-                    for dd in objekt.Di:
+                if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+                    flexSlot[r][d]=1
+                    for dd in input_dict["Di"]:
                         if (dd % daysInCycle) == dayInCycle:
-                            objekt.flexSlot[r][dd]=1
-                if sum(objekt.gamm_sol[s][r][d] for s in objekt.Si)>0.5:
-                    objekt.fixedSlot[r][d]=1
-                    if sum(objekt.lamb_sol[s][r][d] for s in objekt.Si)>0.5:
-                        objekt.extSlot[r][d]=1
-                if (objekt.fixedSlot[r][d]<0.5) and (objekt.flexSlot[r][d]<0.5):
-                    objekt.unassSlot[r][d]=1
-
+                            flexSlot[r][dd]=1
+                if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                    fixedSlot[r][d]=1
+                    if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                        extSlot[r][d]=1
+                if (fixedSlot[r][d]<0.5) and (flexSlot[r][d]<0.5):
+                    unassSlot[r][d]=1
+        
+        output_dict["fixedSlot"]    = fixedSlot
+        output_dict["flexSlot"]     = flexSlot
+        output_dict["extSlot"]      = extSlot
+        output_dict["unassSlot"]    = unassSlot
+        return output_dict
 
 def main(file_name, nScenarios, seed, time_limit, new_input=True):
     
@@ -326,10 +338,13 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         with open("file.pkl","rb") as f:
             results_saved = pickle.load(f)
         print("loading pickle")
-        input = read_input(file_name)
-        input_update = generate_scenarios(input,nScenarios,seed)
-
-        print("outside run_model():")
+        input           = read_input(file_name)
+        input_update    = generate_scenarios(input,nScenarios,seed)
+        results_update  = categorize_slots(input_update, results_saved )
+        
+        print(results_update["fixedSlot"])
+        print(results_update["flexSlot"])
+        """print("outside run_model():")
         x_sol = results_saved["x"]
         for g in input_update["Gi"]:
             for r in input_update["Ri"]:
@@ -337,7 +352,7 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
                     for c in input_update["Ci"]:     
                         if x_sol[(g,r,d,c)]>0:
                             print("key", (g,r,c,d))
-                            print("value",x_sol[(g,r,d,c)])
+                            print("value",x_sol[(g,r,d,c)])"""
                     
                 
     except IOError:
