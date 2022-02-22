@@ -373,15 +373,21 @@ class old_model:
                     for c in self.Ci:
                         self.delt_sol[s][r][d][c] = delt[s,r,d,c].X
         
-        print("Copying x-values and printing inside run_model:")
+        print("Printing Gurobi-variables within run_model():")
         for g in self.Gi:
             for r in self.Ri:
                 for d in self.Di:
                     for c in self.Ci:
-                        self.x_sol[g][r][d][c] = x[g,r,d,c].X
-                        val = self.x_sol[g][r][d][c]
-                        if val > 0.5:
-                            print("x[%d][%d][%d][%d] = %d" % (g,r,d,c,val))
+                        if x[g,r,d,c].X > 0.5:
+                            print("x[%d,%d,%d,%d] = %d" % (g,r,d,c,x[g,r,d,c].X))
+                            self.x_sol[g][r][d][c] = x[g,r,d,c].X
+        
+        """for g in self.Gi:
+            for r in self.Ri:
+                for d in self.Di:
+                    for c in self.Ci:
+                        if self.x_sol[g][r][d][c] > 0:
+                            print("x[%d][%d][%d][%d] = %d" % (g,r,d,c,self.x_sol[g][r][d][c]))"""
         
         for g in self.Gi:
             for c in self.Ci:
@@ -389,7 +395,7 @@ class old_model:
         for w in self.Wi:
             for d in self.Di:
                 self.v_sol[w][d] = v[w,d].X
-
+        return {x.varName: x.X}
 
 def categorize_slots(objekt):
         daysInCycle = int(objekt.nDays/objekt.I)
@@ -419,10 +425,22 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
     oldModel.read_input(file_name)
     print("Input has been read")
     
-    oldModel.run_model(nScenarios, seed, time_limit)
+    x = oldModel.run_model(nScenarios, seed, time_limit)
     print("Model run finished")
     
+    print("Printing output dictionary")
+    print(x)
+    
+    """print("Copying x-values and printing outside run_model():")
     for g in oldModel.Gi:
+        for r in oldModel.Ri:
+            for d in oldModel.Di:
+                for c in oldModel.Ci:
+                    if x[g,r,d,c] > 0.5:
+                        print("x[%d][%d][%d][%d] = %d" % (g,r,d,c,oldModel.x_sol[g][r][d][c]))"""
+    
+    
+    """tryfor g in oldModel.Gi:
         for c in oldModel.Ci:
             print(oldModel.a_sol[g][c])  
     
@@ -443,7 +461,7 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
                 for c in oldModel.Ci:
                         val = oldModel.delt_sol[s][r][d][c]
                         if val > 0.5:
-                            print("delta[%d][%d][%d][%d] = %d" % (s,r,d,c,val))
+                            print("delta[%d][%d][%d][%d] = %d" % (s,r,d,c,val))"""
   
     """try:
         with open("file.pkl","rb") as f:
