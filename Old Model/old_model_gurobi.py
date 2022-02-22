@@ -288,59 +288,15 @@ def run_model(input_dict, time_limit):
     print('Model Created 100%')
 
     m.optimize()
-    
-    flexSlot    =   [[0]*nDays]*nRooms
-    fixedSlot   =   [[0]*nDays]*nRooms     
-    extSlot     =   [[0]*nDays]*nRooms
-    unassSlot   =   [[0]*nDays]*nRooms
-                
-    gamm_sol    =   [[[0]*nDays]*nRooms]*nSpecialties
-    lamb_sol    =   [[[0]*nDays]*nRooms]*nSpecialties
-    delt_sol    =   [[[[0]*nScenarios]*nDays]*nRooms]*nSpecialties
-    x_sol       =   [[[[0]*nScenarios]*nDays]*nRooms]*nGroups
-    a_sol       =   [[0]*nScenarios]*nGroups
-    v_sol       =   [[0]*nDays]*nWards
-
-    for s in Si:
-        for r in Ri:
-            for d in Di:
-                gamm_sol[s][r][d] = gamm[s,r,d].X
-                lamb_sol[s][r][d] = lamb[s,r,d].X
-                for c in Ci:
-                    delt_sol[s][r][d][c] = delt[s,r,d,c].X
-    
-    """for g in Gi:
-        for r in Ri:
-            for d in Di:
-                for c in Ci:     
-                    x_sol[g][r][d][c] = x[g,r,d,c].X"""
-                        
-    for g in Gi:
-        for c in Ci:
-            a_sol[g][c] = a[g,c].X
-    for w in Wi:
-        for d in Di:
-            v_sol[w][d] = v[w,d].X
             
     result_dict =   {}
-    result_dict["gamm"] = gamm_sol
-    result_dict["lamb"] = lamb_sol
-    result_dict["delt"] = delt_sol
-    result_dict["x"]    = x_sol
-    result_dict["a"]    = a_sol
-    result_dict["v"]    = v_sol
-    
-    print("inside run_model():")
-    for g in Gi:
-        for r in Ri:
-            for d in Di:
-                for c in Ci:     
-                    if x[g,r,d,c].X>0:
-                        x_sol[g][r][d][c] = x[g,r,d,c].X
-                        print(x[g,r,d,c].X)
-                        print(x_sol[g][r][d][c])
-                        print(result_dict["x"][g][r][d][c])
-                        print()
+    result_dict["gamm"] = {k:v.X for k,v in gamm.items()}
+    result_dict["lamb"] = {k:v.X for k,v in lamb.items()}
+    result_dict["delt"] = {k:v.X for k,v in delt.items()}
+    result_dict["x"]    = {k:v.X for k,v in x.items()}
+    result_dict["a"]    = {k:v.X for k,v in a.items()}
+    result_dict["v"]    = {k:v.X for k,v in v.items()}
+
     return result_dict
     
 def categorize_slots(objekt):
@@ -372,14 +328,17 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         print("loading pickle")
         input = read_input(file_name)
         input_update = generate_scenarios(input,nScenarios,seed)
-        
+
+        print("outside run_model():")
         x_sol = results_saved["x"]
         for g in input_update["Gi"]:
             for r in input_update["Ri"]:
                 for d in input_update["Di"]:
                     for c in input_update["Ci"]:     
-                        if x_sol[g][r][d][c]>0:
-                            print(x_sol[g][r][d][c])                
+                        if x_sol[(g,r,d,c)]>0:
+                            print("key", (g,r,c,d))
+                            print("value",x_sol[(g,r,d,c)])
+                    
                 
     except IOError:
         input = read_input(file_name)
@@ -396,63 +355,10 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
             for r in input_update["Ri"]:
                 for d in input_update["Di"]:
                     for c in input_update["Ci"]:     
-                        if x_sol[g][r][d][c]>0:
-                            print(x_sol[g][r][d][c])
+                        if x_sol[(g,r,d,c)]>0:
+                            print("key", (g,r,c,d))
+                            print("value",x_sol[(g,r,d,c)])
         with open("file.pkl","wb") as f:
             pickle.dump(results,f)
-    
-    """oldModel = old_model()
-    if new_input:
-        old_model.read_input(oldModel,file_name)
-        print("New Instances created")"""
-        
-    '''try:
-        with open("file.pkl","rb") as f:
-            variablesSaved = pickle.load(f)
-            
-            print(variablesSaved.Ri)
-            print(variablesSaved.Di)
-            print(variablesSaved.flexSlot)
-            print(variablesSaved.fixedSlot)
-            print(variablesSaved.extSlot)
-            print(variablesSaved.unassSlot)
-            print()
-            print("Trying to categorize slots:")
-            categorize_slots(variablesSaved)
-            print(variablesSaved.flexSlot)
-            print(variablesSaved.fixedSlot)
-            print(variablesSaved.extSlot)
-            print()
-            print("Printing gammas:")
-            print(variablesSaved.gamm_sol)
-            print("Printing a:")
-            print(variablesSaved.a_sol)
-            
-            
-    except IOError:
-        oldModel = old_model()
-    
-        oldModel.read_input(file_name)
-        print("Input has been read")
-        
-        oldModel.run_model(nScenarios, seed, time_limit)
-        print("Model run finished")
-        
-        for g in oldModel.Gi:
-            for c in oldModel.Ci:
-                print(oldModel.a_sol[g][c])
-        
-        with open("file.pkl","wb") as f:
-            pickle.dump(oldModel,f)
-        print("Do you see the pickle?")'''
-        
-    
-        
-    '''with open("file.pkl","rb") as f:
-        VariablesSaved = pickle.load(f)'''
-    '''print(variablesSaved.x)
-    old_model.cathegorize_slots(variablesSaved)
-    print(oldModel.flexSlots)'''
-
 
 main("Old Model/Input/model_input.xlsx",10,1,15)
