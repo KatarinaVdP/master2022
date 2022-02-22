@@ -1,3 +1,38 @@
+def categorize_slots_2(input_dict, output_dict):
+    
+    fixed_slots = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    flex_slot = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    ext_slot = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    
+    days_in_cycle = int(input_dict["nDays"]/input_dict["I"])
+    flex_count = 0
+    fixed_count = 0
+    
+    for r in range(input_dict["nRooms"]):
+        for d in range(input_dict["nDays"]):
+            if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+                flex_slot[r][d] = 1
+                flex_count += 1
+            if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                fixed_slots[r][d] = 1
+                fixed_count += 1
+                if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                    ext_slot[r][d]=1
+    
+    print("Number of fixed slots: %d" % fixed_count)
+    print(f"fixed_slots: {fixed_slots}")
+    
+    print("Number of flexible slots: %d" % flex_count)
+    print(f"flex_slots: {flex_slot}")
+    
+    print(f"Count of 1's: {sum(row.count(1) for row in flex_slot)}")
+    
+    output_dict["fixedSlot"]    = fixed_slots
+    output_dict["flexSlot"]     = flex_slot
+    output_dict["extSlot"]      = ext_slot
+    return output_dict    
+
+
 def categorize_slots(input_dict, output_dict):
         
         fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]

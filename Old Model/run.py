@@ -14,7 +14,7 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         print()
         input           = read_input(file_name)
         input_update    = generate_scenarios(input,nScenarios,seed)
-        results_update  = categorize_slots(input_update, results_saved)
+        results_update  = categorize_slots_2(input_update, results_saved)
         print_MSS(input_update, results_update)
         
         
@@ -68,7 +68,7 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         input_update = generate_scenarios(input,nScenarios,seed)
 
         results = run_model(input_update,time_limit)
-        results_update  = categorize_slots(input_update, results)
+        results_update  = categorize_slots_2(input_update, results)
         print(results_update["fixedSlot"])
 
         with open("Old Model/file.pkl","wb") as f:
