@@ -13,7 +13,7 @@ def categorize_slots_2(input_dict, output_dict):
             if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
                 flex_slot[r][d] = 1
                 flex_count += 1
-            if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+            if sum(output_dict["gamm2"][s][r][d] for s in input_dict["Si"])>0.5:
                 fixed_slots[r][d] = 1
                 fixed_count += 1
                 if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:

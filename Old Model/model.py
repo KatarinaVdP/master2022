@@ -133,12 +133,17 @@ def run_model(input_dict, time_limit):
     m.optimize()
             
     result_dict =   {}
+    
     result_dict["gamm"] = {k:v.X for k,v in gamm.items()}
     result_dict["lamb"] = {k:v.X for k,v in lamb.items()}
     result_dict["delt"] = {k:v.X for k,v in delt.items()}
     result_dict["x"]    = {k:v.X for k,v in x.items()}
     result_dict["a"]    = {k:v.X for k,v in a.items()}
     result_dict["v"]    = {k:v.X for k,v in v.items()}
+    
+    result_dict["gamm2"]=[[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+    
+    
     
     print("inside run_model(): gamm")
     for s in input["Si"]:
@@ -147,6 +152,7 @@ def run_model(input_dict, time_limit):
                 if gamm[s,r,d].X>0:
                     print("key", (s,r,d))
                     print("value",gamm[s,r,d].X)
+                    result_dict["gamm2"][s][r][d] = gamm[s,r,d].X
                     
     print("inside model from dictionary")
     gamm_sol = result_dict["gamm"]

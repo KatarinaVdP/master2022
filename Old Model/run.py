@@ -74,4 +74,4 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         with open("Old Model/file.pkl","wb") as f:
             pickle.dump(results,f)
 
-main("Old Model/Input/model_input.xlsx",10,1,1200)
+main("Old Model/Input/model_input.xlsx",10,1,60)
