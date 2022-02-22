@@ -313,3 +313,42 @@ def run_model(input_dict, nScenarios, seed, time_limit):
 
     m.write("formulation.rlp")
     m.optimize()
+    
+    
+    def categorize_slots(input_dict, output_dict):
+        
+        fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        nameFixedSlot = [[""]*input_dict["nDays"]]*input_dict["nRooms"]
+        flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        extSlot     =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+        unassSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
+
+        daysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        
+        for r in input_dict["Ri"]:
+            dayInCycle=0
+            for d in input_dict["Di"]:
+                if dayInCycle >= daysInCycle:
+                    dayInCycle=0
+                if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+                    flexSlot[r][d]=1
+                    """for dd in input_dict["Di"]:
+                        if (dd % daysInCycle) == dayInCycle:
+                            flexSlot[r][dd]=1"""
+                if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                    fixedSlot[r][d]=1
+                    for s in input_dict["Si"]:
+                        if output_dict["gamm"][(s,r,d)]>0.5:
+                            nameFixedSlot[r][d] = input_dict["S"][s]
+                    if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                        extSlot[r][d]=1
+                if (fixedSlot[r][d]<0.5) and (flexSlot[r][d]<0.5):
+                    unassSlot[r][d]=1
+                dayInCycle += 1
+        
+        output_dict["fixedSlot"]    = fixedSlot
+        output_dict["flexSlot"]     = flexSlot
+        output_dict["extSlot"]      = extSlot
+        output_dict["unassSlot"]    = unassSlot
+        output_dict["nameFixedSlot"]    = nameFixedSlot
+        return output_dict
