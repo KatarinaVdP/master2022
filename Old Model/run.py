@@ -38,9 +38,11 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results, input_update_update = run_model(input_update, number_of_groups, flexibility, time_limit)
         results_update  = categorize_slots(input_update_update, results)
 
+        with open("Old Model/file.pkl","wb") as f:
+            pickle.dump(results,f) 
         print_MSS(input_update_update, results_update)
         print_expected_operations(input_update_update, results_update)
-        
-        """with open("Old Model/file.pkl","wb") as f:
-            pickle.dump(results,f)""" 
+        print_operations_per_group(input_update_update, results_update)
+        print_expected_bed_util(input_update_update, results_update)
+
 main(0,4, 10,3,120)
