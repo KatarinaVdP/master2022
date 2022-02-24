@@ -5,7 +5,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 
 
-def run_model(input_dict, flexibility, time_limit, number_of_groups):
+def run_model(input_dict, flexibility, time_limit):
     input = input_dict
     
     #----- Sets ----- #  
@@ -46,6 +46,11 @@ def run_model(input_dict, flexibility, time_limit, number_of_groups):
     Pi  =   input["Pi"]
     Q   =   input["Q"]
     
+    """if number_of_groups == 4:
+    elif number_of_groups == 5:
+        
+    elif number_of_groups == 12:
+    elif number_of_groups == 13:"""   
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
