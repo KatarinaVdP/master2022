@@ -5,7 +5,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 
 
-def run_model(input_dict, time_limit):
+def run_model(input_dict, flexibility, time_limit, number_of_groups):
     input = input_dict
     
     #----- Sets ----- #  
@@ -28,7 +28,8 @@ def run_model(input_dict, time_limit):
     Ci  =   input["Ci"]
 
     #----- Parameter ----- #  
-    F   =   input["F"]
+    F   =   flexibility
+    input["F"]  = flexibility
     E   =   input["E"]
     TC  =   input["TC"]
     I   =   input["I"]
@@ -65,6 +66,7 @@ def run_model(input_dict, time_limit):
                 for c in Ci:
                     delt[s,r,d,c].lb=0
                     delt[s,r,d,c].lb=0
+    
     '--- Objective ---' 
     m.setObjective(
                 quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
@@ -134,34 +136,45 @@ def run_model(input_dict, time_limit):
             
     result_dict =   {}
     
-    result_dict["gamm"] = {k:v.X for k,v in gamm.items()}
-    result_dict["lamb"] = {k:v.X for k,v in lamb.items()}
-    result_dict["delt"] = {k:v.X for k,v in delt.items()}
-    result_dict["x"]    = {k:v.X for k,v in x.items()}
-    result_dict["a"]    = {k:v.X for k,v in a.items()}
-    result_dict["v"]    = {k:v.X for k,v in v.items()}
+    #result_dict["gamm"] = {k:v.X for k,v in gamm.items()}
+    result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+    result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+    result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+    result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
+    result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
+    result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
     
-    result_dict["gamm2"]=[[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-    
-    
-    
-    print("inside run_model(): gamm")
+    # Copying the values of gamma, lambda and delta to the result dictionary
     for s in input["Si"]:
         for r in input["Ri"]:
             for d in input["Di"]:    
-                if gamm[s,r,d].X>0:
-                    print("key", (s,r,d))
-                    print("value",gamm[s,r,d].X)
-                    result_dict["gamm2"][s][r][d] = gamm[s,r,d].X
-                    
-    print("inside model from dictionary")
-    gamm_sol = result_dict["gamm"]
-    for s in input["Si"]:
+                if gamm[s,r,d].X > 0:
+                    result_dict["gamm"][s][r][d] = gamm[s,r,d].X
+                if lamb[s,r,d].X > 0:
+                    result_dict["lamb"][s][r][d] = lamb[s,r,d].X
+                for c in input["Ci"]:
+                    if delt[s,r,d,c].X > 0:
+                        result_dict["delt"][s][r][d][c] = delt[s,r,d,c].X
+                        
+    # Copying the values of x to the result dictionary                       
+    for g in input["Gi"]:
         for r in input["Ri"]:
             for d in input["Di"]:    
-                if gamm_sol[s,r,d]>0:
-                    print("key", (s,r,d))
-                    print("value",gamm_sol[s,r,d])
+                for c in input["Ci"]:
+                    if x[s,r,d,c].X > 0:
+                        result_dict["x"][g][r][d][c] = x[g,r,d,c].X
 
-    return result_dict
+    # Copying the values of a to the result dictionary
+    for g in input["Gi"]:
+        for c in input["Ci"]:
+            if a[g,c].X > 0:
+                result_dict["a"][g][c] = a[g,c].X
+
+    # Copying the values of v to the result dictionary
+    for w in input["Wi"]:
+        for d in input["Di"]:
+            if v[w,d].X > 0:
+                result_dict["v"][w][d] = v[w,d].X
+                    
+    return result_dict, input
     

@@ -1,4 +1,4 @@
-def categorize_slots_2(input_dict, output_dict):
+def categorize_slots(input_dict, output_dict):
     
     fixed_slots = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
     flex_slot = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
@@ -9,15 +9,22 @@ def categorize_slots_2(input_dict, output_dict):
     fixed_count = 0
     
     for r in range(input_dict["nRooms"]):
+        day_in_cycle=0
         for d in range(input_dict["nDays"]):
-            if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+            if day_in_cycle >= days_in_cycle:
+                    day_in_cycle=0
+            if sum(output_dict["delt"][s][r][d][c] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
                 flex_slot[r][d] = 1
                 flex_count += 1
-            if sum(output_dict["gamm2"][s][r][d] for s in input_dict["Si"])>0.5:
+                for dd in range(input_dict["nDays"]):
+                        if (dd % days_in_cycle) == day_in_cycle:
+                            flex_slot[r][dd]=1
+            if sum(output_dict["gamm"][s][r][d] for s in input_dict["Si"])>0.5:
                 fixed_slots[r][d] = 1
                 fixed_count += 1
-                if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                if sum(output_dict["lamb"][s][r][d] for s in input_dict["Si"])>0.5:
                     ext_slot[r][d]=1
+            day_in_cycle += 1
     
     print("Number of fixed slots: %d" % fixed_count)
     print(f"fixed_slots: {fixed_slots}")
@@ -33,7 +40,10 @@ def categorize_slots_2(input_dict, output_dict):
     return output_dict    
 
 
-def categorize_slots(input_dict, output_dict):
+
+
+
+"""def categorize_slots(input_dict, output_dict):
         
         fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
         flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
@@ -44,13 +54,13 @@ def categorize_slots(input_dict, output_dict):
         fixedCount = 0
         for r in input_dict["Ri"]:
             for d in input_dict["Di"]:
-                if sum(output_dict["delt"][(s,r,d,c)] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
+                if sum(output_dict["delt"][s][r][d][c] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
                     flexSlot[r][d]=1
                     flexCount+=1
-                if sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                if sum(output_dict["gamm"][s][r][d] for s in input_dict["Si"])>0.5:
                     fixedSlot[r][d]=1
                     fixedCount += 1
-                    if sum(output_dict["lamb"][(s,r,d)] for s in input_dict["Si"])>0.5:
+                    if sum(output_dict["lamb"][s][r][d] for s in input_dict["Si"])>0.5:
                         extSlot[r][d]=1
         print("Number of fixed slots: %d" % fixedCount)
         print("Number of flexible slots: %d" % flexCount)
@@ -61,7 +71,7 @@ def categorize_slots(input_dict, output_dict):
         output_dict["fixedSlot"]    = fixedSlot
         output_dict["flexSlot"]     = flexSlot
         output_dict["extSlot"]      = extSlot
-        return output_dict
+        return output_dict"""
 
 def print_MSS(input_dict, output_dict):
 
@@ -92,9 +102,9 @@ def print_MSS(input_dict, output_dict):
                     print("{0:<5}".format("?"), end="") 
                 elif output_dict["fixedSlot"][r][d] == 1:
                     for s in input_dict["Si"]:
-                        if output_dict["gamm"][(s,r,d)] == 1:
+                        if output_dict["gamm"][s][r][d] == 1:
                             slotLabel = input_dict["S"][s]
-                        if output_dict["lamb"][(s,r,d)] == 1:
+                        if output_dict["lamb"][s][r][d] == 1:
                             slotLabel = slotLabel+"*"
                     print("{0:<5}".format(slotLabel), end="")
             print()
@@ -157,7 +167,7 @@ def print_GammSlots(input_dict, output_dict):
             room = "{0:>8}".format(input_dict["R"][r]+"|")
             print(room, end="")
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                gamSum = int(sum(output_dict["gamm"][(s,r,d)] for s in input_dict["Si"]))
+                gamSum = int(sum(output_dict["gamm"][s][r][d] for s in input_dict["Si"]))
                 print("{0:<5}".format(gamSum), end="")
             print()
         print("        ", end="")

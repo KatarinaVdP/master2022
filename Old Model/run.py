@@ -4,7 +4,7 @@ from output_functions import *
 import pickle
 from typing import IO
 
-def main(file_name, nScenarios, seed, time_limit, new_input=True):
+def main(file_name, flexibility, nScenarios, seed, time_limit, new_input=True):
     print("\n\n")
     
     try:
@@ -14,11 +14,11 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         print()
         input           = read_input(file_name)
         input_update    = generate_scenarios(input,nScenarios,seed)
-        results_update  = categorize_slots_2(input_update, results_saved)
+        results_update  = categorize_slots(input_update, results_saved)
         print_MSS(input_update, results_update)
         
         
-        nFixSlots = sum(results_update["gamm"][(s,r,d)] for s in input_update["Si"] for r in input_update["Ri"] for d in input_update["Di"])
+        nFixSlots = sum(results_update["gamm"][s][r][d] for s in input_update["Si"] for r in input_update["Ri"] for d in input_update["Di"])
         
         nFixSlotsCategory = sum(results_update["fixedSlot"][r][d] for r in input_update["Ri"] for d in input_update["Di"])
         nFlexSlotsCategory = sum(results_update["flexSlot"][r][d] for r in input_update["Ri"] for d in input_update["Di"])
@@ -35,31 +35,7 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
         print("Printing only fixed slots:")
         print_FixedSlots(input_update, results_update)
         print("Printing only flexible slots:")
-        print_FlexSlots(input_update, results_update)
-        """print(results_update["fixedSlot"])
-        print(results_update["nameFixedSlot"])
-        print(results_update["flexSlot"])
-        print(results_update["extSlot"])
-        print(results_update["unassSlot"])"""
-
-        """print("outside run_model():")"""
-        """x_sol = results_saved["x"]
-        for g in input_update["Gi"]:
-            for r in input_update["Ri"]:
-                for d in input_update["Di"]:
-                    for c in input_update["Ci"]:     
-                        if x_sol[(g,r,d,c)]>0:
-                            print("key", (g,r,d,c))
-                            print("value",x_sol[(g,r,d,c)])"""
-
-        """ gamm_sol = results_saved["gamm"]
-        for s in input_update["Si"]:
-            for r in input_update["Ri"]:
-                for d in input_update["Di"]:    
-                    if gamm_sol[(s,r,d)]>0:
-                        print("key", (s,r,d))
-                        print("value",gamm_sol[(s,r,d)])"""
-                    
+        print_FlexSlots(input_update, results_update)                    
                 
     except IOError:
         input = read_input(file_name)
@@ -67,11 +43,11 @@ def main(file_name, nScenarios, seed, time_limit, new_input=True):
 
         input_update = generate_scenarios(input,nScenarios,seed)
 
-        results = run_model(input_update,time_limit)
-        results_update  = categorize_slots_2(input_update, results)
+        results, input_update_update = run_model(input_update, flexibility, time_limit)
+        results_update  = categorize_slots(input_update_update, results)
         print(results_update["fixedSlot"])
 
         with open("Old Model/file.pkl","wb") as f:
             pickle.dump(results,f)
 
-main("Old Model/Input/model_input.xlsx",10,1,60)
+main("Old Model/Input/model_input_9groups.xlsx",0.1, 10,1,30)
