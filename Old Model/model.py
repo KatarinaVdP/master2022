@@ -5,7 +5,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 
 
-def run_model(input_dict, flexibility, time_limit):
+def run_model(input_dict, number_of_groups, flexibility, time_limit):
     input = input_dict
     
     #----- Sets ----- #  
@@ -46,11 +46,37 @@ def run_model(input_dict, flexibility, time_limit):
     Pi  =   input["Pi"]
     Q   =   input["Q"]
     
-    """if number_of_groups == 4:
-    elif number_of_groups == 5:
-        
-    elif number_of_groups == 12:
-    elif number_of_groups == 13:"""   
+    if number_of_groups==4 or number_of_groups==12:
+        Si  = [0,1]
+        input["Si"]=Si
+        Ri  = [3,4,6]
+        input["Ri"]=Ri
+        Gi  = [g for g in range(number_of_groups)]
+        input["Gi"]=Gi
+        GWi = [[g for g in range(number_of_groups)] for _ in range(nWards)]
+        input["GWi"]=GWi        
+        for d in range(nDays):
+            if N[d]>0:
+                N[d]=3
+        input["N"]=N
+
+    elif number_of_groups==5 or number_of_groups==13:
+        Si  = [2,3,4]
+        input["Si"]=Si
+        Ri  = [0,1,2,5]
+        input["Ri"]=Ri
+        Gi  = [g for g in range(number_of_groups,nGroups)]
+        input["Gi"]=Gi
+        GWi = [[g for g in range(number_of_groups,nGroups)] for _ in range(nWards)]
+        input["GWi"]=GWi
+        for d in range(nDays):
+            if N[d]>0:
+                N[d]=4  
+        input["N"]=N  
+    else:
+        print("Invalid number of groups")
+
+            
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
@@ -71,6 +97,15 @@ def run_model(input_dict, flexibility, time_limit):
                 for c in Ci:
                     delt[s,r,d,c].lb=0
                     delt[s,r,d,c].lb=0
+    
+    if number_of_groups == 4:
+        print("4 Groups")
+    elif number_of_groups == 5:
+        print("5 Groups")
+    elif number_of_groups == 12:
+        print("12 Groups")
+    elif number_of_groups == 13:   
+        print("13 Groups")                    
     
     '--- Objective ---' 
     m.setObjective(
@@ -123,7 +158,7 @@ def run_model(input_dict, flexibility, time_limit):
     )
     print('still Creating Model 90%')
     m.addConstrs(
-        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+        (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in RSi[s] for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
         == v[w,d] for w in Wi for d in range(J[w]-1)),
     name = "Con_BedOccupationBoundaries",
     )

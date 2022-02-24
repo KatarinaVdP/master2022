@@ -8,7 +8,7 @@ def categorize_slots(input_dict, output_dict):
     flex_count = 0
     fixed_count = 0
     
-    for r in range(input_dict["nRooms"]):
+    for r in input_dict["Ri"]:
         day_in_cycle=0
         for d in range(input_dict["nDays"]):
             if day_in_cycle >= days_in_cycle:
@@ -26,52 +26,11 @@ def categorize_slots(input_dict, output_dict):
                     ext_slot[r][d]=1
             day_in_cycle += 1
     
-    print("Number of fixed slots: %d" % fixed_count)
-    print(f"fixed_slots: {fixed_slots}")
-    
-    print("Number of flexible slots: %d" % flex_count)
-    print(f"flex_slots: {flex_slot}")
-    
-    print(f"Count of 1's: {sum(row.count(1) for row in flex_slot)}")
-    
     output_dict["fixedSlot"]    = fixed_slots
     output_dict["flexSlot"]     = flex_slot
     output_dict["extSlot"]      = ext_slot
     return output_dict    
 
-
-
-
-
-"""def categorize_slots(input_dict, output_dict):
-        
-        fixedSlot   =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
-        flexSlot    =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
-        extSlot     =   [[0]*input_dict["nDays"]]*input_dict["nRooms"]
-
-        daysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        flexCount = 0
-        fixedCount = 0
-        for r in input_dict["Ri"]:
-            for d in input_dict["Di"]:
-                if sum(output_dict["delt"][s][r][d][c] for s in input_dict["Si"] for c in input_dict["Ci"])>0.5:
-                    flexSlot[r][d]=1
-                    flexCount+=1
-                if sum(output_dict["gamm"][s][r][d] for s in input_dict["Si"])>0.5:
-                    fixedSlot[r][d]=1
-                    fixedCount += 1
-                    if sum(output_dict["lamb"][s][r][d] for s in input_dict["Si"])>0.5:
-                        extSlot[r][d]=1
-        print("Number of fixed slots: %d" % fixedCount)
-        print("Number of flexible slots: %d" % flexCount)
-         
-        print(flexSlot)
-        print(fixedSlot)       
-        
-        output_dict["fixedSlot"]    = fixedSlot
-        output_dict["flexSlot"]     = flexSlot
-        output_dict["extSlot"]      = extSlot
-        return output_dict"""
 
 def print_MSS(input_dict, output_dict):
 
@@ -112,73 +71,65 @@ def print_MSS(input_dict, output_dict):
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
-#Input needed for this function:
-#I, nDays, Ri, R, N, flexSlot, fixedSlot, Si, S, gamm, lamb
+        print()
+        print()
+        print()
 
 
+# Prints the expected number of planned operations for every slot in the MSS
+def print_expected_operations(input_dict, output_dict):
 
-def print_Expected_Operations(self):
-    print("Expected number of planned operations")
-    print("-------------------------------------")
-    for i in range(1,self.I):
+    print("Expected number of planned operations per slot")
+    print("-----------------------------------------------")
+    for i in range(1,input_dict["I"]+1):
         print("Cycle: ", i)
         print("        ", end="")
-        nDaysInCycle = (self.nDays/self.I)
-        firstDayInCycle = nDaysInCycle*(i-1)+1
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle-1):
-            day = "{0:^5}".format(str(d))
-            print(d, end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
         print()
         print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle-1):
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
-        
-        for r in self.Ri:
-            room = "{0:>8}".format(self.R[r]+"|")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
             print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle-1+nDaysInCycle-1):
-                if self.N[d] == 0:
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
                     print("{0:<5}".format("-"), end="")
                 else:
-                    a = 1 #expSurg = sum(x[,r,d,])
-            print("")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle-1):
-            print("-----",end="")
-
-
-def print_GammSlots(input_dict, output_dict):
-
-    print("Planning period modified MSS")
-    print("-----------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                gamSum = int(sum(output_dict["gamm"][s][r][d] for s in input_dict["Si"]))
-                print("{0:<5}".format(gamSum), end="")
+                    operations = 0
+                    for g in input_dict["Gi"]: 
+                        for c in input_dict["Ci"]:
+                            operations += (input_dict["Pi"][c])*(output_dict["x"][g][r][d][c])
+                    if operations > 0:
+                        operations_str = "{:.1f}".format(operations)
+                    else:
+                        operations_str = "{:.0f}".format(operations)
+                    print("{0:<5}".format(str(operations_str)), end="")
             print()
         print("        ", end="")
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
+        print()
+        print()
+        print()
         print()
         
+"""def bed_occupation(input_dict, w, d, c):
+    occupation = 0
+    for g in input_dict[""]:
+        for r in input_dict["Ri"]:
+            for dd in range(max(1, ...)):
+                quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] for w in Wi for d in Di for c in Ci"""
 
-def print_FixedSlots(input_dict, output_dict):
+# Prints the expected bed occupation in every ward, every day in every cycle
+def print_expected_bed_util(input_dict, output_dict):
 
-    print("Planning period modified MSS")
+    print("Expected bed ward utilization")
     print("-----------------------------")
     for i in range(1,input_dict["I"]+1):
         print("Cycle: ", i)
@@ -193,42 +144,18 @@ def print_FixedSlots(input_dict, output_dict):
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
+        for w in input_dict["Wi"]:
+            ward = "{0:>8}".format(input_dict["W"][w]+"|")
+            print(ward, end="")
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                slotVal = output_dict["fixedSlot"][r][d]
-                print("{0:<5}".format(slotVal), end="")
+                
+                if output_dict["v"][w][d] > 0:
+                    v_str = "{:.1f}".format(output_dict["v"][w][d])
+                else:
+                    v_str = "{:.0f}".format(output_dict["v"][w][d])
+                print("{0:<5}".format(str(v_str)), end="")
             print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-
-def print_FlexSlots(input_dict, output_dict):
-
-    print("Planning period modified MSS")
-    print("-----------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                slotVal = output_dict["flexSlot"][r][d]
-                print("{0:<5}".format(slotVal), end="")
-            print()
+                
         print("        ", end="")
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
