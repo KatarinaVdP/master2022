@@ -32,7 +32,7 @@ def main(file_name, flexibility, nScenarios, seed, time_limit, new_input=True):
 
         with open("Old Model/file.pkl","wb") as f:
             pickle.dump(results,f)
-            
-        print("Dette er en stash test 2")
+        
+        print("Dette er en stash test")
 
 main("Old Model/Input/model_input_9groups.xlsx",0.1, 10,1,30)
