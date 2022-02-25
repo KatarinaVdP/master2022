@@ -124,7 +124,7 @@ def read_input(file_name):
     input_dict["Co"]          =   [element+input_dict["TC"] for element in input_dict["L"]]                           #Cost                       C_(g)
     input_dict["J"]            =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
     input_dict["P"]            =   read_3d([MC, IC], "J", max(input_dict["J"]))                          #Probabilies                P_(g,w,d)
-    return input_dict                  #Probabilies                P_(g,w,d)
+    return input_dict
 
 def generate_scenarios(input_dict, nScenarios, seed):
         groups                  =   input_dict["G"]
@@ -149,4 +149,3 @@ def generate_scenarios(input_dict, nScenarios, seed):
         input_dict["Q"]         =   transposed_matrix
         
         return input_dict
-            

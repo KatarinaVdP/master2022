@@ -74,7 +74,6 @@ def print_MSS(input_dict, output_dict):
         print()
         print()
 
-# Prints the expected number of planned operations for every slot in the MSS
 def print_expected_operations(input_dict, output_dict):
 
     print("Expected number of planned operations per slot")
@@ -124,10 +123,16 @@ def bed_occupation(input_dict, output_dict, w, d, c):
             for dd in range(max(0,d+1-input_dict["J"][w]), d+1):
                 occupation += input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] + output_dict["v"][w][d]
     return occupation
-
-# Prints the expected bed occupation in every ward, every day in every cycle
+        
 def print_expected_bed_util(input_dict, output_dict):
 
+    bed_occupation =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    
+    for w in input_dict["Wi"]:
+        for d in input_dict["Di"]:
+            for c in input_dict["Ci"]:
+                bed_occupation[w][d][c]= sum(input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + output_dict["v"][w][d]
+    
     print("Expected bed ward utilization")
     print("-----------------------------")
     for i in range(1,input_dict["I"]+1):
@@ -147,9 +152,7 @@ def print_expected_bed_util(input_dict, output_dict):
             ward = "{0:>8}".format(input_dict["W"][w]+"|")
             print(ward, end="")
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                total = 0
-                for c in input_dict["Ci"]:
-                    total += bed_occupation(input_dict, output_dict, w, d, c)*input_dict["Pi"][c]
+                total = sum(bed_occupation[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
                 total = "{:.1f}".format(total)
                 print("{0:<5}".format(str(total)), end="")
             print()
@@ -158,7 +161,6 @@ def print_expected_bed_util(input_dict, output_dict):
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
-        
         
 def print_operations_per_group(input_dict, output_dict):
     
@@ -176,11 +178,71 @@ def print_operations_per_group(input_dict, output_dict):
     print()
     print()
     print()
-        
-        
-        
-        
-        
-        
+
+def print_que(input_dict, output_dict):
+    share_met_demand    =   [0 for _ in range(input_dict["nGroups"])]
+    minutes_met_demand  =   [0 for _ in range(input_dict["nGroups"])]    
     
+    print("           E[unmet #operations]  E[fracton operated]  E[que] ")
+    print("        -------------------------------------------------------")
+    for g in input_dict["Gi"]:
+        gg              =   "{0:<2}".format(str(g))
+        name            =   "{0:<4}".format(str(input_dict["G"][g]))
+        print("%s %s|        " %(gg,name), end= " ")
+        que                     =   sum(input_dict["Pi"][c] * output_dict["a"][g][c] for c in input_dict["Ci"])
+        que                     =   "{:.2f}".format(que)
+        que                     =   "{0:>7}".format(str(que))
+        print("%s            " %que, end= " ")
+        share_met_demand[g]     =   0
+        minutes_met_demand[g]   =   0
         
+        for c in input_dict["Ci"]: 
+            if input_dict["Q"][g][c]>0:
+                share_met_demand[g]     +=  input_dict["Pi"][c] * sum(output_dict["x"][g][r][d][c] for r in input_dict["Ri"] for d in input_dict["Di"])/input_dict["Q"][g][c]
+            else:
+                share_met_demand[g]     +=  input_dict["Pi"][c] * 1
+            minutes_met_demand[g]   +=  input_dict["Pi"][c] * output_dict["a"][g][c]*input_dict["L"][g]
+            
+            if sum(output_dict["x"][g][r][d][c] for r in input_dict["Ri"] for d in input_dict["Di"] for c in input_dict["Ci"] ) < 0.5:
+                share_met_demand[g] = 0
+        share               =   "{:.3f}".format(share_met_demand[g])    
+        share               =   "{0:>6}".format(share)
+        min                 =   "{:.1f}".format(minutes_met_demand[g])
+        min                 =   "{0:>9}".format(min)
+        print("%s        %s" %(share,min) )
+    print()
+    print()
+
+        
+    """def print_expected_bed_util_pho(input_dict, output_dict):
+
+        print("Expected bed ward utilization")
+        print("-----------------------------")
+        for i in range(1,input_dict["I"]+1):
+            print("Cycle: ", i)
+            print("        ", end="")
+            nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+            firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+                day = "{0:<5}".format(str(d))
+                print(day, end="")
+            print()
+            print("        ", end="")
+            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+                print("-----",end="")
+            print()
+            for w in input_dict["Wi"]:
+                ward = "{0:>8}".format(input_dict["W"][w]+"|")
+                print(ward, end="")
+                for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                    total = 0
+                    for c in input_dict["Ci"]:
+                        total += bed_occupation(input_dict, output_dict, w, d, c)*input_dict["Pi"][c]
+                    total = "{:.1f}".format(total)
+                    print("{0:<5}".format(str(total)), end="")
+                print()
+                    
+            print("        ", end="")
+            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+                print("-----",end="")
+            print()"""   
