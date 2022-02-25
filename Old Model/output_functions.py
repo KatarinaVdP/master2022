@@ -31,7 +31,6 @@ def categorize_slots(input_dict, output_dict):
     output_dict["extSlot"]      = ext_slot
     return output_dict    
 
-
 def print_MSS(input_dict, output_dict):
 
     print("Planning period modified MSS")
@@ -74,7 +73,6 @@ def print_MSS(input_dict, output_dict):
         print()
         print()
         print()
-
 
 # Prints the expected number of planned operations for every slot in the MSS
 def print_expected_operations(input_dict, output_dict):
