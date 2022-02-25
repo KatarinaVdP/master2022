@@ -117,12 +117,13 @@ def print_expected_operations(input_dict, output_dict):
         print()
         print()
         
-"""def bed_occupation(input_dict, w, d, c):
+def bed_occupation(input_dict, output_dict, w, d, c):
     occupation = 0
-    for g in input_dict[""]:
+    for g in input_dict["GWi"][w]:
         for r in input_dict["Ri"]:
-            for dd in range(max(1, ...)):
-                quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] for w in Wi for d in Di for c in Ci"""
+            for dd in range(max(0,d+1-input_dict["J"][w]), d+1):
+                occupation += input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] + output_dict["v"][w][d]
+    return occupation
 
 # Prints the expected bed occupation in every ward, every day in every cycle
 def print_expected_bed_util(input_dict, output_dict):
@@ -146,15 +147,40 @@ def print_expected_bed_util(input_dict, output_dict):
             ward = "{0:>8}".format(input_dict["W"][w]+"|")
             print(ward, end="")
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                
-                if output_dict["v"][w][d] > 0:
-                    v_str = "{:.1f}".format(output_dict["v"][w][d])
-                else:
-                    v_str = "{:.0f}".format(output_dict["v"][w][d])
-                print("{0:<5}".format(str(v_str)), end="")
+                total = 0
+                for c in input_dict["Ci"]:
+                    total += bed_occupation(input_dict, output_dict, w, d, c)*input_dict["Pi"][c]
+                total = "{:.1f}".format(total)
+                print("{0:<5}".format(str(total)), end="")
             print()
                 
         print("        ", end="")
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
+        
+        
+def print_operations_per_group(input_dict, output_dict):
+    
+    print("Total number of operations per surgery group across all scenarios")
+    print("------------------------------------------------------------------")
+    
+    for g in input_dict["Gi"]:
+        group = "{0:<5}".format(input_dict["G"][g])+"|"
+        print(group, end="")
+        operations = 0
+        operations = sum(output_dict["x"][g][r][d][c] for c in input_dict["Ci"] for d in input_dict["Di"] for r in input_dict["Ri"])
+        print("{0:>5}".format(operations))
+        
+    print()
+    print()
+    print()
+    print()
+        
+        
+        
+        
+        
+        
+    
+        

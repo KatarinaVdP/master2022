@@ -201,7 +201,7 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
         for r in input["Ri"]:
             for d in input["Di"]:    
                 for c in input["Ci"]:
-                    if x[s,r,d,c].X > 0:
+                    if x[g,r,d,c].X > 0:
                         result_dict["x"][g][r][d][c] = x[g,r,d,c].X
 
     # Copying the values of a to the result dictionary
