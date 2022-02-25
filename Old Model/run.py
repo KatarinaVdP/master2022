@@ -7,14 +7,19 @@ from typing import IO
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
     
+    #----- choosing correct input file ----
+    if number_of_groups==4 or number_of_groups==5:
+        num_specialties="_2or3spec"
+    else:
+        num_specialties="_5spec"              
     if number_of_groups==4 or number_of_groups==5 or number_of_groups==9:
-        file_name="Old Model/Input/model_input_9groups.xlsx"
+        num_max_groups= "_9groups"
     elif number_of_groups==12 or number_of_groups==13 or number_of_groups==25:
-        file_name="Old Model/Input/model_input.xlsx"
+        num_max_groups= "_25groups"
     else:
         print("Invalid number of groups")    
         return
-    
+    file_name= "Old Model/Input/" + "model_input" + num_max_groups + num_specialties + ".xlsx"
     
     try:
         with open("Old Model/file.pkl","rb") as f:
@@ -22,27 +27,25 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("loading pickle")
         print()
         input           = read_input(file_name)
-        input_update    = generate_scenarios(input,nScenarios,seed)
-        results_update  = categorize_slots(input_update, results_saved)
-        print_MSS(input_update, results_update)
+        input    = generate_scenarios(input,nScenarios,seed)
+        results  = categorize_slots(input, results_saved)
+        print_MSS(input, results)
 
-        print_expected_operations(input_update, results_update)    
-        #print_expected_bed_util(input_update, results_update)       
+        print_expected_operations(input, results)    
+        print_expected_bed_util(input, results)       
                 
     except IOError:
         input = read_input(file_name)
         print("Input has been read")
 
-        input_update = generate_scenarios(input,nScenarios,seed)
+        input = generate_scenarios(input,nScenarios,seed)
 
-        results, input_update_update = run_model(input_update, number_of_groups, flexibility, time_limit)
-        results_update  = categorize_slots(input_update_update, results)
+        results, input = run_model(input, number_of_groups, flexibility, time_limit)
+        results  = categorize_slots(input, results)
 
+        print_MSS(input, results)
+        print_expected_operations(input, results)
+        
         with open("Old Model/file.pkl","wb") as f:
-            pickle.dump(results,f) 
-        print_MSS(input_update_update, results_update)
-        print_expected_operations(input_update_update, results_update)
-        print_operations_per_group(input_update_update, results_update)
-        print_expected_bed_util(input_update_update, results_update)
-
-main(0,4, 10,3,120)
+            pickle.dump(results,f)
+main(0,4, 10,3,60)
