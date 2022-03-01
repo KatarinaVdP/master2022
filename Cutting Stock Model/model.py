@@ -16,16 +16,20 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
     
-    Wi  =   input["Wi"]
-    Si  =   input["Si"]
-    Gi  =   input["Gi"]
-    GWi =   input["GWi"]
-    GSi =   input["GSi"]    
-    Ri  =   input["Ri"]
-    RSi =   input["RSi"]
-    RGi =   input["RGi"]
-    Di  =   input["Di"]
-    Ci  =   input["Ci"]
+    Mi      =   input["Mi"]
+    Mnxi    =   input["Mnxi"]
+    Mxi     =   input["Mxi"]
+    MSi     =   input["MSi"]
+    Wi      =   input["Wi"]
+    Si      =   input["Si"]
+    Gi      =   input["Gi"]
+    GWi     =   input["GWi"]
+    GSi     =   input["GSi"]    
+    Ri      =   input["Ri"]
+    RSi     =   input["RSi"]
+    RGi     =   input["RGi"]
+    Di      =   input["Di"]
+    Ci      =   input["Ci"]
 
     #----- Parameter ----- #  
     F   =   flexibility
@@ -42,9 +46,11 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     T   =   input["T"]
     Co  =   input["Co"]
     J   =   input["J"]
-    P   =   input["P"]
     Pi  =   input["Pi"]
     Q   =   input["Q"]
+    # Parameters specific to cutting stock model
+    A   =   input["A"]
+    P   =   input["P"]
     
     if number_of_groups==4 or number_of_groups==12:
         Si  = [0,1]
@@ -85,7 +91,7 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
     lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
-    x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
+    phi     =   m.addVars(Mi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
     v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
     
@@ -94,6 +100,8 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
             for d in Di:
                 gamm[s,r,d].lb=0
                 gamm[s,r,d].ub=0
+                lamb[s,r,d].lb=0
+                lamb[s,r,d].ub=0
                 for c in Ci:
                     delt[s,r,d,c].lb=0
                     delt[s,r,d,c].ub=0  
@@ -114,11 +122,12 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
         quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
         name = "Con_PercentFixedRooms"
         )
-    m.addConstrs(
-        (lamb[s,r,d] <= gamm[s,r,d] 
-        for s in Si for r in Ri for d in Di), 
-        name = "Con_RollingFixedSlotCycles",
-        )
+    for s in Si:
+        m.addConstrs(
+            (lamb[s,r,d] <= gamm[s,r,d] 
+            for r in RSi[s] for d in Di), 
+            name = "Con_RollingFixedSlotCycles"+ str(s),
+            )
     m.addConstrs(
         (quicksum(lamb[s,r,d] for r in RSi[s] for d in Di) <= U[s] 
         for s in Si),
@@ -140,32 +149,36 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
         for d in Di for c in Ci),
         name= "Con_TotalRoomsInUse",
     )
-    for s in Si:
-        m.addConstrs(
-            (quicksum((L[g]+TC) * x[g,r,d,c] for g in GSi[s]) <= H[d] * (gamm[s,r,d] + delt[s,r,d,c]) + E*lamb[s,r,d] 
-            for r in RSi[s] for d in Di for c in Ci),
-        name = "Con_AvalibleTimeInRoom" + str(s), 
-        )   
     m.addConstrs(
-        (quicksum(x[g,r,d,c] for r in Ri for d in Di) + a[g,c] ==  Q[g][c] 
+        (quicksum(phi[m,r,d,c] for m in MSi[s] <= gamm[s,r,d]+delt[s,r,d,c])
+        for s in Si for r in Ri for d in Di for c in Ci),
+        name = "Con_CorrectPatternForSpecialty",
+    )
+    m.addConstrs(
+        (2*quicksum(phi[m,r,d,c] for m in Mxi) + quicksum(phi[m,r,d,c] for m in Mnxi) <= quicksum(gamm[s,r,d] + delt[s,r,d,c]+lamb[s,r,d] for s in Si)
+        for r in Ri for d in Di for c in Ci),
+        name = "Con_AvalibleTimeInRoom", 
+    )   
+    m.addConstrs(
+        (quicksum(phi[m,r,d,c] for m in Mi for r in RGi for d in Di) + a[g,c] ==  Q[g][c] 
         for g in Gi for c in Ci),
         name= "Con_Demand",
     )
     m.addConstrs(
-        (quicksum(delt[s,r,d,c] for s in Si) <= quicksum(x[g,r,d,c] for g in Gi) 
+        (quicksum(A[m][g]*phi[m,r,d,c] for m in Mnxi) >= quicksum(delt[s,r,d,c] for s in Si) 
         for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
     print('still Creating Model 60%')
     m.addConstrs(
-        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
+        (quicksum(P[m][w][d-dd] * phi[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
     print('still Creating Model 90%')
     for w in Wi:
         m.addConstrs(
-            (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
+            (quicksum(Pi[c] * quicksum(P[m][w][d+nDays-dd] * phi[m,r,dd,c] for m in Mi for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
             for d in range(J[w]-1)),
         name = "Con_BedOccupationBoundaries" + str(w),
         )
@@ -191,6 +204,7 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
     result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
     result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
+    result_dict["phi"]  = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(len(Mi))]
     result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
     result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
     
@@ -208,8 +222,15 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
         for r in input["Ri"]:
             for d in input["Di"]:    
                 for c in input["Ci"]:
-                    if x[g,r,d,c].X > 0:
-                        result_dict["x"][g][r][d][c] = x[g,r,d,c].X
+                    val = sum(A[m][g]*phi[m,r,d,c].X for m in Mi)
+                    if val > 0:
+                        result_dict["x"][g][r][d][c] = val
+    for m in Mi:
+        for r in Ri:
+            for d in Di:
+                for c in Ci:
+                    if phi[m,r,d,c].X > 0:
+                        result_dict["phi"] = phi[m,r,d,c].X
     for g in input["Gi"]:
         for c in input["Ci"]:
             if a[g,c].X > 0:
