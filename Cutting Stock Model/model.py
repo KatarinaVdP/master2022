@@ -3,6 +3,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
+from patterns import generate_pattern_data
 
 
 def run_model(input_dict, number_of_groups, flexibility, time_limit):
@@ -16,10 +17,7 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
     
-    Mi      =   input["Mi"]
-    Mnxi    =   input["Mnxi"]
-    Mxi     =   input["Mxi"]
-    MSi     =   input["MSi"]
+
     Wi      =   input["Wi"]
     Si      =   input["Si"]
     Gi      =   input["Gi"]
@@ -48,9 +46,6 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     J   =   input["J"]
     Pi  =   input["Pi"]
     Q   =   input["Q"]
-    # Parameters specific to cutting stock model
-    A   =   input["A"]
-    P   =   input["P"]
     
     if number_of_groups==4 or number_of_groups==12:
         Si  = [0,1]
@@ -82,6 +77,16 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
                 N[d]=4  
         input["N"]=N  
         print(RSi)
+ 
+    input = generate_pattern_data(input)
+    
+    # Parameters and sets specific to cutting stock model
+    A       =   input["A"]
+    P       =   input["P"]
+    Mi      =   input["Mi"]
+    Mnxi    =   input["Mnxi"]
+    Mxi     =   input["Mxi"]
+    MSi     =   input["MSi"]
  
     #----- Model ----- #
     m = gp.Model("mss_mip")

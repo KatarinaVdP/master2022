@@ -214,35 +214,38 @@ def print_que(input_dict, output_dict):
     print()
 
         
-    """def print_expected_bed_util_pho(input_dict, output_dict):
+def print_MSS_minutes(input_dict, output_dict):
 
-        print("Expected bed ward utilization")
-        print("-----------------------------")
-        for i in range(1,input_dict["I"]+1):
-            print("Cycle: ", i)
-            print("        ", end="")
-            nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-            firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                day = "{0:<5}".format(str(d))
-                print(day, end="")
+    print("Planning period modified MSS")
+    print("-----------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    print("{0:<5}".format("-"), end="")
+                else:
+                    minutes= sum((input_dict["L"][g]+input_dict["TC"]) * output_dict["x"][g][r][d][5] for g in input_dict["Gi"])
+            
+                    print("{0:<5}".format(int(minutes)), end="")
             print()
-            print("        ", end="")
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                print("-----",end="")
-            print()
-            for w in input_dict["Wi"]:
-                ward = "{0:>8}".format(input_dict["W"][w]+"|")
-                print(ward, end="")
-                for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                    total = 0
-                    for c in input_dict["Ci"]:
-                        total += bed_occupation(input_dict, output_dict, w, d, c)*input_dict["Pi"][c]
-                    total = "{:.1f}".format(total)
-                    print("{0:<5}".format(str(total)), end="")
-                print()
-                    
-            print("        ", end="")
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                print("-----",end="")
-            print()"""   
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        print()
+        print()
+        print()   

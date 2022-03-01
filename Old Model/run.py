@@ -83,5 +83,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print_expected_bed_util(input, results)   
     print_MSS_minutes(input, results)
     print_que(input, results)
+    
+    print(input["P"])
             
 main(0,9, 10,1,60)
