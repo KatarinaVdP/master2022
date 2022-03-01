@@ -16,7 +16,7 @@ def read_list(sheet, name,integerVal=False):
     return list
 
 # Henter ut data 
-parameters  =   pd.read_excel("model_input_global.xlsx", sheet_name='Parameters')
+parameters  =   pd.read_excel("Cutting Stock Model/Input/model_input_9groups_2or3spec.xlsx", sheet_name='Parameters')
 
 duration  =   read_list(parameters, "Surgery Duration")                     # Operasjonslengde per gruppe
 groups = read_list(parameters, "Surgery Groups")                            # Navn på alle operasjonsgrupper
@@ -50,7 +50,7 @@ for specialty, durations in durations_per_specialty.items():
           if sum(duration) <= slot_time]
     combinations_per_group_extended[specialty] = [duration for i in range(1, max_operations_per_specialty_extended[j]+1)
           for duration in itertools.combinations_with_replacement(durations, i)
-          if sum(duration) <= slot_time_extended]
+          if sum(duration) > slot_time and sum(duration) <= slot_time_extended]
     j += 1
 
 # Lager en dict med oversikt over patterns, per spesialitet

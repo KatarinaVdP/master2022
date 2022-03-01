@@ -57,10 +57,10 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     else:
         print("Invalid number of groups")    
         return
-    file_name= "Old Model/Input/" + "model_input" + num_max_groups + num_specialties + ".xlsx"
+    file_name= "Cutting Stock Model/Input/" + "model_input" + num_max_groups + num_specialties + ".xlsx"
     
     try:
-        with open("Old Model/file.pkl","rb") as f:
+        with open("Cutting Stock Model/file.pkl","rb") as f:
             saved_values = pickle.load(f)
         print("loading pickle")
         print()
@@ -75,7 +75,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
-        with open("Old Model/file.pkl","wb") as f:
+        with open("Cutting Stock Model/file.pkl","wb") as f:
             pickle.dump(saved_values,f)
 
     print_MSS(input, results)
