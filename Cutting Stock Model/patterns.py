@@ -17,7 +17,7 @@ slot_time_extended = slot_time + read_list(parameters, "Extended Time")[0]  # An
 # Lager en dictionary med spesialiteter som key og en liste med tilhørende surgery durations (ink cleaning time) som value
 def durations_per_specialty(input):
     groups = input["G"]
-    cleaning_time = input["T"]
+    cleaning_time = input["TC"]
     duration = input["L"]
     durations_per_specialty = {}
     durations_per_specialty[groups[0][0:2]] = [duration[0] + cleaning_time]
@@ -31,14 +31,14 @@ def durations_per_specialty(input):
 # Regner ut maks antall operasjoner som kan gjennomføres i en slot ila en dag, både for vanlig og extended slot
 
 def max_operations_per_specialty(input):
-    slot_time = input["H"]
+    slot_time = input["H"][0]
     max_operations_per_specialty = []
     for group in durations_per_specialty(input):
         max_operations_per_specialty.append(math.floor(slot_time/min(durations_per_specialty(input)[group])))
     return max_operations_per_specialty
     
 def max_operations_per_specialty_extended(input):
-    slot_time_extended = input["H"] + input["E"]
+    slot_time_extended = input["H"][0] + input["E"]
     max_operations_per_specialty_extended = []
     for group in durations_per_specialty(input):
         max_operations_per_specialty_extended.append(math.floor(slot_time_extended/min(durations_per_specialty(input)[group])))
@@ -47,7 +47,7 @@ def max_operations_per_specialty_extended(input):
 # Lager en dict med oversikt over alle mulige operasjonskombinasjoner gitt ved operasjonslengde ila en dag, per spesialitet
     
 def combinations_per_group(input):
-    slot_time = input["H"]
+    slot_time = input["H"][0]
     combinations_per_group = {}
     j = 0
     for specialty, durations in durations_per_specialty(input).items():
@@ -58,8 +58,8 @@ def combinations_per_group(input):
     return combinations_per_group
 
 def combinations_per_group_extended(input):
-    slot_time = input["H"]
-    slot_time_extended = input["H"] + input["E"]
+    slot_time = input["H"][0]
+    slot_time_extended = input["H"][0] + input["E"]
     combinations_per_group_extended = {}
     j = 0
     for specialty, durations in durations_per_specialty(input).items():
@@ -73,7 +73,7 @@ def combinations_per_group_extended(input):
 # Vanlig slot
 
 def patterns_per_specialty(input):
-    cleaning_time = input["T"]
+    cleaning_time = input["TC"]
     patterns_per_specialty = {}
     for specialty, combinations in combinations_per_group(input).items():
         patterns_per_specialty[specialty] = []
@@ -116,7 +116,7 @@ def patterns_non_extended(input):
 
 # Extended   
 def patterns_per_specialty_extended(input):
-    cleaning_time = cleaning_time = input["T"]
+    cleaning_time = input["TC"]
     
     patterns_per_specialty_extended = {}        
     for specialty, combinations in combinations_per_group_extended(input).items():
@@ -129,7 +129,7 @@ def patterns_per_specialty_extended(input):
     for specialty, patterns in patterns_per_specialty_extended.items():
         for i in range(len(patterns)):
             for duration, numbers in patterns[i].items():
-                for specialty2 in combinations_per_group_extended.values():
+                for specialty2 in combinations_per_group_extended(input).values():
                     for j in range(len(specialty2)):
                         for duration2 in specialty2[j]:
                             if i == j and duration == duration2 - cleaning_time:
@@ -140,7 +140,7 @@ def patterns_per_specialty_extended(input):
 def patterns_extended(input):  
     groups = input["G"]                             
     list_patterns_extended = []
-    for combinations in combinations_per_group_extended.values():
+    for combinations in combinations_per_group_extended(input).values():
         for i, combination in enumerate(combinations):
             list_patterns_extended.append([0 for _ in range(len(groups))])
             
@@ -195,21 +195,22 @@ def patterns_specialty(input):
 
 # Set P_mwd
 def accumulated_probabilities(input):
-    cum_P = [[[0 for _ in range(20)] for _ in range(input["nWards"])] for _ in range(len(all_patterns_indices(input)))]
+    P_sum = [[[0 for _ in range(20)] for _ in range(input["nWards"])] for _ in range(len(all_patterns_indices(input)))]
     A = all_patterns(input)
     for m in all_patterns_indices(input):
         for w in input["Wi"]:
             for g in input["Gi"]:
                 if A[m][g] > 0:
                     for d in range(20):
-                        cum_P[m][w][d] += input["P"][w][g][d] * A[m][g]
-    return cum_P        
+                        P_sum[m][w][d] += input["P"][w][g][d] * A[m][g]
+    return P_sum        
 
 def generate_pattern_data(input):
-    input["P"] = accumulated_probabilities(input)
+    input["Psum"] = accumulated_probabilities(input)
     input["Mi"] = all_patterns_indices(input)
     input["Mnxi"] = patterns_non_extended_indices(input)
     input["Mxi"] = patterns_extended_indices(input)
+    input["MSi"] = patterns_specialty(input)
     input["A"] = all_patterns(input)
     return input
 
