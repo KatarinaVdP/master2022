@@ -6,8 +6,7 @@ from gurobipy import quicksum
 from patterns import generate_pattern_data
 
 
-def run_model(input_dict, number_of_groups, flexibility, time_limit):
-    input = input_dict
+def run_model(input, number_of_groups, flexibility, time_limit):
     
     #----- Sets ----- #  
     nDays           =   input["nDays"]
@@ -88,6 +87,7 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     Mnxi    =   input["Mnxi"]
     Mxi     =   input["Mxi"]
     MSi     =   input["MSi"]
+
  
     #----- Model ----- #
     m = gp.Model("mss_mip")
@@ -97,10 +97,10 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
     lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
-    phi     =   m.addVars(Mi, Ri, Di, Ci, vtype=GRB.BINARY, name="phi")
+    pat     =   m.addVars(Mi, Ri, Di, Ci, vtype=GRB.BINARY, name="pat")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
     v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
-    
+
     for s in Si:
         for r in (list(set(Ri)^set(RSi[s]))):
             for d in Di:
@@ -110,13 +110,14 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
                 lamb[s,r,d].ub=0
                 for c in Ci:
                     delt[s,r,d,c].lb=0
-                    delt[s,r,d,c].ub=0  
-    """for g in Gi:
-        for r in (list(set(Ri)^set(RGi[g]))):
-            for d in Di:
-                for c in Ci:  
-                    x[g,r,d,c].lb=0
-                    x[g,r,d,c].ub=0"""             
+                    delt[s,r,d,c].ub=0
+    """for s in Si:
+        for m in MSi[s]:
+            for r in (list(set(Ri)^set(RSi[s]))):
+                for d in Di:
+                    for c in Ci:
+                        pat[m,r,d,c].lb=0
+                        pat[m,r,d,c].ub=0   """         
     
     '--- Objective ---' 
     m.setObjective(
@@ -156,35 +157,35 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
         name= "Con_TotalRoomsInUse",
     )
     m.addConstrs(
-        (quicksum(phi[m,r,d,c] for m in MSi[s]) <= gamm[s,r,d]+delt[s,r,d,c]
+        (quicksum(pat[m,r,d,c] for m in MSi[s]) <= gamm[s,r,d]+delt[s,r,d,c]
         for s in Si for r in Ri for d in Di for c in Ci),
         name = "Con_CorrectPatternForSpecialty",
     )
     m.addConstrs(
-        (2*quicksum(phi[m,r,d,c] for m in Mxi) + quicksum(phi[m,r,d,c] for m in Mnxi) <= quicksum(gamm[s,r,d] + delt[s,r,d,c]+lamb[s,r,d] for s in Si)
+        (2*quicksum(pat[m,r,d,c] for m in Mxi) + quicksum(pat[m,r,d,c] for m in Mnxi) <= quicksum(gamm[s,r,d] + delt[s,r,d,c]+lamb[s,r,d] for s in Si)
         for r in Ri for d in Di for c in Ci),
         name = "Con_AvalibleTimeInRoom", 
     )   
     m.addConstrs(
-        (quicksum(A[m][g]*phi[m,r,d,c] for m in Mi for r in RGi[g] for d in Di) + a[g,c] ==  Q[g][c] 
+        (quicksum(A[m][g]*pat[m,r,d,c] for m in Mi for r in RGi[g] for d in Di) + a[g,c] ==  Q[g][c] 
         for g in Gi for c in Ci),
         name= "Con_Demand",
     )
     m.addConstrs(
-        (quicksum(A[m][g]*phi[m,r,d,c] for m in Mnxi for g in Gi) >= quicksum(delt[s,r,d,c] for s in Si) 
+        (quicksum(A[m][g]*pat[m,r,d,c] for m in Mnxi for g in Gi) >= quicksum(delt[s,r,d,c] for s in Si) 
         for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
     print('still Creating Model 60%')
     m.addConstrs(
-        (quicksum(Psum[m][w][d-dd] * phi[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
+        (quicksum(Psum[m][w][d-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
     print('still Creating Model 90%')
     for w in Wi:
         m.addConstrs(
-            (quicksum(Pi[c] * quicksum(Psum[m][w][d+nDays-dd] * phi[m,r,dd,c] for m in Mi for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
+            (quicksum(Pi[c] * quicksum(Psum[m][w][d+nDays-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
             for d in range(J[w]-1)),
         name = "Con_BedOccupationBoundaries" + str(w),
         )
@@ -224,19 +225,21 @@ def run_model(input_dict, number_of_groups, flexibility, time_limit):
                 for c in input["Ci"]:
                     if delt[s,r,d,c].X > 0:
                         result_dict["delt"][s][r][d][c] = delt[s,r,d,c].X                     
+        
     for g in input["Gi"]:
         for r in input["Ri"]:
             for d in input["Di"]:    
                 for c in input["Ci"]:
-                    val = sum(A[m][g]*phi[m,r,d,c].X for m in Mi)
+                    val = sum(A[m][g]*pat[m,r,d,c].X for m in Mi)
                     if val > 0:
                         result_dict["x"][g][r][d][c] = val
     """for m in Mi:
         for r in Ri:
             for d in Di:
                 for c in Ci:
-                    if phi[m,r,d,c].X > 0:
-                        result_dict["phi"][m][r][d][c] = phi[m,r,d,c].X"""
+                    val = pat[m,r,d,c].X
+                    if val > 0:
+                        result_dict["phi"][m][r][d][c] = val"""
                         
                         
     for g in input["Gi"]:
