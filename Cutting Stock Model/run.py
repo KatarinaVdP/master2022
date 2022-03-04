@@ -48,4 +48,4 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print_MSS_minutes(input, results)
     print_que(input, results)
             
-main(0,9,10,1,20)
+main(0,25,10,1,2400)

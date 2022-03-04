@@ -22,7 +22,7 @@ saving_str = "_A"
 results_file ="patient_groups"+saving_str+".xls"
 
 # Number of clusters per speciality
-k_clusters = {"GN": 1, "GØ": 1, "UR": 1, "KA": 1, "EN": 1}
+k_clusters = {"GN": 2, "GØ": 2, "UR": 2, "KA": 1, "EN": 2}
 
 #-----------------------------------------------------------------------------------
 
@@ -200,7 +200,7 @@ for code in all_codes:
     code.speciality = most_common(code.sections)
 
     code.surg_average = np.average(code.surgery_durations)
-    code.surg_p = np.percentile(code.surgery_durations, 80)
+    code.surg_p = np.percentile(code.surgery_durations, 65)
     code.LOSS_average = np.average(code.ward_loses)
     code.LOSI_average = np.average(code.icu_loses)
     code.LOST_average = np.average(code.tov_loses)
@@ -622,7 +622,7 @@ patgroup.write(0, 12, "Median surgery duration")
 patgroup.write(0, 16, "Speciality")
 patgroup.write(0, 17, "Number of clusters")
 patgroup.write(0, 18, "Distortion")
-patgroup.write(0, 19, "80 p surgery duration")
+patgroup.write(0, 19, "65 p surgery duration")
 
 index=0
 for key in k_clusters.keys():
@@ -672,7 +672,7 @@ for i in range(len(patient_groups)):
     patgroup.write(i + 1, 11, int(group.throughput))
     patgroup.write(i + 1, 12, float(np.median(group.durations)))
 
-    patgroup.write(i + 1, 19, float(np.percentile(group.durations, 80)))
+    patgroup.write(i + 1, 19, float(np.percentile(group.durations, 65)))
 
 
 
