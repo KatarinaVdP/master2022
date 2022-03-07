@@ -4,15 +4,6 @@ import itertools
 import numpy as np
 from input_functions import *
 
-# Henter ut data 
-"""parameters  =   pd.read_excel("Cutting Stock Model/Input/model_input_9groups_2or3spec.xlsx", sheet_name='Parameters')
-
-duration  =   read_list(parameters, "Surgery Duration")                     # Operasjonslengde per gruppe
-groups = read_list(parameters, "Surgery Groups")                            # Navn på alle operasjonsgrupper
-cleaning_time = read_list(parameters, "Cleaning Time")[0]                   # Vasketid
-slot_time = read_list(parameters, "Opening Hours")[0]                       # Antall minutter i vanlig slot
-slot_time_extended = slot_time + read_list(parameters, "Extended Time")[0]  # Antall minutter i extended slot"""
-
 # Lager en dictionary med spesialiteter som key og en liste med tilhørende surgery durations (ink cleaning time) som value
 def durations_per_specialty(input):
     groups = input["G"]
@@ -204,6 +195,13 @@ def accumulated_probabilities(input):
                         P_sum[m][w][d] += input["P"][w][g][d] * A[m][g]
     return P_sum        
 
+def pattern_durations(input):
+    pattern_dur = [0 for _ in range(input["Mi"])]
+    for m in input["Mi"]:
+        for g in input["Gi"]:
+            pattern_dur[m] += input["A"][m][g]*input["L"][g]
+    return pattern_dur
+
 def generate_pattern_data(input):
     input["Psum"] = accumulated_probabilities(input)
     input["Mi"] = all_patterns_indices(input)
@@ -211,15 +209,5 @@ def generate_pattern_data(input):
     input["Mxi"] = patterns_extended_indices(input)
     input["MSi"] = patterns_specialty(input)
     input["A"] = all_patterns(input)
+    input["pattern_dur"] = pattern_durations(input)
     return input
-
-"""print("\nPatterns per group:\n")
-print(patterns_non_extended())
-print("\nPatterns per group, extended:\n")
-print(patterns_extended())
-print(patterns_non_extended_indices())
-print(patterns_extended_indices())
-print(all_patterns_indices())
-print(patterns_per_specialty)
-print(patterns_per_specialty_extended)
-print(patterns_specialty())"""
