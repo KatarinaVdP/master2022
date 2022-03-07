@@ -44,12 +44,7 @@ def print_MSS_minutes(input_dict, output_dict):
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
     
-    #----- choosing correct input file ----
-    if number_of_groups in [4, 5, 12, 13]:
-        num_specialties="_2or3spec"
-    else:
-        num_specialties="_5spec"  
-            
+    #----- choosing correct input file ----  
     if number_of_groups in [4, 5, 9]:
         num_max_groups= "_9groups"
     elif number_of_groups in [12, 13, 25]:
@@ -57,7 +52,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     else:
         print("Invalid number of groups")    
         return
-    file_name= "Old Model/Input/" + "model_input" + num_max_groups + num_specialties + ".xlsx"
+    file_name= "Old Model/Input/" + "model_input" + num_max_groups + ".xlsx"
     
     try:
         with open("Old Model/file.pkl","rb") as f:
@@ -69,14 +64,14 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     except IOError:
         input           =   read_input(file_name)
         input           =   generate_scenarios(input,nScenarios,seed)
-        results, input  =   run_model(input, number_of_groups, flexibility, time_limit)
+        input           =   edit_input_to_number_of_groups(input, number_of_groups)
+        results, input  =   run_model(input, flexibility, time_limit)
         results         =   categorize_slots(input, results)
-        
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
-        with open("Old Model/file.pkl","wb") as f:
-            pickle.dump(saved_values,f)
+        """with open("Old Model/file.pkl","wb") as f:
+            pickle.dump(saved_values,f)"""
 
     print_MSS(input, results)
     print_expected_operations(input, results)    
@@ -84,6 +79,5 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print_MSS_minutes(input, results)
     print_que(input, results)
     
-    print(input["P"])
             
-main(0,9, 10,1,60)
+main(0,5, 10,1,10)

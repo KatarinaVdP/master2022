@@ -5,7 +5,6 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 from patterns import generate_pattern_data
 
-
 def run_model(input, number_of_groups, flexibility, time_limit):
     
     #----- Sets ----- #  
@@ -46,38 +45,8 @@ def run_model(input, number_of_groups, flexibility, time_limit):
     Pi  =   input["Pi"]
     Q   =   input["Q"]
     P   =   input["P"]
+    Y   =   input["Y"]
     
-    if number_of_groups==4 or number_of_groups==12:
-        Si  = [0,1]
-        input["Si"]=Si
-        Ri  = [3,4,6]
-        input["Ri"]=Ri
-        Gi  = [g for g in range(number_of_groups)]
-        input["Gi"]=Gi
-        GWi = [[g for g in range(number_of_groups)] for _ in range(nWards)]
-        input["GWi"]=GWi     
-        for d in range(nDays):
-            if N[d]>0:
-                N[d]=3
-        input["N"]=N
-
-    elif number_of_groups==5 or number_of_groups==13:
-        Si  = [2,3,4]
-        input["Si"]=Si
-        Ri  = [0,1,2,5]
-        input["Ri"]=Ri
-        Gi  = [g for g in range(number_of_groups-1,nGroups)]
-        input["Gi"]=Gi
-        print(Gi)
-        GWi = [[g for g in range(number_of_groups-1,nGroups)] for _ in range(nWards)]
-        input["GWi"]=GWi
-        print(GWi)
-        for d in range(nDays):
-            if N[d]>0:
-                N[d]=4  
-        input["N"]=N  
-        print(RSi)
- 
     input = generate_pattern_data(input)
     
     # Parameters and sets specific to cutting stock model
@@ -99,7 +68,7 @@ def run_model(input, number_of_groups, flexibility, time_limit):
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
     pat     =   m.addVars(Mi, Ri, Di, Ci, vtype=GRB.BINARY, name="pat")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
-    v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")
+    """v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")"""
 
     for s in Si:
         for r in (list(set(Ri)^set(RSi[s]))):
@@ -178,6 +147,11 @@ def run_model(input, number_of_groups, flexibility, time_limit):
     )
     print('still Creating Model 60%')
     m.addConstrs(
+        (quicksum(Psum[m][w][d-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - Y[w][d] 
+        for w in Wi for d in Di for c in Ci),
+    name = "Con_BedOccupationCapacity",
+    )
+    """m.addConstrs(
         (quicksum(Psum[m][w][d-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
@@ -188,7 +162,7 @@ def run_model(input, number_of_groups, flexibility, time_limit):
             (quicksum(Pi[c] * quicksum(Psum[m][w][d+nDays-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
             for d in range(J[w]-1)),
         name = "Con_BedOccupationBoundaries" + str(w),
-        )
+        )"""
     for s in Si:
         m.addConstrs(
             (gamm[s,r,d]==gamm[s,r,nDays/I+d] 
@@ -246,10 +220,10 @@ def run_model(input, number_of_groups, flexibility, time_limit):
         for c in input["Ci"]:
             if a[g,c].X > 0:
                 result_dict["a"][g][c] = a[g,c].X
-    for w in input["Wi"]:
+    """for w in input["Wi"]:
         for d in input["Di"]:
             if v[w,d].X > 0:
-                result_dict["v"][w][d] = v[w,d].X
+                result_dict["v"][w][d] = v[w,d].X"""
                     
     return result_dict, input
     

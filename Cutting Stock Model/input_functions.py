@@ -126,6 +126,73 @@ def read_input(file_name):
     input_dict["P"]            =   read_3d([MC, IC], "J", max(input_dict["J"]))                          #Probabilies                P_(g,w,d)
     return input_dict
 
+def edit_input_to_number_of_groups(input, number_of_groups):
+    if number_of_groups==4 or number_of_groups==12:
+        Si  = [0,1]
+        input["Si"]=Si
+        Ri  = [3,4,6]
+        input["Ri"]=Ri
+        Gi  = [g for g in range(number_of_groups)]
+        input["Gi"]=Gi
+        GWi = [[g for g in range(number_of_groups)] for _ in range(input["nWards"])]
+        input["GWi"]=GWi
+        for d in range(input["nDays"]):
+            if input["N"][d]>0:
+                input["N"][d]=3  
+        input["B"][0]= [
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28]
+        input["B"][1]= [
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6]
+        if number_of_groups==4:
+            input["Y"][0]= [ 
+            9.6099605137945,	    7.92343873352264,	    6.42009262462051,	    5.05819959281451,	    3.95685664420224,	    3.06364998024959,	    2.3924680112309, 
+            1.83427433346149,	    1.39731236339947,	    1.04006953447921,	    0.761345073321226,	    0.548174080346526,	    0.372886537942348,	    0.243006818375876,
+            0.134006377201234,	    0.0586140225908212,	    0.0127030969098742,	    0,	                    0,	                    0,                      0,            
+            0,                      0,                      0,                      0,                      0,                      0,                      0]
+        if number_of_groups==12:
+            print("No Y yet")
+
+    elif number_of_groups==5 or number_of_groups==13:
+        Si  = [2,3,4]
+        input["Si"]=Si
+        Ri  = [0,1,2,5]
+        input["Ri"]=Ri
+        Gi  = [g for g in range(number_of_groups-1,input["nGroups"])]
+        input["Gi"]=Gi
+        print(Gi)
+        GWi = [[g for g in range(number_of_groups-1,input["nGroups"])] for _ in range(input["nWards"])]
+        input["GWi"]=GWi
+        print(GWi)
+        for d in range(input["nDays"]):
+            if input["N"][d]>0:
+                input["N"][d]=4  
+    
+        input["B"][0]= [
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28,
+        32, 32, 32, 32, 28, 28, 28]
+        input["B"][1]= [
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6,
+        11, 11, 11, 11, 6,  6,  6]
+        if number_of_groups==5:
+            input["Y"][0]= [ 
+            4.92286525804354,	    3.62649909318744,	    2.70664727297185,	    2.05634263595871,	    1.57059052664699,	    1.20533606542764,   0.901700225463426,
+            0.667378589528715,	    0.48815022891828,	    0.349775871871824,	    0.252938281043167,	    0.194419248861976,      0.143958972020235,  0.0975216836842416,
+            0.0551073838539951,	    0.0256982273007508,	    0.00433504775900073,    0,	                    0,	                    0,	                0,              
+            0,                      0,                      0,                      0,                      0,                      0,                  0]
+        if number_of_groups==13:
+            print("No Y yet")
+    return input
+
 def generate_scenarios(input_dict, nScenarios, seed):
         groups                  =   input_dict["G"]
         groups_index            =   input_dict["Gi"]

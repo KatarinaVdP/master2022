@@ -9,10 +9,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print("\n\n")
     
     #----- choosing correct input file ----
-    if number_of_groups in [4, 5, 12, 13]:
-        num_specialties="_2or3spec"
-    else:
-        num_specialties="_5spec"  
             
     if number_of_groups in [4, 5, 9]:
         num_max_groups= "_9groups"
@@ -21,7 +17,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     else:
         print("Invalid number of groups")    
         return
-    file_name= "Cutting Stock Model/Input/" + "model_input" + num_max_groups + num_specialties + ".xlsx"
+    file_name= "Cutting Stock Model/Input/" + "model_input" + num_max_groups + ".xlsx"
     
     try:
         with open("Cutting Stock Model/file.pkl","rb") as f:
@@ -48,4 +44,4 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print_MSS_minutes(input, results)
     print_que(input, results)
             
-main(0,25,10,1,2400)
+main(0,9,10,1,30)

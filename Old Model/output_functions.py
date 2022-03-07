@@ -131,7 +131,7 @@ def print_expected_bed_util(input_dict, output_dict):
     for w in input_dict["Wi"]:
         for d in input_dict["Di"]:
             for c in input_dict["Ci"]:
-                bed_occupation[w][d][c]= sum(input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + output_dict["v"][w][d]
+                bed_occupation[w][d][c]= sum(input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
     
     print("Expected bed ward utilization")
     print("-----------------------------")
