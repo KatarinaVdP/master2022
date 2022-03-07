@@ -1,9 +1,13 @@
-from input_functions import *
 from model import *
-from output_functions import *
 from patterns import *
 import pickle
 from typing import IO
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from global_functions.input_functions import *
+from global_functions.output_functions import *
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
@@ -45,4 +49,4 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print_MSS_minutes(input, results)
     print_que(input, results)
             
-main(0,9,10,1,30)
+main(0,4,10,1,30)

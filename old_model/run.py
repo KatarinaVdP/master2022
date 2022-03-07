@@ -1,10 +1,13 @@
 from model import *
 import pickle
 from typing import IO
-from ..Global_Functions import *
 
-#from ..Global_Functions.input_functions import *
-#from ..Global_Functions.output_functions import *
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from global_functions.input_functions import *
+from global_functions.output_functions import *
+
 
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
@@ -31,18 +34,16 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         input           =   read_input(file_name)
         input           =   generate_scenarios(input,nScenarios,seed)
         input           =   edit_input_to_number_of_groups(input, number_of_groups)
+        
         results, input  =   run_model(input, flexibility, time_limit)
         results         =   categorize_slots(input, results)
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
-        """with open("Old Model/file.pkl","wb") as f:
-            pickle.dump(saved_values,f)"""
+
 
     print_MSS(input, results)
     print_expected_operations(input, results)    
-    print_expected_bed_util(input, results)   
-    print_MSS_minutes(input, results)
+    print_expected_bed_util(input, results) 
     print_que(input, results)
-           
-main(0,5, 10,1,10)
+main(0,4, 10,1,10)

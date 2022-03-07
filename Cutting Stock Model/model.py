@@ -79,14 +79,7 @@ def run_model(input, flexibility, time_limit):
                 lamb[s,r,d].ub=0
                 for c in Ci:
                     delt[s,r,d,c].lb=0
-                    delt[s,r,d,c].ub=0
-    """for s in Si:
-        for m in MSi[s]:
-            for r in (list(set(Ri)^set(RSi[s]))):
-                for d in Di:
-                    for c in Ci:
-                        pat[m,r,d,c].lb=0
-                        pat[m,r,d,c].ub=0   """         
+                    delt[s,r,d,c].ub=0       
     
     '--- Objective ---' 
     m.setObjective(
@@ -207,23 +200,29 @@ def run_model(input, flexibility, time_limit):
                     val = sum(A[m][g]*pat[m,r,d,c].X for m in Mi)
                     if val > 0:
                         result_dict["x"][g][r][d][c] = val
-    """for m in Mi:
-        for r in Ri:
-            for d in Di:
-                for c in Ci:
-                    val = pat[m,r,d,c].X
-                    if val > 0:
-                        result_dict["phi"][m][r][d][c] = val"""
                         
                         
     for g in input["Gi"]:
         for c in input["Ci"]:
             if a[g,c].X > 0:
                 result_dict["a"][g][c] = a[g,c].X
-    """for w in input["Wi"]:
+    for w in Wi:
+        for d in range(J[w]-1):
+            result_dict["v"][w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * result_dict["x"][g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+    
+    result_dict["obj"] = m.ObjVal
+    result_dict["best_bound"] = m.ObjBound
+    result_dict["runtime"] = m.Runtime
+    result_dict["max_runtime"] = time_limit    
+    
+    bed_occupationC =[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+    result_dict["bed_occupation"] =[[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+    for w in input["Wi"]:
         for d in input["Di"]:
-            if v[w,d].X > 0:
-                result_dict["v"][w][d] = v[w,d].X"""
-                    
+            for c in input["Ci"]:
+                bed_occupationC[w][d][c]= sum(input["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(max(0,d+1-input["J"][w]),d+1)) + input["Y"][w][d]
+    for w in input["Wi"]:
+            for d in input["Di"]:
+                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
     return result_dict, input
     

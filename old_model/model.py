@@ -192,7 +192,22 @@ def run_model(input_dict, flexibility, time_limit):
                 
     for w in Wi:
         for d in range(J[w]-1):
-            result_dict["v"][w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
-                    
+            result_dict["v"][w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * result_dict["x"][g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+    
+    result_dict["obj"] = m.ObjVal
+    result_dict["best_bound"] = m.ObjBound
+    result_dict["runtime"] = m.Runtime
+    result_dict["max_runtime"] = time_limit    
+    
+    bed_occupationC =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    result_dict["bed_occupation"] =[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    for w in input_dict["Wi"]:
+        for d in input_dict["Di"]:
+            for c in input_dict["Ci"]:
+                bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
+    for w in input_dict["Wi"]:
+            for d in input_dict["Di"]:
+                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+
     return result_dict, input
     
