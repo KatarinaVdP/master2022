@@ -181,7 +181,25 @@ def patterns_specialty(input):
         specialty += 1
         start_index += len(patterns)   
     
-    return(matrix)
+    return matrix
+
+def patterns_specialty_split(input):
+    matrix = [[] for _ in range(input["nSpecialties"])] # OBS! Dette er veldig hardkodet. Hente inn fra excel-fil. Er det riktig at vi her alltid har fem spesialiteter, selv om vi ikke nødvendigvis ser på alle? Tror det.
+    specialty = 0
+    start_index = 0
+    for patterns in patterns_per_specialty(input).values():
+        matrix[specialty] = [j for j in range(start_index, start_index+len(patterns))]
+        specialty += 1
+        start_index += len(patterns)
+        
+    matrix2 = [[] for _ in range(input["nSpecialties"])]
+    specialty = 0
+    for patterns in patterns_per_specialty_extended(input).values():
+        matrix2[specialty] = [j for j in range(start_index, start_index+len(patterns))]
+        specialty += 1
+        start_index += len(patterns)   
+    
+    return matrix, matrix2
 
 # Set P_mwd
 def accumulated_probabilities(input):
@@ -196,7 +214,7 @@ def accumulated_probabilities(input):
     return P_sum        
 
 def pattern_durations(input):
-    pattern_dur = [0 for _ in range(input["Mi"])]
+    pattern_dur = [0 for _ in range(len(input["Mi"]))]
     for m in input["Mi"]:
         for g in input["Gi"]:
             pattern_dur[m] += input["A"][m][g]*input["L"][g]
@@ -209,5 +227,6 @@ def generate_pattern_data(input):
     input["Mxi"] = patterns_extended_indices(input)
     input["MSi"] = patterns_specialty(input)
     input["A"] = all_patterns(input)
+    input["MSnxi"], input["MSxi"] = patterns_specialty_split(input)
     input["pattern_dur"] = pattern_durations(input)
     return input
