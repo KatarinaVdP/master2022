@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import poisson
 
 
+
 def read_list(sheet, name,integerVal=False):
         set =  sheet[name].values
         list = []
@@ -192,6 +193,42 @@ def edit_input_to_number_of_groups(input, number_of_groups):
         if number_of_groups==13:
             print("No Y yet")
     return input
+
+def print_MSS_minutes(input_dict, output_dict):
+
+    print("Planning period modified MSS")
+    print("-----------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    print("{0:<5}".format("-"), end="")
+                else:
+                    minutes= sum((input_dict["L"][g]+input_dict["TC"]) * output_dict["x"][g][r][d][5] for g in input_dict["Gi"])
+            
+                    print("{0:<5}".format(int(minutes)), end="")
+            print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        print()
+        print()
+        print()
 
 def generate_scenarios(input_dict, nScenarios, seed):
         groups                  =   input_dict["G"]

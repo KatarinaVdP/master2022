@@ -17,7 +17,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     else:
         print("Invalid number of groups")    
         return
-    file_name= "Cutting Stock Model/Input/" + "model_input" + num_max_groups + ".xlsx"
+    file_name= "Input/" + "model_input" + num_max_groups + ".xlsx"
     
     try:
         with open("Cutting Stock Model/file.pkl","rb") as f:
@@ -29,14 +29,15 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     except IOError:
         input           =   read_input(file_name)
         input           =   generate_scenarios(input,nScenarios,seed)
-        results, input  =   run_model(input, number_of_groups, flexibility, time_limit)
+        input           =   edit_input_to_number_of_groups(input, number_of_groups)
+        results, input  =   run_model(input, flexibility, time_limit)
         results         =   categorize_slots(input, results)
         
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
-        with open("Cutting Stock Model/file.pkl","wb") as f:
-            pickle.dump(saved_values,f)
+        """with open("Cutting Stock Model/file.pkl","wb") as f:
+            pickle.dump(saved_values,f)"""
 
     print_MSS(input, results)
     print_expected_operations(input, results)    

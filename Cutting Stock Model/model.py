@@ -5,7 +5,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 from patterns import generate_pattern_data
 
-def run_model(input, number_of_groups, flexibility, time_limit):
+def run_model(input, flexibility, time_limit):
     
     #----- Sets ----- #  
     nDays           =   input["nDays"]
