@@ -857,7 +857,7 @@ ids = [1, 2, 3, 4, 5, 6, 7]
 colors = ["Greens", "Blues", "Oranges", "Reds", "Purples", "Greys", "spring"]
 
 
-print("Creating plots")
+"""print("Creating plots")
 for spec in specialities[:-1]:
     fig = plt.figure()
     ax = plt.axes(projection='3d')
@@ -879,6 +879,6 @@ for spec in specialities[:-1]:
         ax.scatter3D(xdata, ydata, zdata, cmap=colors[id-1])
     plt.savefig(str(spec)+' code plot' +saving_str +'.png', bbox_inches='tight')
     plt.show()
-
+"""
 
 print("Done with run!")
