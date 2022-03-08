@@ -212,5 +212,6 @@ def run_model_fixed(input_dict,output_dict, time_limit):
                 for d in input_dict["Di"]:
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
 
+        m.write('model.mps')
     return result_dict
     
