@@ -37,12 +37,12 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_expected_bed_util(input, results) 
         print_que(input, results)
         
-    write_to_excel('results.xlsx',input,results)
+    write_to_excel('results4.xlsx',input,results)
     
 
 
-for i in range(1,10):    
-    main(0,4, 10,i,15)
+for i in range(1,2):    
+    main(0,4, 10,i,10)
 
     
 """try:

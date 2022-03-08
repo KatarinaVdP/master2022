@@ -225,10 +225,10 @@ def write_to_excel(file_name,input_dict,output_dict):
         wb = load_workbook(file_name)
         ws = wb.worksheets[0]  # select first worksheet
     except FileNotFoundError:
-        headers_row = ['groups','scenarios','seed','flexibility','primal_bound', 'dual_bound','runtime','max_runtime','status','','MC',]
+        headers_row = ['groups','scenarios','flexibility','seed','primal_bound', 'dual_bound', 'gap','runtime','max_runtime','status','-','MC',]
         for d in range(1,input_dict["nDays"]+1):
             headers_row.append(d)
-        headers_row.append('')
+        headers_row.append('-')
         headers_row.append('IC')
         for d in range(1,input_dict["nDays"]+1):
             headers_row.append(d)
@@ -238,21 +238,22 @@ def write_to_excel(file_name,input_dict,output_dict):
 
     new_row.append(input_dict["number_of_groups"])
     new_row.append(input_dict["nScenarios"])
-    new_row.append(input_dict["seed"])
     new_row.append(input_dict["F"])
+    new_row.append(input_dict["seed"])
     new_row.append(output_dict["obj"])
     new_row.append(output_dict["best_bound"])
+    new_row.append(output_dict["MIPGap"])
     new_row.append(output_dict["runtime"])
     new_row.append(output_dict["max_runtime"])
     new_row.append(output_dict["status"])
-    new_row.append('')
-    new_row.append('')
+    new_row.append('-')
+    new_row.append('-')
     
     if output_dict["status"] != 0:
         for d in input_dict["Di"]:
             new_row.append(output_dict["bed_occupation"][0][d])
-        new_row.append('')
-        new_row.append('')
+        new_row.append('-')
+        new_row.append('-')
         for d in input_dict["Di"]:
             new_row.append(output_dict["bed_occupation"][1][d])
 

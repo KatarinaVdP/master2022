@@ -167,7 +167,8 @@ def run_model(input_dict, flexibility, time_limit):
     result_dict["obj"] = m.ObjVal
     result_dict["best_bound"] = m.ObjBound
     result_dict["runtime"] = m.Runtime
-    result_dict["max_runtime"] = time_limit   
+    result_dict["max_runtime"] = time_limit
+    result_dict["MIPGap"] = m.MIPGap  
     nSolutions=m.SolCount
     if nSolutions==0:
         result_dict["status"]=statuses[0]
