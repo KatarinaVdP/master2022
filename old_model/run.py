@@ -1,6 +1,7 @@
 from model import *
 import pickle
 from typing import IO
+from old_model_fixed import *
 
 if __name__ == '__main__' and __package__ is None:
     from os import sys, path
@@ -30,19 +31,22 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     results, input  =   run_model(input, flexibility, time_limit)
     if results["status"]==0:
         print('No solutions found in given runtime')
+        write_to_excel('results4.xlsx',input,results)
     else:
-        results         =   categorize_slots(input, results)
+        write_to_excel('results4.xlsx',input,results)
+        results_fixed = run_model_fixed(input,results,time_limit)
+        write_to_excel('results4.xlsx',input,results_fixed)
+        results =   categorize_slots(input, results)
         print_MSS(input, results)
         print_expected_operations(input, results)    
         print_expected_bed_util(input, results) 
         print_que(input, results)
         
-    write_to_excel('results4.xlsx',input,results)
     
 
 
 for i in range(1,2):    
-    main(0,4, 10,i,10)
+    main(0,9, 100,i,600)
 
     
 """try:
