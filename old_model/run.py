@@ -23,27 +23,41 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         return
     file_name= "Input/" + "model_input" + num_max_groups + ".xlsx"
     
-    try:
-        with open("Old Model/file.pkl","rb") as f:
-            saved_values = pickle.load(f)
-        print("loading pickle")
-        print()
-        input           = saved_values["input"]
-        results         = saved_values["results"]  
-    except IOError:
-        input           =   read_input(file_name)
-        input           =   generate_scenarios(input,nScenarios,seed)
-        input           =   edit_input_to_number_of_groups(input, number_of_groups)
-        
-        results, input  =   run_model(input, flexibility, time_limit)
+    
+    input           =   read_input(file_name)
+    input           =   generate_scenarios(input,nScenarios,seed)
+    input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    results, input  =   run_model(input, flexibility, time_limit)
+    if results["status"]==0:
+        print('No solutions found in given runtime')
+    else:
         results         =   categorize_slots(input, results)
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
+        print_MSS(input, results)
+        print_expected_operations(input, results)    
+        print_expected_bed_util(input, results) 
+        print_que(input, results)
+        
+    write_to_excel('results.xlsx',input,results)
+    
 
 
-    print_MSS(input, results)
-    print_expected_operations(input, results)    
-    print_expected_bed_util(input, results) 
-    print_que(input, results)
-main(0,4, 10,1,10)
+for i in range(1,10):    
+    main(0,4, 10,i,15)
+
+    
+"""try:
+    with open("Old Model/file.pkl","rb") as f:
+        saved_values = pickle.load(f)
+    input           = saved_values["input"]
+    results         = saved_values["results"]  
+except IOError:
+    input           =   read_input(file_name)
+    input           =   generate_scenarios(input,nScenarios,seed)
+    input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    results, input  =   run_model(input, flexibility, time_limit)
+    saved_values            =   {}
+    saved_values["input"]   =   input
+    saved_values["results"] =   results
+    with open("Cutting Stock Model/file.pkl","wb") as f:
+        pickle.dump(saved_values,f)"""
+    

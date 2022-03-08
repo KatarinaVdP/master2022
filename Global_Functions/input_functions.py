@@ -128,6 +128,7 @@ def read_input(file_name):
     return input_dict
 
 def edit_input_to_number_of_groups(input, number_of_groups):
+    input["number_of_groups"]=number_of_groups
     if number_of_groups==4 or number_of_groups==12:
         Si  = [0,1]
         input["Si"]=Si
