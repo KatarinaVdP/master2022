@@ -3,16 +3,12 @@ import gurobipy as gp
 from gurobipy import GRB
 from model import *
 from old_model_fixed import *
+from move_heuristic import *
+from input_functions import *
+from output_functions import *
 
-if __name__ == '__main__' and __package__ is None:
-    from os import sys, path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from global_functions.input_functions import *
-from global_functions.output_functions import *
-
-
-
-def heuristic(model_file_name, parameter_file_name, warm_start_file_name, input_dict, last_output, time_limit):
+def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit):
+    input=input_dict
     m = gp.read(model_file_name)
 
     if m.isMIP != 1:
@@ -20,63 +16,38 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, input_
         sys.exit(1)
 
     m.setParam("TimeLimit", time_limit)
-    m.read(parameter_file_name)
-    m.read(warm_start_file_name)
     
     """---------------------- swap ------------------------"""
+    swap_done, getting_slot, giving_slot = swap_fixed_slot(input_dict, last_output)
     
+    if swap_done:
+        for i in range(getting_slot["size"]):
+            s=getting_slot["s"][i]
+            print(s)
+            r=getting_slot["r"][i]
+            print(r)
+            d=getting_slot["d"][i]
+            print(d)
+            name = f"gamma[{s},{r},{d}]"
+            print(name)
+            var = m.getVarByName(name)
+            print(var.VarName)
+            var.lb=1
+            var.ub=1
+        for i in range(giving_slot["size"]):
+            s=giving_slot["s"][i]
+            r=giving_slot["r"][i]
+            d=giving_slot["d"][i]
+            name = f"gamma[{s},{r},{d}]"
+            var = m.getVarByName(name)
+            print(var.VarName)
+            var.lb=0
+            var.ub=0  
+    else:
+        return
     
-    """days_in_first_cycle=int(input_dict["nDays"]/input_dict["I"])
-    for d in range(days_in_first_cycle):
-        for r in input_dict["Ri"]:
-            for s in input_dict["Si"]:
-                    name = f"gamma[{s},{r},{d}]"
-                    var = model.getVarByName(name)
-                    #print('\n*** variable name: %s \n' % (var.varName))
-                    val=first_stage_solution_dict["gamm"][s][r][d]
-                    var.lb=val
-                    var.ub=val
-                    name = f"lambda[{s},{r},{d}]"
-                    var = model.getVarByName(name)
-                    #print('\n*** variable name: %s \n' % (var.varName))
-                    val=first_stage_solution_dict["lamb"][s][r][d]
-                    var.lb=val
-                    var.ub=val"""
-                
-    
-    #names_to_retrieve = (f"gamm[{s},{r},{d}]" for s in input["Si"] for r in input["Ri"] for d in input["Di"])
-    """s=1
-    r=4
-    d=0
-    name = f"gamma[{s},{r},{d}]" # GO to room GA-5 day 1
-    var=model.getVarByName(name)
-    print('\n*** %s is originally %i ***\n' % (var.varName,early_results["gamm"][s][r][d]))
-    var.lb=1
-    var.ub=1
-    
-    name = f"gamma[{s},{r},{d+14}]" # GO to room GA-5 day 1
-    print('\n*** %s is originally %i ***\n' % (var.varName,early_results["gamm"][s][r][d+14]))
-    var=model.getVarByName(name)
-    var.lb=1
-    var.ub=1
-    
-    print('\n*** Setting %s to 1 ***\n' % (var.varName))
-    s=0
-    r=4
-    d=0
-    name = f"gamma[{s},{r},{d}]" # GO to room GA-5 day 1
-    var=model.getVarByName(name)
-    print('\n*** %s is originally %i ***\n' % (var.varName,early_results["gamm"][s][r][d]))
-    var.lb=0
-    var.ub=0
-    name = f"gamma[{s},{r},{d+14}]" # GO to room GA-5 day 1
-    print('\n*** %s is originally %i ***\n' % (var.varName,early_results["gamm"][s][r][d+14]))
-    var=model.getVarByName(name)
-    var.lb=0
-    var.ub=0
-    #model.getVarByName(name).ub=1
-    print('\n*** Setting %s to 0 ***\n' % (var.varName))"""
-    
+    m.read(parameter_file_name)
+    m.read(warm_start_file_name)
     m.optimize()
             
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
@@ -99,14 +70,16 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, input_
         if result_dict["given_more_time"]==False:
             result_dict["status"]=statuses[0]
             print('Did not find feasible solution within time limit of %i' %time_limit)
-            m.write('new_warmstart.mst')
+            #m.write('new_warmstart.mst')
             more_time = 3*time_limit
             print('Try with new time limit of %i' %more_time)
-            m.load('new_warmstart.mst')
+            #m.load('new_warmstart.mst')
             m.setParam("TimeLimit", more_time)
             m.optimize()
         else:
             """---------------------- swap back ------------------------"""
+            print("swap back as we did not fint any feasible solution after giving more time")
+            return 
     else:
         old_objective = last_output["obj"]
         
@@ -162,17 +135,76 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, input_
             for w in input["Wi"]:
                     for d in input["Di"]:
                         result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
-        
+            
+            
+            write_to_excel(excel_file,input,results)
+            results =   categorize_slots(input, results)
+            print_MSS(input, results)
         else:
             """---------------------- swap back ------------------------"""
+            print("swap back as we did not find any better objective w/ swap giving more time")
+            # ----- Copying the desicion variable values to result dictionary -----
+            result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+            result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+            result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+            result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
+            result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
+            result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+            
+            for s in input["Si"]:
+                for r in input["Ri"]:
+                    for d in input["Di"]:
+                        name = (f"gamma[{s},{r},{d}]")
+                        var= m.getVarByName(name)    
+                        result_dict["gamm"][s][r][d] = var.X
+                        name = (f"lambda[{s},{r},{d}]")
+                        var= m.getVarByName(name) 
+                        result_dict["lamb"][s][r][d] = var.X
+                        
+                        for c in input["Ci"]:
+                            name = (f"delta[{s},{r},{d},{c}]")
+                            var= m.getVarByName(name)  
+                            result_dict["delt"][s][r][d][c] = var.X        
+            for g in input["Gi"]:
+                for r in input["Ri"]:
+                    for d in input["Di"]:    
+                        for c in input["Ci"]:
+                            name = (f"x[{g},{r},{d},{c}]")
+                            var= m.getVarByName(name)
+                            result_dict["x"][g][r][d][c] = var.X
+            for g in input["Gi"]:
+                for c in input["Ci"]:
+                    name = (f"a[{g},{c}]")
+                    var= m.getVarByName(name)
+                    result_dict["a"][g][c] = var.X
+                        
+            for w in input["Wi"]:
+                for d in range(input["J"][w]-1):
+                    result_dict["v"][w][d] = sum(input["Pi"][c] * sum(input["P"][w][g][d+input["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(d+input["nDays"]+1-input["J"][w],input["nDays"])) for c in input["Ci"]) 
+            
+            bed_occupationC =[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+            result_dict["bed_occupation"] =[[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+            for w in input["Wi"]:
+                for d in input["Di"]:
+                    for c in input["Ci"]:
+                        bed_occupationC[w][d][c]= sum(input["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(max(0,d+1-input["J"][w]),d+1)) + input["Y"][w][d]
+            for w in input["Wi"]:
+                    for d in input["Di"]:
+                        result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
+            
+            
+            write_to_excel(excel_file,input,result_dict)
+            result_dict =   categorize_slots(input, result_dict)
+            print_MSS(input, result_dict)
+            return 
         
     return result_dict
     
-flexibility=0
+"""flexibility=0
 number_of_groups= 4
 nScenarios= 10 
 seed= 1 
-time_limit=300
+time_limit=300"""
 
 """#----- choosing correct input file ----  
 if number_of_groups in [4, 5, 9]:

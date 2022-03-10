@@ -1,7 +1,7 @@
 def swap_fixed_slot(input, results):
     swap_done = False
     prev_occupied = False
-    days_in_cycle = input["nDays"]/input["I"]
+    days_in_cycle = int(input["nDays"]/input["I"])
     getting_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     for s in input["Si"]:
@@ -24,11 +24,11 @@ def swap_fixed_slot(input, results):
                         for i in range(input["I"]):
                             getting_slot["s"].append(s)
                             getting_slot["r"].append(r)
-                            getting_slot["d"].append(d+i*days_in_cycle)
+                            getting_slot["d"].append(int(d+i*days_in_cycle))
                             if prev_occupied:
                                 giving_slot["s"].append(prev_spec)
                                 giving_slot["r"].append(r)
-                                giving_slot["d"].append(d+i*days_in_cycle)
+                                giving_slot["d"].append(int(d+i*days_in_cycle))
                         swap_done = True
     if swap_done:
         getting_slot["size"] = len(getting_slot["s"])

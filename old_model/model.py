@@ -12,7 +12,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     #----- Sets ----- #  
     nDays           =   input["nDays"]
     nWards          =   input["nWards"]
-    nScenarios      =   input["nScenarios"]
     nGroups         =   input["nGroups"]
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
@@ -26,7 +25,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     RSi =   input["RSi"]
     RGi =   input["RGi"]
     Di  =   input["Di"]
-    Ci  =   input["Ci"]
 
     #----- Parameter ----- #  
     F   =   flexibility
@@ -44,8 +42,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     Co  =   input["Co"]
     J   =   input["J"]
     P   =   input["P"]
-    Pi  =   input["Pi"]
-    Q   =   input["Q"]
     Y   =   input["Y"]
     
     if expected_value_solution:
@@ -60,7 +56,11 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         input["Pi"]         =   [1/nScenarios]*nScenarios
         input["nScenarios"] =   nScenarios
         input["Q"]          =   Q
-    
+    else:
+        nScenarios          =   input["nScenarios"]
+        Pi                  =   input["Pi"]
+        Q                   =   input["Q"]
+        Ci                  =   input["Ci"]
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
@@ -179,9 +179,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     print('Model Created 100%')
 
     m.optimize()
-
-
-    """if obj er bedre, skriv mps fil, hvis ikke, reverser swap, gjør nytt swap(call på funksjon)"""
     
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
