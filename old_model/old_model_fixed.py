@@ -15,7 +15,7 @@ def run_model_fixed(input_dict,output_dict, time_limit):
     nGroups         =   input["nGroups"]
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
-    
+    print('noe')
     Wi  =   input["Wi"]
     Si  =   input["Si"]
     Gi  =   input["Gi"]
