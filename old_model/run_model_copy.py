@@ -12,15 +12,37 @@ from global_functions.output_functions import *
 
 
 
-def modify_fixed_model(model_file_name,early_results):
+def modify_fixed_model(model_file_name,parameter_file_name,warm_start_file_name,input_dict,first_stage_solution_dict, time_limit):
     model = gp.read(model_file_name)
-    
+
     if model.isMIP != 1:
         print('The model is not a linear program')
         sys.exit(1)
     
+    model.setParam("TimeLimit", time_limit)
+    model.read(parameter_file_name)
+    model.read(warm_start_file_name)
+    
+    days_in_first_cycle=int(input_dict["nDays"]/input_dict["I"])
+    for d in range(days_in_first_cycle):
+        for r in input_dict["Ri"]:
+            for s in input_dict["Si"]:
+                    name = f"gamma[{s},{r},{d}]"
+                    var = model.getVarByName(name)
+                    #print('\n*** variable name: %s \n' % (var.varName))
+                    val=first_stage_solution_dict["gamm"][s][r][d]
+                    var.lb=val
+                    var.ub=val
+                    name = f"lambda[{s},{r},{d}]"
+                    var = model.getVarByName(name)
+                    #print('\n*** variable name: %s \n' % (var.varName))
+                    val=first_stage_solution_dict["lamb"][s][r][d]
+                    var.lb=val
+                    var.ub=val
+                
+    
     #names_to_retrieve = (f"gamm[{s},{r},{d}]" for s in input["Si"] for r in input["Ri"] for d in input["Di"])
-    s=1
+    """s=1
     r=4
     d=0
     name = f"gamma[{s},{r},{d}]" # GO to room GA-5 day 1
@@ -50,9 +72,12 @@ def modify_fixed_model(model_file_name,early_results):
     var.lb=0
     var.ub=0
     #model.getVarByName(name).ub=1
-    print('\n*** Setting %s to 0 ***\n' % (var.varName))
+    print('\n*** Setting %s to 0 ***\n' % (var.varName))"""
     
     model.optimize()
+    
+    model.write(parameter_file_name)
+    model.write(warm_start_file_name)
     
     
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
@@ -117,16 +142,13 @@ def modify_fixed_model(model_file_name,early_results):
                 for d in input["Di"]:
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
 
-        model.write('model2.rlp')
     return result_dict
     
-
-
 flexibility=0
-number_of_groups= 4
-nScenarios= 10 
+number_of_groups= 9
+nScenarios= 100 
 seed= 1 
-time_limit=20
+time_limit=300
 
 #----- choosing correct input file ----  
 if number_of_groups in [4, 5, 9]:
@@ -157,9 +179,8 @@ else:
     write_to_excel('results4.xlsx',input,results)
     
     # ----- run model w/ fixed variables -----
-    results_fixed = run_model_fixed(input,results,time_limit)
-    write_to_excel('results4.xlsx',input,results_fixed)
-    
+    results = modify_fixed_model('model.mps','parameters.prm','warmstart.mst',input,results,10)
+    write_to_excel('results4.xlsx',input,results)
     # ----- Printing results to terminal and excel -----
     results =   categorize_slots(input, results)
     print_MSS(input, results)
@@ -169,7 +190,7 @@ else:
     
     
     # ---- Read and modity a block ----
-    new_results = modify_fixed_model('model.mps',results)
+    new_results = modify_fixed_model('model.mps','parameters.prm','warmstart.mst',input,results,10)
     
     if new_results["status"]==0:
         print('No solutions found in given runtime')
