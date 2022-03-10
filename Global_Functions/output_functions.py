@@ -1,5 +1,7 @@
 from openpyxl import Workbook
 from openpyxl import load_workbook
+from datetime import datetime
+
 
 def categorize_slots(input_dict, output_dict):
     
@@ -216,7 +218,6 @@ def print_que(input_dict, output_dict):
     print()
     print()
 
-##ikke ferdig enda!
 def write_to_excel(file_name,input_dict,output_dict):
     #filename = "myfile.xlsx"
     new_row = []
@@ -259,3 +260,31 @@ def write_to_excel(file_name,input_dict,output_dict):
 
     ws.append(new_row)
     wb.save(file_name)
+    
+def write_header_to_excel(file_name, type_of_header: str):
+    wb = load_workbook(file_name)
+    ws = wb.worksheets[0]
+    new_row = []
+    
+    if type_of_header == "begin_new":
+        new_row.append("------------------- New Run -------------------")
+        ws.append(new_row)
+        wb.save(file_name)
+        new_row = []
+        new_row.append("new")
+        new_row.append("heuristic")
+        new_row.append("run")
+        new_row.append("")
+        new_row.append("Date:")
+        now = datetime.now() # current date and time
+        date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+        new_row.append(date_time)
+        ws.append(new_row)
+        wb.save(file_name)
+    elif type_of_header == "first_iteration":
+        new_row.append("------------------- Begin Heuristic -------------------")
+        ws.append(new_row)
+        wb.save(file_name)
+    else:
+        print('Invalid input in write_header_to_excel()')
+        return

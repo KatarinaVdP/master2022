@@ -3,7 +3,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
-
+import numpy as np
 
 def run_model_fixed(input_dict,output_dict, time_limit):
     input = input_dict
@@ -65,24 +65,22 @@ def run_model_fixed(input_dict,output_dict, time_limit):
                 gamm[s,r,d].ub=output_dict["gamm"][s][r][d]
                 lamb[s,r,d].lb=output_dict["lamb"][s][r][d]
                 lamb[s,r,d].ub=output_dict["lamb"][s][r][d]
-                for c in Ci:
-                    delt[s,r,d,c].lb=output_dict["delt"][s][r][d][c]
-                    delt[s,r,d,c].ub=output_dict["delt"][s][r][d][c]  
     for g in Gi:
         for r in (list(set(Ri)^set(RGi[g]))):
             for d in Di:
                 for c in Ci:  
                     x[g,r,d,c].lb=0
-                    x[g,r,d,c].ub=0             
-    
+                    x[g,r,d,c].ub=0 
+                    
     '--- Objective ---' 
     m.setObjective(
                 quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
-    )
+    )   
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
+    max_fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)))
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  max_fixed_slots ,
         name = "Con_PercentFixedRooms"
         )
     m.addConstrs(
@@ -173,7 +171,12 @@ def run_model_fixed(input_dict,output_dict, time_limit):
     nSolutions=m.SolCount
     if nSolutions==0:
         result_dict["status"]=statuses[0]
+        print('Did not find any feasible initial solution in read_model_fixed()')
+        return
     else:
+        m.write('model.mps')
+        m.write('parameters.prm')
+        m.write('warmstart.mst')
         # ----- Copying the desicion variable values to result dictionary -----
         result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
@@ -211,7 +214,5 @@ def run_model_fixed(input_dict,output_dict, time_limit):
         for w in input_dict["Wi"]:
                 for d in input_dict["Di"]:
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
-
-        m.write('model.mps')
     return result_dict
     

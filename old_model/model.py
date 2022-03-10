@@ -3,9 +3,10 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
+import numpy as np
 
 
-def run_model(input_dict, flexibility, time_limit):
+def run_model(input_dict, flexibility, time_limit, expected_value_solution = False):
     input = input_dict
     
     #----- Sets ----- #  
@@ -47,9 +48,24 @@ def run_model(input_dict, flexibility, time_limit):
     Q   =   input["Q"]
     Y   =   input["Y"]
     
+    if expected_value_solution:
+        nScenarios          =   1
+        Ci                  =   [c for c in range(nScenarios)]
+        Pi                  =   [1/nScenarios]*nScenarios
+        Q                   =   [[0 for _ in range(nScenarios)] for _ in range(input["nGroups"])]
+        for c in Ci:
+            for g in Gi:
+                Q[g][c] = int(T[g])
+        input["Ci"]         =   Ci                           
+        input["Pi"]         =   [1/nScenarios]*nScenarios
+        input["nScenarios"] =   nScenarios
+        input["Q"]          =   Q
+    
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    
+    
     
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
@@ -74,16 +90,20 @@ def run_model(input_dict, flexibility, time_limit):
                     x[g,r,d,c].lb=0
                     x[g,r,d,c].ub=0             
     
+
+    max_fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)))
     '--- Objective ---' 
     m.setObjective(
                 quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
     )
+        
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) - (1-F) * quicksum(N[d] for d in Di)  >= 0,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  max_fixed_slots ,
         name = "Con_PercentFixedRooms"
         )
+        
     m.addConstrs(
         (lamb[s,r,d] <= gamm[s,r,d] 
         for s in Si for r in Ri for d in Di), 
@@ -160,6 +180,9 @@ def run_model(input_dict, flexibility, time_limit):
 
     m.optimize()
 
+
+    """if obj er bedre, skriv mps fil, hvis ikke, reverser swap, gjør nytt swap(call på funksjon)"""
+    
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
     result_dict =   {}
@@ -210,6 +233,8 @@ def run_model(input_dict, flexibility, time_limit):
         for w in input_dict["Wi"]:
                 for d in input_dict["Di"]:
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+
+
 
     return result_dict, input
     
