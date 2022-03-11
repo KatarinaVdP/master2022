@@ -1,10 +1,9 @@
 from model import *
 import pickle
 from typing import IO
-from old_model_fixed import *
-from run_model_copy import *
 from input_functions import *
 from output_functions import *
+from heuristic import *
 
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
@@ -50,7 +49,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
 
 
 for i in range(1,2):    
-    main(0,25, 100,i,120)
+    main(0,9, 100,i,300)
 
     
 """try:

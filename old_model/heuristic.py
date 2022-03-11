@@ -2,8 +2,6 @@ import sys
 import gurobipy as gp
 from gurobipy import GRB
 from model import *
-from old_model_fixed import *
-from move_heuristic import *
 from input_functions import *
 from output_functions import *
 
@@ -199,64 +197,59 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
             return 
         
     return result_dict
-    
-"""flexibility=0
-number_of_groups= 4
-nScenarios= 10 
-seed= 1 
-time_limit=300"""
 
-"""#----- choosing correct input file ----  
-if number_of_groups in [4, 5, 9]:
-    num_max_groups= "_9groups"
-elif number_of_groups in [12, 13, 25]:
-    num_max_groups= "_25groups"
-else:
-    print("Invalid number of groups")    
-file_name= "Input/" + "model_input" + num_max_groups + ".xlsx"
-
-#----- Running model first time -----
-input           =   read_input(file_name)
-input           =   generate_scenarios(input,nScenarios,seed)
-input           =   edit_input_to_number_of_groups(input, number_of_groups)
-results, input  =   run_model(input, flexibility, time_limit)
-
-#----- writing to file -----
-if results["status"]==0:
-    print('No solutions found in given runtime')
-    write_to_excel('results4.xlsx',input,results)
-else:
-    # ----- Printing results to terminal and excel -----
-    results =   categorize_slots(input, results)
-    print_MSS(input, results)
-    print_expected_operations(input, results)    
-    print_expected_bed_util(input, results) 
-    print_que(input, results)
-    write_to_excel('results4.xlsx',input,results)
-    
-    # ----- run model w/ fixed variables -----
-    results = heuristic('model.mps','parameters.prm','warmstart.mst',input,results,10)
-    write_to_excel('results4.xlsx',input,results)
-    # ----- Printing results to terminal and excel -----
-    results =   categorize_slots(input, results)
-    print_MSS(input, results)
-    print_expected_operations(input, results)    
-    print_expected_bed_util(input, results) 
-    print_que(input, results)
-    
-    
-    # ---- Read and modity a block ----
-    new_results = heuristic('model.mps','parameters.prm','warmstart.mst',input,results,10)
-    
-    if new_results["status"]==0:
-        print('No solutions found in given runtime')
-        write_to_excel('results4.xlsx',input,new_results)
+def swap_fixed_slot(input, results):
+    swap_done = False
+    prev_occupied = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    getting_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    for s in input["Si"]:
+        if swap_done == True:
+                        break
+        for d in input["Di"]:
+            if swap_done == True:
+                        break
+            slots = sum(results["gamm"][s][r][d] for r in input["Ri"])
+            teams = input["K"][s][d]
+            if (teams > slots):
+                for r in input["RSi"][s]:
+                    if swap_done == True:
+                        break
+                    if ((results["gamm"][s][r][d] == 0) and (sum(results["lamb"][ss][r][d] for ss in input["Si"])==0)):
+                        for ss in input["Si"]:
+                            if (results["gamm"][ss][r][d] == 1):
+                                prev_spec = ss
+                                prev_occupied = True
+                        for i in range(input["I"]):
+                            getting_slot["s"].append(s)
+                            getting_slot["r"].append(r)
+                            getting_slot["d"].append(int(d+i*days_in_cycle))
+                            if prev_occupied:
+                                giving_slot["s"].append(prev_spec)
+                                giving_slot["r"].append(r)
+                                giving_slot["d"].append(int(d+i*days_in_cycle))
+                        swap_done = True
+    if swap_done:
+        getting_slot["size"] = len(getting_slot["s"])
+        giving_slot["size"] = len(giving_slot["s"])
+        if prev_occupied:
+            print("The following swaps were made:")
+            for i in range(getting_slot["size"]):
+                old_spec = input["S"][giving_slot["s"][i]]
+                new_spec = input["S"][getting_slot["s"][i]]
+                room = input["R"][getting_slot["r"][i]]
+                day = getting_slot["d"][i]+1
+                day = "{:.0f}".format(day)
+                print("%s gave their slot to %s in room %s on day %s." % (old_spec, new_spec, room, day))
+        else:
+            print("The following slots were assigned without swapping:")
+            for i in range(getting_slot["size"]):
+                new_spec = input["S"][getting_slot["s"][i]]
+                room = input["R"][getting_slot["r"][i]]
+                day = getting_slot["d"][i]+1
+                day = "{:.0f}".format(day)
+                print("%s in room %s on day %s." % (new_spec, room, day))
     else:
-        # ----- Printing results to terminal and excel -----
-        new_results =   categorize_slots(input, new_results)
-        print_MSS(input, new_results)
-        print_expected_operations(input, new_results)    
-        print_expected_bed_util(input, new_results) 
-        print_que(input, new_results)
-        write_to_excel('results4.xlsx',input,new_results)"""
-    
+        print("No swap or assignment has been made.")
+    return swap_done, getting_slot, giving_slot
