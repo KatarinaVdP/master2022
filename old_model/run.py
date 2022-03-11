@@ -49,7 +49,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
 
 
 for i in range(1,2):    
-    main(0,9, 60,i,30)
+    main(0,4, 60,i,600)
 
     
 """try:
