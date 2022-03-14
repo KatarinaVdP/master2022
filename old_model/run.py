@@ -26,7 +26,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print("------------------------------------------------------------------------------------------------------------------")
     input           =   read_input(file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    results, input  =   run_model(input, flexibility, time_limit,True)
+    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = True)
     print()
     print_solution_performance(input, results)
     if results["status"]==0:
@@ -47,11 +47,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     
     write_to_excel(excel_file,input,results)
     
-    """results =   categorize_slots(input, results)
-    print_MSS(input, results)
-    print_expected_operations(input, results)    
-    print_expected_bed_util(input, results) 
-    print_que(input, results)"""
     print('\n' * 5)
     
     #----- Begin Heuristic ----  
@@ -66,7 +61,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
 
 
 for i in range(1,2):    
-    main(0, 9, 60, i, 20)
+    main(0, 9, 60, i, 300)
 
     
 """try:

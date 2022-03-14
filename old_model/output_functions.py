@@ -76,7 +76,6 @@ def print_MSS(input_dict, output_dict):
             print("-----",end="")
         print()
 
-
 def print_expected_operations(input_dict, output_dict):
 
     print("Expected number of planned operations per slot")
@@ -306,5 +305,25 @@ def print_solution_performance(input, results):
     print("{0:>10}".format(str(gap)+"%"))
     print()
     
-def print_heristic_iteration():
-    x =1
+def print_heuristic_iteration_header():
+    print("{0:<15}".format("Global iter"), end="")
+    print("{0:<15}".format("Temp level"), end="")
+    print("{0:<15}".format("Temp iter"),end="")
+    print("{0:<15}".format("Best sol"),end="")
+    print("{0:<15}".format("Current sol"),end="")
+    print("{0:<15}".format("Current gap"),end="")
+    print("{0:<15}".format("Action"),end="")
+    print()
+
+def print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol, current_sol, current_gap, action):
+    level_str = str(level)+"/"+str(len(levels))
+    iter_str = str(iter)+"/"+str(level_iters[level-1])
+    print("{0:<15}".format(global_iter), end="")
+    print("{0:<15}".format(level_str), end="")
+    print("{0:<15}".format(iter_str),end="")
+    print("{0:<15}".format("{:.1f}".format(best_sol)),end="")
+    print("{0:<15}".format("{:.1f}".format(current_sol)),end="")
+    print("{0:<15}".format(str("{:.1f}".format(current_gap*100))+"%"),end="")
+    print("{0:<15}".format(action),end="")
+    print()
+    
