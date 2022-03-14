@@ -21,35 +21,52 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     excel_file="input_output/" + "results.xlsx"
     
     #----- Find EVS as initial MSS ----  
+    print("------------------------------------------------------------------------------------------------------------------")
+    print("READING INPUT AND RUNNING MIP-MODEL TO FIND EVS")
+    print("------------------------------------------------------------------------------------------------------------------")
     input           =   read_input(file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
     results, input  =   run_model(input, flexibility, time_limit,True)
+    print()
+    print_solution_performance(input, results)
     if results["status"]==0:
         print('No solutions found in given runtime')
         return
+    results =   categorize_slots(input, results)
+    print_MSS(input, results)
+    print('\n' * 5)
     
-    #----- Creatin model and fix first stage solution to EVS  ----    
+    #----- Creating model and fixed first-stage solution to EVS  ----   
+    print("------------------------------------------------------------------------------------------------------------------")
+    print("RUNNING FIXED FIRST-STAGE TO EVALUATE EVS PERFORMANCE")
+    print("------------------------------------------------------------------------------------------------------------------") 
     input           = generate_scenarios(input, nScenarios, seed)
-    results         = run_model_fixed(input,results,time_limit)     # --- 'model.mps', 'parameters.prm','warmstart.mst' are created
+    results         = run_model_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
+    print()
+    print_solution_performance(input, results)
     
     write_to_excel(excel_file,input,results)
     
-    results =   categorize_slots(input, results)
+    """results =   categorize_slots(input, results)
     print_MSS(input, results)
     print_expected_operations(input, results)    
     print_expected_bed_util(input, results) 
-    print_que(input, results)
+    print_que(input, results)"""
+    print('\n' * 5)
     
     #----- Begin Heuristic ----  
+    print("------------------------------------------------------------------------------------------------------------------")
+    print("INITIATING HEURISTIC SEARCH FROM EVS")
+    print("------------------------------------------------------------------------------------------------------------------")
     obj_estimation_time = 10
-    write_header_to_excel(excel_file,"first_iteration") 
-    results = heuristic('model.mps', 'parameters.prm', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+    write_header_to_excel(excel_file,"first_iteration")
+    results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
 
     
 
 
 for i in range(1,2):    
-    main(0,4, 60,i,600)
+    main(0, 9, 60, i, 20)
 
     
 """try:

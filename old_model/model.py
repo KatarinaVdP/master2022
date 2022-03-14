@@ -6,7 +6,7 @@ from gurobipy import quicksum
 import numpy as np
 
 
-def run_model(input_dict, flexibility, time_limit, expected_value_solution = False):
+def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):
     input = input_dict
     
     #----- Sets ----- #  
@@ -64,7 +64,8 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
-    
+    if not print_optimizer:
+        m.Params.LogToConsole = 0
     
     
     '--- Variables ---'
@@ -114,7 +115,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         for s in Si),
         name = "Con_LongDaysCap",
     )
-    print('still Creating Model 30%')
+    print('Creating model (1/3)')
     m.addConstrs(
         (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 
         for r in Ri for d in Di for c in Ci),
@@ -146,7 +147,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
-    print('still Creating Model 60%')
+    print('Creating model (2/3)')
     m.addConstrs(
         (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - Y[w][d] 
         for w in Wi for d in Di for c in Ci),
@@ -176,12 +177,14 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
             for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
         name = "Con_RollingExtendedSlotCycles" + str(s),
         )
-    print('Model Created 100%')
+    print('Creating model (3/3)')
 
     m.optimize()
     
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
+    
+    
     result_dict =   {}
     result_dict["status"]=statuses[m.STATUS]
     result_dict["obj"] = m.ObjVal
@@ -235,7 +238,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
 
     return result_dict, input
 
-def run_model_fixed(input_dict,output_dict, time_limit):
+def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False):
     input = input_dict
     
     #----- Sets ----- #  
@@ -245,7 +248,6 @@ def run_model_fixed(input_dict,output_dict, time_limit):
     nGroups         =   input["nGroups"]
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
-    print('noe')
     Wi  =   input["Wi"]
     Si  =   input["Si"]
     Gi  =   input["Gi"]
@@ -279,6 +281,8 @@ def run_model_fixed(input_dict,output_dict, time_limit):
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    if not print_optimizer:
+        m.Params.LogToConsole = 0
     
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
@@ -323,7 +327,7 @@ def run_model_fixed(input_dict,output_dict, time_limit):
         for s in Si),
         name = "Con_LongDaysCap",
     )
-    print('still Creating Model 30%')
+    print('Creating model (1/3)')
     m.addConstrs(
         (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 
         for r in Ri for d in Di for c in Ci),
@@ -355,7 +359,7 @@ def run_model_fixed(input_dict,output_dict, time_limit):
         for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
-    print('still Creating Model 60%')
+    print('Creating model (2/3)')
     m.addConstrs(
         (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - Y[w][d] 
         for w in Wi for d in Di for c in Ci),
@@ -385,7 +389,7 @@ def run_model_fixed(input_dict,output_dict, time_limit):
             for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
         name = "Con_RollingExtendedSlotCycles" + str(s),
         )
-    print('Model Created 100%')
+    print('Creating model (3/3)')
 
     m.optimize()
 
@@ -405,7 +409,6 @@ def run_model_fixed(input_dict,output_dict, time_limit):
         return
     else:
         m.write('model.mps')
-        m.write('parameters.prm')
         m.write('warmstart.mst')
         # ----- Copying the desicion variable values to result dictionary -----
         result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
