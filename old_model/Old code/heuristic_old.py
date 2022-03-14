@@ -67,10 +67,6 @@ def save_results(excel_file, m, input_dict, result_dict):
     
     return result_dict
     
-def update_temperature(iter, iter_max):
-    temperature = 1 - ((iter + 1)/iter_max)
-    return temperature
-    
 
 def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
@@ -87,7 +83,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
 
     global_iter = 1
     levels = [1,2,3]
-    level_iters = [10,10,10]
+    level_iters = [3,3,3]
     
     print_heuristic_iteration_header()
     
@@ -119,7 +115,6 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     var.lb=0
                     var.ub=0  
             else:
-                print("Swap not found")
                 return
             
             m.read(warm_start_file_name)
@@ -178,6 +173,59 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 #----- Storing entire solution if a new best solution is found -----
                 if result_dict["obj"] < best_sol["obj"]:
                     action = "MOVE"
+                    """m.write('new_model.mps')
+                    m.write('new_warmstart.mst')
+                    # ----- Copying the desicion variable values to result dictionary -----
+                    result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
+                    result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
+                    result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    
+                    for s in input["Si"]:
+                        for r in input["Ri"]:
+                            for d in input["Di"]:
+                                name = (f"gamma[{s},{r},{d}]")
+                                var= m.getVarByName(name)    
+                                result_dict["gamm"][s][r][d] = var.X
+                                name = (f"lambda[{s},{r},{d}]")
+                                var= m.getVarByName(name) 
+                                result_dict["lamb"][s][r][d] = var.X
+                                
+                                for c in input["Ci"]:
+                                    name = (f"delta[{s},{r},{d},{c}]")
+                                    var= m.getVarByName(name)  
+                                    result_dict["delt"][s][r][d][c] = var.X        
+                    for g in input["Gi"]:
+                        for r in input["Ri"]:
+                            for d in input["Di"]:    
+                                for c in input["Ci"]:
+                                    name = (f"x[{g},{r},{d},{c}]")
+                                    var= m.getVarByName(name)
+                                    result_dict["x"][g][r][d][c] = var.X
+                    for g in input["Gi"]:
+                        for c in input["Ci"]:
+                            name = (f"a[{g},{c}]")
+                            var= m.getVarByName(name)
+                            result_dict["a"][g][c] = var.X
+                                
+                    for w in input["Wi"]:
+                        for d in range(input["J"][w]-1):
+                            result_dict["v"][w][d] = sum(input["Pi"][c] * sum(input["P"][w][g][d+input["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(d+input["nDays"]+1-input["J"][w],input["nDays"])) for c in input["Ci"]) 
+                    
+                    bed_occupationC =[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    result_dict["bed_occupation"] =[[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    for w in input["Wi"]:
+                        for d in input["Di"]:
+                            for c in input["Ci"]:
+                                bed_occupationC[w][d][c]= sum(input["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(max(0,d+1-input["J"][w]),d+1)) + input["Y"][w][d]
+                    for w in input["Wi"]:
+                            for d in input["Di"]:
+                                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
+                    
+                    write_to_excel(excel_file,input,result_dict)
+                    result_dict =   categorize_slots(input, result_dict)"""
                     best_sol = save_results(excel_file, m, input, result_dict)
                     
                 else:
@@ -202,15 +250,63 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                         var.ub=1
                     
                     # ----- Copying the desicion variable values to result dictionary -----
+                    """result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+                    result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
+                    result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
+                    result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    
+                    for s in input["Si"]:
+                        for r in input["Ri"]:
+                            for d in input["Di"]:
+                                name = (f"gamma[{s},{r},{d}]")
+                                var= m.getVarByName(name)    
+                                result_dict["gamm"][s][r][d] = var.X
+                                name = (f"lambda[{s},{r},{d}]")
+                                var= m.getVarByName(name) 
+                                result_dict["lamb"][s][r][d] = var.X
+                                
+                                for c in input["Ci"]:
+                                    name = (f"delta[{s},{r},{d},{c}]")
+                                    var= m.getVarByName(name)  
+                                    result_dict["delt"][s][r][d][c] = var.X        
+                    for g in input["Gi"]:
+                        for r in input["Ri"]:
+                            for d in input["Di"]:    
+                                for c in input["Ci"]:
+                                    name = (f"x[{g},{r},{d},{c}]")
+                                    var= m.getVarByName(name)
+                                    result_dict["x"][g][r][d][c] = var.X
+                    for g in input["Gi"]:
+                        for c in input["Ci"]:
+                            name = (f"a[{g},{c}]")
+                            var= m.getVarByName(name)
+                            result_dict["a"][g][c] = var.X
+                                
+                    for w in input["Wi"]:
+                        for d in range(input["J"][w]-1):
+                            result_dict["v"][w][d] = sum(input["Pi"][c] * sum(input["P"][w][g][d+input["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(d+input["nDays"]+1-input["J"][w],input["nDays"])) for c in input["Ci"]) 
+                    
+                    bed_occupationC =[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    result_dict["bed_occupation"] =[[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
+                    for w in input["Wi"]:
+                        for d in input["Di"]:
+                            for c in input["Ci"]:
+                                bed_occupationC[w][d][c]= sum(input["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(max(0,d+1-input["J"][w]),d+1)) + input["Y"][w][d]
+                    for w in input["Wi"]:
+                            for d in input["Di"]:
+                                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
+                    
+                    
+                    write_to_excel(excel_file,input,result_dict)"""
                     result_dict =  save_results(excel_file, m, input, result_dict)
                     result_dict =  categorize_slots(input, result_dict)
             
             # ----- Printing iteration to console -----
-            print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
+            print_heuristic_iteration(global_iter, level, iter, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
             iter += 1
             global_iter += 1
-        
-        #temperature = update_temperature()
         
     return result_dict
 
