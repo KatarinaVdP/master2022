@@ -1,12 +1,8 @@
 from model import *
 import pickle
 from typing import IO
-
-if __name__ == '__main__' and __package__ is None:
-    from os import sys, path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from global_functions.input_functions import *
-from global_functions.output_functions import *
+from input_functions import *
+from output_functions import *
 
 
 
@@ -21,7 +17,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     else:
         print("Invalid number of groups")    
         return
-    file_name= "Input/" + "model_input" + num_max_groups + ".xlsx"
+    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
     
     
     input           =   read_input(file_name)
@@ -42,7 +38,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
 
 
 for i in range(1,3):    
-    main(0,4, 10,i,60)
+    main(0,12, 30,i,1200)
 
 
 
