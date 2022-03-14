@@ -36,11 +36,16 @@ def categorize_slots(input_dict, output_dict):
     output_dict["extSlot"]      = ext_slot
     return output_dict    
 
-def print_MSS(input_dict, output_dict):
+def print_MSS(input_dict, output_dict, print_all_cycles = False):
 
+    if print_all_cycles:
+        cycles = range(1,input_dict["I"]+1)
+    else:
+        cycles = range(1,2)
+        
     print("Planning period modified MSS")
     print("-----------------------------")
-    for i in range(1,input_dict["I"]+1):
+    for i in cycles:
         print("Cycle: ", i)
         print("        ", end="")
         nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])

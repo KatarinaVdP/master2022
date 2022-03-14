@@ -7,11 +7,10 @@ from model import *
 from input_functions import *
 from output_functions import *
 
-def save_results(excel_file, m, input_dict, result_dict):
-    input = input_dict
+def save_results(excel_file, m, input_dict, result_dict2):
+    input = copy.deepcopy(input_dict)
+    result_dict = copy.deepcopy(result_dict2)
     
-    m.write('new_model.mps')
-    m.write('new_warmstart.mst')
     # ----- Copying the desicion variable values to result dictionary -----
     result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
     result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
@@ -155,7 +154,6 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     m.optimize()
                 else:
                     """---------------------- swap back ------------------------"""
-                    print("Swapped back because no feasible solution was found within the time limit.")
                     for i in range(getting_slot["size"]):
                         s=getting_slot["s"][i]
                         r=getting_slot["r"][i]
@@ -178,12 +176,15 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 #----- Storing entire solution if a new best solution is found -----
                 if result_dict["obj"] < best_sol["obj"]:
                     action = "MOVE"
+                    
+                    m.write('new_model.mps')
+                    m.write('warmstart.mst')
+                    
                     best_sol = save_results(excel_file, m, input, result_dict)
                     
                 else:
                     action = "NO MOVE"
                     """---------------------- swap back ------------------------"""
-                    print("Swapped back because the candidate solution was not better than the incumbent.")
                     for i in range(getting_slot["size"]):
                         s=getting_slot["s"][i]
                         r=getting_slot["r"][i]
@@ -210,9 +211,8 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             iter += 1
             global_iter += 1
         
-        #temperature = update_temperature()
-        
-    return result_dict
+        #temperature = update_temperature()   
+    return best_sol
 
 def swap_fixed_slot(input, results, print_swap = False):
     swap_done = False
