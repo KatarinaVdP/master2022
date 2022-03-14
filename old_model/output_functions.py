@@ -118,6 +118,48 @@ def print_expected_operations(input_dict, output_dict):
         print()
         print()
         
+def print_expected_minutes(input_dict, output_dict):
+
+    print("Expected number of planned operation minutes per slot")
+    print("-----------------------------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    print("{0:<5}".format("-"), end="")
+                else:
+                    operations = 0
+                    for g in input_dict["Gi"]: 
+                        for c in input_dict["Ci"]:
+                            operations += (input_dict["Pi"][c])*(output_dict["x"][g][r][d][c]*(input_dict["L"][g]+input_dict["TC"]))
+                    if operations > 0:
+                        operations_str = "{:.0f}".format(operations)
+                    else:
+                        operations_str = "{:.0f}".format(operations)
+                    print("{0:<5}".format(str(operations_str)), end="")
+            print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        print()
+        print()
+        print()
+        
 def bed_occupation(input_dict, output_dict, w, d, c):
     occupation = 0
     for g in input_dict["GWi"][w]:

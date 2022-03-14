@@ -28,25 +28,25 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         input["B"][0][d]=input["B"][0][d]*0.47
         input["B"][1][d]=input["B"][1][d]*0.54"""
     results, input  =   run_model(input, flexibility, 40,True)
-    print_expected_operations(input, results)
+    print_expected_minutes(input, results)
     print("EVS found")
     
     #----- Creatin model and fix first stage solution to EVS  ----    
-    input           = generate_scenarios(input, 100, 1)
+    input           = generate_scenarios(input, 10, 1)
     results         = run_model_fixed(input,results,300,True)
-    print_expected_operations(input, results)
+    print_expected_minutes(input, results)
     print("EVS found - EVS fixed on large tree")
     compare= "EVS: " + str(results["obj"]) 
     
     input           =   read_input(file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    input           = generate_scenarios(input, 30, 1)
+    input           = generate_scenarios(input, 3, 1)
     results, input  =   run_model(input, flexibility, 300,False,True)
-    print_expected_operations(input, results)
+    print_expected_minutes(input, results)
     print("EVS found - EVS fixed on large tree - RPS found")
-    input           = generate_scenarios(input, 100, 1)
+    input           = generate_scenarios(input, 10, 1)
     results         = run_model_fixed(input,results,300,True)
-    print_expected_operations(input, results)
+    print_expected_minutes(input, results)
     print("EVS found - EVS fixed on large tree - RPS found - RPS fixed on large tree")
     compare+= "RPS: " + str(results["obj"]) 
     
