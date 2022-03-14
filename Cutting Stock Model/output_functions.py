@@ -1,3 +1,8 @@
+from openpyxl import Workbook
+from openpyxl import load_workbook
+from datetime import datetime
+
+
 def categorize_slots(input_dict, output_dict):
     
     fixed_slots = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
@@ -126,12 +131,12 @@ def bed_occupation(input_dict, output_dict, w, d, c):
         
 def print_expected_bed_util(input_dict, output_dict):
 
-    bed_occupation =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    """bed_occupation =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
     
     for w in input_dict["Wi"]:
         for d in input_dict["Di"]:
             for c in input_dict["Ci"]:
-                bed_occupation[w][d][c]= sum(input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
+                bed_occupation[w][d][c]= sum(input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]"""
     
     print("Expected bed ward utilization")
     print("-----------------------------")
@@ -152,7 +157,7 @@ def print_expected_bed_util(input_dict, output_dict):
             ward = "{0:>8}".format(input_dict["W"][w]+"|")
             print(ward, end="")
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                total = sum(bed_occupation[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+                total = output_dict["bed_occupation"][w][d]
                 total = "{:.1f}".format(total)
                 print("{0:<5}".format(str(total)), end="")
             print()
@@ -213,36 +218,73 @@ def print_que(input_dict, output_dict):
     print()
     print()
 
-        
-    """def print_expected_bed_util_pho(input_dict, output_dict):
+def write_to_excel(file_name,input_dict,output_dict):
+    #filename = "myfile.xlsx"
+    new_row = []
 
-        print("Expected bed ward utilization")
-        print("-----------------------------")
-        for i in range(1,input_dict["I"]+1):
-            print("Cycle: ", i)
-            print("        ", end="")
-            nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-            firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                day = "{0:<5}".format(str(d))
-                print(day, end="")
-            print()
-            print("        ", end="")
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                print("-----",end="")
-            print()
-            for w in input_dict["Wi"]:
-                ward = "{0:>8}".format(input_dict["W"][w]+"|")
-                print(ward, end="")
-                for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                    total = 0
-                    for c in input_dict["Ci"]:
-                        total += bed_occupation(input_dict, output_dict, w, d, c)*input_dict["Pi"][c]
-                    total = "{:.1f}".format(total)
-                    print("{0:<5}".format(str(total)), end="")
-                print()
-                    
-            print("        ", end="")
-            for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-                print("-----",end="")
-            print()"""   
+    try:
+        wb = load_workbook(file_name)
+        ws = wb.worksheets[0]  # select first worksheet
+    except FileNotFoundError:
+        headers_row = ['groups','scenarios','flexibility','seed','primal_bound', 'dual_bound', 'gap','runtime','max_runtime','status','-','MC',]
+        for d in range(1,input_dict["nDays"]+1):
+            headers_row.append(d)
+        headers_row.append('-')
+        headers_row.append('IC')
+        for d in range(1,input_dict["nDays"]+1):
+            headers_row.append(d)
+        wb = Workbook()
+        ws = wb.active
+        ws.append(headers_row)
+
+    new_row.append(input_dict["number_of_groups"])
+    new_row.append(input_dict["nScenarios"])
+    new_row.append(input_dict["F"])
+    new_row.append(input_dict["seed"])
+    new_row.append(output_dict["obj"])
+    new_row.append(output_dict["best_bound"])
+    new_row.append(output_dict["MIPGap"])
+    new_row.append(output_dict["runtime"])
+    new_row.append(output_dict["max_runtime"])
+    new_row.append(output_dict["status"])
+    new_row.append('-')
+    new_row.append('-')
+    
+    if output_dict["status"] != 0:
+        for d in input_dict["Di"]:
+            new_row.append(output_dict["bed_occupation"][0][d])
+        new_row.append('-')
+        new_row.append('-')
+        for d in input_dict["Di"]:
+            new_row.append(output_dict["bed_occupation"][1][d])
+
+    ws.append(new_row)
+    wb.save(file_name)
+    
+def write_header_to_excel(file_name, type_of_header: str):
+    wb = load_workbook(file_name)
+    ws = wb.worksheets[0]
+    new_row = []
+    
+    if type_of_header == "begin_new":
+        new_row.append("------------------- New Run -------------------")
+        ws.append(new_row)
+        wb.save(file_name)
+        new_row = []
+        new_row.append("new")
+        new_row.append("heuristic")
+        new_row.append("run")
+        new_row.append("")
+        new_row.append("Date:")
+        now = datetime.now() # current date and time
+        date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+        new_row.append(date_time)
+        ws.append(new_row)
+        wb.save(file_name)
+    elif type_of_header == "first_iteration":
+        new_row.append("------------------- Begin Heuristic -------------------")
+        ws.append(new_row)
+        wb.save(file_name)
+    else:
+        print('Invalid input in write_header_to_excel()')
+        return
