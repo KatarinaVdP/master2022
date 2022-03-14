@@ -7,9 +7,14 @@ from model import *
 from input_functions import *
 from output_functions import *
 
-def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit):
+def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
+    
     m = gp.read(model_file_name)
+    print("\n"*3)
+            
+    if not print_optimizer:
+        m.Params.LogToConsole = 0
 
     if m.isMIP != 1:
         print('The model is not a linear program')
@@ -27,15 +32,10 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
         if swap_found:
             for i in range(getting_slot["size"]):
                 s=getting_slot["s"][i]
-                print(s)
                 r=getting_slot["r"][i]
-                print(r)
                 d=getting_slot["d"][i]
-                print(d)
                 name = f"gamma[{s},{r},{d}]"
-                print(name)
                 var = m.getVarByName(name)
-                print(var.VarName)
                 var.lb=1
                 var.ub=1
             for i in range(giving_slot["size"]):
@@ -44,13 +44,11 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                 d=giving_slot["d"][i]
                 name = f"gamma[{s},{r},{d}]"
                 var = m.getVarByName(name)
-                print(var.VarName)
                 var.lb=0
                 var.ub=0  
         else:
             return
         
-        m.read(parameter_file_name)
         m.read(warm_start_file_name)
         m.optimize()
                 
@@ -85,15 +83,10 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                 print("Swapped back because no feasible solution was found within the time limit.")
                 for i in range(getting_slot["size"]):
                     s=getting_slot["s"][i]
-                    print(s)
                     r=getting_slot["r"][i]
-                    print(r)
                     d=getting_slot["d"][i]
-                    print(d)
                     name = f"gamma[{s},{r},{d}]"
-                    print(name)
                     var = m.getVarByName(name)
-                    print(var.VarName)
                     var.lb=0
                     var.ub=0
                 for i in range(giving_slot["size"]):
@@ -102,7 +95,6 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                     d=giving_slot["d"][i]
                     name = f"gamma[{s},{r},{d}]"
                     var = m.getVarByName(name)
-                    print(var.VarName)
                     var.lb=1
                     var.ub=1
 
@@ -111,7 +103,6 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
             
             if result_dict["obj"] < old_objective:
                 m.write('new_model.mps')
-                m.write('new_parameters.prm')
                 m.write('new_warmstart.mst')
                 # ----- Copying the desicion variable values to result dictionary -----
                 result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
@@ -165,21 +156,15 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                 
                 write_to_excel(excel_file,input,results)
                 results =   categorize_slots(input, results)
-                print_MSS(input, results)
             else:
                 """---------------------- swap back ------------------------"""
                 print("Swapped back because the candidate solution was not better than the incumbent.")
                 for i in range(getting_slot["size"]):
                     s=getting_slot["s"][i]
-                    print(s)
                     r=getting_slot["r"][i]
-                    print(r)
                     d=getting_slot["d"][i]
-                    print(d)
                     name = f"gamma[{s},{r},{d}]"
-                    print(name)
                     var = m.getVarByName(name)
-                    print(var.VarName)
                     var.lb=0
                     var.ub=0
                 for i in range(giving_slot["size"]):
@@ -188,7 +173,6 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                     d=giving_slot["d"][i]
                     name = f"gamma[{s},{r},{d}]"
                     var = m.getVarByName(name)
-                    print(var.VarName)
                     var.lb=1
                     var.ub=1
                 
@@ -244,9 +228,9 @@ def heuristic(model_file_name, parameter_file_name, warm_start_file_name, excel_
                 
                 write_to_excel(excel_file,input,result_dict)
                 result_dict =   categorize_slots(input, result_dict)
-                print_MSS(input, result_dict)
         
         iter += 1
+        print("\n"*3)
         
     return result_dict
 

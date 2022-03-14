@@ -75,9 +75,7 @@ def print_MSS(input_dict, output_dict):
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
-        print()
-        print()
-        print()
+
 
 def print_expected_operations(input_dict, output_dict):
 
@@ -288,3 +286,25 @@ def write_header_to_excel(file_name, type_of_header: str):
     else:
         print('Invalid input in write_header_to_excel()')
         return
+    
+def print_solution_performance(input, results):
+    print("Solution performance")
+    print("--------------------------------")
+    print("Status:          ", end="")
+    print(results["status"])
+    print("Runtime:         ", end="")
+    runtime = "{:.0f}".format(results["runtime"])
+    print("{0:>10}".format(str(runtime)+"s"))
+    print("Objective :      ", end="")
+    obj = "{:.1f}".format(results["obj"])
+    print("{0:>10}".format(str(obj)))
+    print("Dual bound:      ", end="")
+    dual = "{:.1f}".format(results["best_bound"])
+    print("{0:>10}".format(str(dual)))
+    print("Optimality gap:  ", end="")
+    gap = "{:.1f}".format(results["MIPGap"]*100)
+    print("{0:>10}".format(str(gap)+"%"))
+    print()
+    
+def print_heristic_iteration():
+    x =1
