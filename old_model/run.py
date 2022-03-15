@@ -29,7 +29,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     if model_run_exists:     
         input = saved_values["input"]
         results = saved_values["results"]
-        #----- Begin Heuristic ----  
+        results = categorize_slots(input, results)
+        print_MSS(input, results)
+        #----- Begin Heuristic ---- 
         print("------------------------------------------------------------------------------------------------------------------")
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
@@ -84,6 +86,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results =   categorize_slots(input, results)
         print_MSS(input, results)
 
-main(0, 9, 50, 1, 10)
+main(0.2, 9, 20, 1, 20)
 
     

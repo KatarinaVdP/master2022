@@ -34,18 +34,18 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
         iter = 1
         #----- Looping through through iterations at temperature level -----
         while iter <= level_iters[level-1]:
-        
-            """---------------------- swap ------------------------"""
-            pho = True
-            if pho:
+            
+            extended = False
+            swap_type = "flex"
+            if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
-                var_name = "lambda"
-            else:
+            elif swap_type == "fixed":
                 swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol)
-                var_name = "gamma"
+            elif swap_type == "flex":
+                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol,print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
-            m = change_bound(m, swap_found, getting_slot, giving_slot, var_name)
+            m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
             m.read(warm_start_file_name)
             m.optimize()
@@ -69,7 +69,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     m.setParam("TimeLimit", more_time)
                     m.optimize()
                 else:
-                    m = change_bound(m, swap_found, getting_slot, giving_slot, var_name, swap_back = True)
+                    m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
                     m.update()
 
             #----- Comparing candidate performance to best solution -----
@@ -84,17 +84,17 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     best_sol = save_results(m, input, result_dict)
                     write_to_excel(excel_file,input,best_sol)
                     best_sol = categorize_slots(input, best_sol)
+                    print_MSS(input, best_sol)
                 else:
                     # ----- Copying the desicion variable values to result dictionary -----
                     result_dict =  save_results(m, input, result_dict)
                     write_to_excel(excel_file,input,result_dict)
                     action = "NO MOVE"
-                    m = change_bound(m, swap_found, getting_slot, giving_slot, var_name, swap_back = True)
+                    m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
             
             # ----- Printing iteration to console -----
             print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
-            print_MSS(input, best_sol)
             iter += 1
             global_iter += 1
         
@@ -240,6 +240,7 @@ def swap_extension(input, results, print_swap = False):
 def swap_fixed_with_flexible(input, results, print_swap = False):
     
     swap_done = False
+    extended = False
     days_in_cycle = int(input["nDays"]/input["I"])
     new_fixed_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
@@ -287,6 +288,8 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
                                         new_flexible_slot["d"].append(int(d+i*days_in_cycle))
                                     new_fixed_slot["size"] = len(new_fixed_slot["s"])
                                     new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                                    if results["lamb"][s][r][d] == 1:
+                                        extended = True
                                     swap_done = True
                                 
     # Printing the swaps that have been made
@@ -294,42 +297,90 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
         if print_swap:
             print("The following slots have been changed:")
             for i in range(new_fixed_slot["size"]):
-                spec = input["S"][new_fixed_slot["s"][i]]
+                if extended:
+                    spec = input["S"][new_fixed_slot["s"][i]]+"*"
+                else:
+                    spec = input["S"][new_fixed_slot["s"][i]]
                 room_fixed = input["R"][new_fixed_slot["r"][i]]
                 day_fixed = new_fixed_slot["d"][i]+1
-                room_flexible = input["S"][new_flexible_slot["s"][i]]
+                room_flexible = input["R"][new_flexible_slot["r"][i]]
                 day_flexible = new_flexible_slot["d"][i]+1
                 print("The fixed slot that belonged to specialty %s on day %d in room %s was swapped with the flexible slot on day %d in room %s" % (spec, day_flexible, room_flexible, day_fixed, room_fixed)) # day_flexible og room_flexible er de som NÅ er fleksible og derfor tidligere var fikserte. Omvendt for fixed.
     else:
         print("No swap or assignment has been made.")
         
-    return swap_done, new_fixed_slot, new_flexible_slot
+    return swap_done, new_fixed_slot, new_flexible_slot, extended
 
-def change_bound(m, swap_found, getting_slot, giving_slot, var_name,swap_back = False):
-    if swap_back:
-        getting_val = 0
-        giving_val = 1
-    else:
-        getting_val = 1
-        giving_val = 0
+def change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
+    if swap_type == "ext":
+        var_name = "lambda"
+    elif swap_type == "fixed":
+        var_name = "gamma"
     
-    if swap_found:
-        for i in range(getting_slot["size"]):
-            s=getting_slot["s"][i]
-            r=getting_slot["r"][i]
-            d=getting_slot["d"][i]
-            name = f"{var_name}[{s},{r},{d}]"
-            var = m.getVarByName(name)
-            var.lb=getting_val
-            var.ub=getting_val
-        for i in range(giving_slot["size"]):
-            s=giving_slot["s"][i]
-            r=giving_slot["r"][i]
-            d=giving_slot["d"][i]
-            name = f"{var_name}[{s},{r},{d}]"
-            var = m.getVarByName(name)
-            var.lb=giving_val
-            var.ub=giving_val
+    if swap_type != "flex":
+        if swap_back:
+            getting_val = 0
+            giving_val = 1
+        else:
+            getting_val = 1
+            giving_val = 0
+        
+        if swap_found:
+            for i in range(getting_slot["size"]):
+                s=getting_slot["s"][i]
+                r=getting_slot["r"][i]
+                d=getting_slot["d"][i]
+                name = f"{var_name}[{s},{r},{d}]"
+                var = m.getVarByName(name)
+                var.lb=getting_val
+                var.ub=getting_val
+            for i in range(giving_slot["size"]):
+                s=giving_slot["s"][i]
+                r=giving_slot["r"][i]
+                d=giving_slot["d"][i]
+                name = f"{var_name}[{s},{r},{d}]"
+                var = m.getVarByName(name)
+                var.lb=giving_val
+                var.ub=giving_val
+        else:
+            print("Swap not found")
     else:
-        print("Swap not found")
+        if swap_back:
+            getting_val = 0
+            giving_val = 1
+        else:
+            getting_val = 1
+            giving_val = 0
+        
+        if swap_found:
+            var_name_1 = "gamma"
+            var_name_2 = "lambda"
+            for i in range(getting_slot["size"]):
+                s=getting_slot["s"][i]
+                r=getting_slot["r"][i]
+                d=getting_slot["d"][i]
+                name = f"{var_name_1}[{s},{r},{d}]"
+                var = m.getVarByName(name)
+                var.lb=getting_val
+                var.ub=getting_val
+                if extended:
+                    name = f"{var_name_2}[{s},{r},{d}]"
+                    var = m.getVarByName(name)
+                    var.lb=getting_val
+                    var.ub=getting_val
+            for i in range(giving_slot["size"]):
+                s=giving_slot["s"][i]
+                r=giving_slot["r"][i]
+                d=giving_slot["d"][i]
+                name = f"{var_name_1}[{s},{r},{d}]"
+                var = m.getVarByName(name)
+                var.lb=giving_val
+                var.ub=giving_val
+                if extended:
+                    name = f"{var_name_2}[{s},{r},{d}]"
+                    var = m.getVarByName(name)
+                    var.lb=giving_val
+                    var.ub=giving_val
+        else:
+            print("Swap not found")
     return m
