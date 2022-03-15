@@ -172,6 +172,53 @@ def bed_occupation(input_dict, output_dict, w, d, c):
             for dd in range(max(0,d+1-input_dict["J"][w]), d+1):
                 occupation += input_dict["P"][w][g][d-dd] * output_dict["x"][g][r][dd][c] + output_dict["v"][w][d]
     return occupation
+
+def print_expected_bed_util_percent(input_dict, output_dict):
+    print("Expected bed ward utilization")
+    print("-----------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for w in input_dict["Wi"]:
+            ward = "{0:>8}".format(input_dict["W"][w]+"|")
+            print(ward, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                total = output_dict["bed_occupation"][w][d]/input_dict["B"][w][d]
+                total = "{:.2f}".format(total)
+                print("{0:<5}".format(str(total)), end="")
+            print()
+                
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        
+def print_operations_per_group(input_dict, output_dict):
+    
+    print("Total number of operations per surgery group across all scenarios")
+    print("------------------------------------------------------------------")
+    
+    for g in input_dict["Gi"]:
+        group = "{0:<5}".format(input_dict["G"][g])+"|"
+        print(group, end="")
+        operations = 0
+        operations = sum(output_dict["x"][g][r][d][c] for c in input_dict["Ci"] for d in input_dict["Di"] for r in input_dict["Ri"])
+        print("{0:>5}".format(operations))
+        
+    print()
+    print()
+    print()
+    print()
         
 def print_expected_bed_util(input_dict, output_dict):
 

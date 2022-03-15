@@ -286,3 +286,27 @@ def generate_scenarios(input_dict, nScenarios, seed):
         input_dict["Q"]         =   transposed_matrix
         
         return input_dict
+    
+def generate_scenario_data_for_EVS(input_dict,nScenarios, seed, return_dissadvantage = False):
+    input_dict                      =   generate_scenarios(input_dict,nScenarios,seed)                      
+    Q_single_scenario               =   [[0 for _ in range(1)] for _ in range(input_dict["nGroups"])]
+    dissadvantage                   =   0
+    for g in input_dict["Gi"]:
+        expected_group_preceil      =   sum(input_dict["Pi"][c]*input_dict["Q"][g][c] for c in input_dict["Ci"])
+        expected_group              =   int(np.round(expected_group_preceil))
+        dissadvantage               +=  (expected_group - expected_group_preceil)*(input_dict["L"][g] + input_dict["TC"])
+        Q_single_scenario[g][0]     =   expected_group
+        
+    nScenarios                      =   1
+    input_dict["nScenarios"]        =   nScenarios       
+    input_dict["Ci"]                =   [c for c in range(nScenarios)]                             
+    input_dict["Pi"]                =   [1/nScenarios]*nScenarios                 
+    input_dict["Q"]                 =   Q_single_scenario
+    
+    if return_dissadvantage:
+        return input_dict, dissadvantage
+    return input_dict
+
+        
+        
+        

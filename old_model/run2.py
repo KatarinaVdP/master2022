@@ -21,42 +21,33 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     
     #----- Find EVS as initial MSS ---- 
     input           =   read_input(file_name)
-    
-    
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    """for d in range(input["nDays"]):
-        input["B"][0][d]=input["B"][0][d]*0.47
-        input["B"][1][d]=input["B"][1][d]*0.54"""
-    results, input  =   run_model(input, flexibility, 40,True)
-    print_expected_minutes(input, results)
+    for d in range(input["nDays"]):
+        input["B"][0][d]=input["B"][0][d]*0.7
+        input["B"][1][d]=input["B"][0][d]*0.7
+    #input, dissadvantage           =   generate_scenario_data_for_EVS(input,20,1,return_dissadvantage=True)
+    results, input  =   run_model(input, flexibility, 60,True,True)
     print("EVS found")
     
-    #----- Creatin model and fix first stage solution to EVS  ----    
-    input           = generate_scenarios(input, 10, 1)
-    results         = run_model_fixed(input,results,300,True)
-    print_expected_minutes(input, results)
+    #----- fix first stage solution to EVS  ----   
+    input           = generate_scenarios(input,50,2)
+    results         = run_model_fixed(input,results,60,True)
     print("EVS found - EVS fixed on large tree")
-    compare= "EVS: " + str(results["obj"]) 
-    
-    input           =   read_input(file_name)
-    input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    input           = generate_scenarios(input, 3, 1)
+    compare= "EVS: " + str(results["obj"])
+    print(compare)
+    #----- find RPS  ----  
+    input           =   generate_scenarios(input,20,1)
     results, input  =   run_model(input, flexibility, 300,False,True)
-    print_expected_minutes(input, results)
     print("EVS found - EVS fixed on large tree - RPS found")
-    input           = generate_scenarios(input, 10, 1)
-    results         = run_model_fixed(input,results,300,True)
-    print_expected_minutes(input, results)
+    
+    #----- fix first stage solution to RPS  ----  
+    input           = generate_scenarios(input,50,2)
+    results         = run_model_fixed(input,results,60,True)
     print("EVS found - EVS fixed on large tree - RPS found - RPS fixed on large tree")
-    compare+= "RPS: " + str(results["obj"]) 
+    compare+= " RPS: " + str(results["obj"]) 
     
     print(compare)
     #print_que(input, results)
-    
-    #----- Begin Heuristic ----  
-    """obj_estimation_time = 10
-    write_header_to_excel(excel_file,"first_iteration") 
-    results = heuristic('model.mps', 'parameters.prm', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside"""
 
 
 for i in range(1,2):    
