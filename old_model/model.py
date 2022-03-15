@@ -4,6 +4,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import numpy as np
+from output_functions import *
 
 
 def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):
@@ -197,7 +198,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         result_dict["status"]=statuses[0]
     else:
         # ----- Copying the desicion variable values to result dictionary -----
-        result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+        """result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
@@ -232,9 +233,9 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
                     bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
         for w in input_dict["Wi"]:
                 for d in input_dict["Di"]:
-                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])"""
 
-
+        result_dict =  save_results(m, input, result_dict)
 
     return result_dict, input
 
@@ -411,7 +412,7 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
         m.write('model.mps')
         m.write('warmstart.mst')
         # ----- Copying the desicion variable values to result dictionary -----
-        result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
+        """result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
         result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
@@ -446,6 +447,8 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
                     bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
         for w in input_dict["Wi"]:
                 for d in input_dict["Di"]:
-                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])"""
+                    
+        result_dict =  save_results(m, input, result_dict)
     return result_dict
         

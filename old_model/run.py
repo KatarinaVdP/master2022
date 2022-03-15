@@ -19,14 +19,27 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         return
     file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
     excel_file="input_output/" + "results.xlsx"
+    input           =   read_input(file_name)
+    input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    
+    variabel = True
+    if variabel:
+        #----- Begin Heuristic ----  
+        print("------------------------------------------------------------------------------------------------------------------")
+        print("INITIATING HEURISTIC SEARCH FROM EVS")
+        print("------------------------------------------------------------------------------------------------------------------")
+        obj_estimation_time = 10
+        write_header_to_excel(excel_file,"first_iteration")
+        results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        print_solution_performance(input, results)
+        results =   categorize_slots(input, results)
+        print_MSS(input, results)
     
     #----- Find EVS as initial MSS ----  
     print("------------------------------------------------------------------------------------------------------------------")
-    print("READING INPUT AND RUNNING MIP-MODEL TO FIND EVS")
+    print("RUNNING MIP-MODEL TO FIND EVS")
     print("------------------------------------------------------------------------------------------------------------------")
-    input           =   read_input(file_name)
-    input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = True)
+    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
     print()
     print_solution_performance(input, results)
     if results["status"]==0:
@@ -56,12 +69,13 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     obj_estimation_time = 10
     write_header_to_excel(excel_file,"first_iteration")
     results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+    print_solution_performance(input, results)
+    results =   categorize_slots(input, results)
+    print_MSS(input, results)
 
-    
 
-
-for i in range(1,2):    
-    main(0, 9, 60, i, 300)
+   
+    main(0, 9, 40, 1, 30)
 
     
 """try:

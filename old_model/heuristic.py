@@ -6,65 +6,6 @@ from gurobipy import GRB
 from model import *
 from input_functions import *
 from output_functions import *
-
-def save_results(excel_file, m, input_dict, result_dict2):
-    input = copy.deepcopy(input_dict)
-    result_dict = copy.deepcopy(result_dict2)
-    
-    # ----- Copying the desicion variable values to result dictionary -----
-    result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-    result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-    result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-    result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
-    result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
-    result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-    
-    for s in input["Si"]:
-        for r in input["Ri"]:
-            for d in input["Di"]:
-                name = (f"gamma[{s},{r},{d}]")
-                var= m.getVarByName(name)    
-                result_dict["gamm"][s][r][d] = var.X
-                name = (f"lambda[{s},{r},{d}]")
-                var= m.getVarByName(name) 
-                result_dict["lamb"][s][r][d] = var.X
-                
-                for c in input["Ci"]:
-                    name = (f"delta[{s},{r},{d},{c}]")
-                    var= m.getVarByName(name)  
-                    result_dict["delt"][s][r][d][c] = var.X        
-    for g in input["Gi"]:
-        for r in input["Ri"]:
-            for d in input["Di"]:    
-                for c in input["Ci"]:
-                    name = (f"x[{g},{r},{d},{c}]")
-                    var= m.getVarByName(name)
-                    result_dict["x"][g][r][d][c] = var.X
-    for g in input["Gi"]:
-        for c in input["Ci"]:
-            name = (f"a[{g},{c}]")
-            var= m.getVarByName(name)
-            result_dict["a"][g][c] = var.X
-                
-    for w in input["Wi"]:
-        for d in range(input["J"][w]-1):
-            result_dict["v"][w][d] = sum(input["Pi"][c] * sum(input["P"][w][g][d+input["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(d+input["nDays"]+1-input["J"][w],input["nDays"])) for c in input["Ci"]) 
-    
-    bed_occupationC =[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-    result_dict["bed_occupation"] =[[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-    for w in input["Wi"]:
-        for d in input["Di"]:
-            for c in input["Ci"]:
-                bed_occupationC[w][d][c]= sum(input["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input["GWi"][w] for r in input["Ri"] for dd in range(max(0,d+1-input["J"][w]),d+1)) + input["Y"][w][d]
-    for w in input["Wi"]:
-            for d in input["Di"]:
-                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input["Pi"][c] for c in input["Ci"])
-    best_sol = copy.deepcopy(result_dict)
-    
-    write_to_excel(excel_file,input,result_dict)
-    result_dict =   categorize_slots(input, result_dict)
-    
-    return result_dict
     
 def update_temperature(iter, iter_max):
     temperature = 1 - ((iter + 1)/iter_max)
@@ -76,11 +17,9 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     
     best_sol = last_output
     m = gp.read(model_file_name)
+    m.update()
     if not print_optimizer:
         m.Params.LogToConsole = 0
-    if m.isMIP != 1:
-        print('The model is not a linear program')
-        sys.exit(1)
     m.setParam("TimeLimit", time_limit)
     print("\n"*3)
 
@@ -100,29 +39,37 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol)
             
             #----- Changing variable bound to evaluate candidate -----
+            m = change_bound(m, swap_found, getting_slot, giving_slot)
+            #m.update()
+            
+            m.read(warm_start_file_name)
+            m.optimize()
+                        # Her skal jeg sjekke at ting stemmer
             if swap_found:
+                print("Swap was found")
                 for i in range(getting_slot["size"]):
                     s=getting_slot["s"][i]
                     r=getting_slot["r"][i]
                     d=getting_slot["d"][i]
                     name = f"gamma[{s},{r},{d}]"
                     var = m.getVarByName(name)
-                    var.lb=1
-                    var.ub=1
+                    if (var.lb == 1 and var.ub == 1):
+                        print("Øyvind did work.")
+                    if (var.lb == 0 and var.ub == 0):
+                        print("Øyvind did not work")
                 for i in range(giving_slot["size"]):
                     s=giving_slot["s"][i]
                     r=giving_slot["r"][i]
                     d=giving_slot["d"][i]
                     name = f"gamma[{s},{r},{d}]"
                     var = m.getVarByName(name)
-                    var.lb=0
-                    var.ub=0  
+                    if (var.lb == 1 and var.ub == 1):
+                        print("Øyvind did not work.")
+                    if (var.lb == 0 and var.ub == 0):
+                        print("Øyvind did work")  
             else:
                 print("Swap not found")
                 return
-            
-            m.read(warm_start_file_name)
-            m.optimize()
                     
             statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
             "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
@@ -180,7 +127,8 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     m.write('new_model.mps')
                     m.write('warmstart.mst')
                     
-                    best_sol = save_results(excel_file, m, input, result_dict)
+                    best_sol = save_results(m, input, result_dict)
+                    write_to_excel(excel_file,input,best_sol)
                     
                 else:
                     action = "NO MOVE"
@@ -203,8 +151,8 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                         var.ub=1
                     
                     # ----- Copying the desicion variable values to result dictionary -----
-                    result_dict =  save_results(excel_file, m, input, result_dict)
-                    result_dict =  categorize_slots(input, result_dict)
+                    result_dict =  save_results(m, input, result_dict)
+                    write_to_excel(excel_file,input,result_dict)
             
             # ----- Printing iteration to console -----
             print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
@@ -220,6 +168,8 @@ def swap_fixed_slot(input, results, print_swap = False):
     days_in_cycle = int(input["nDays"]/input["I"])
     getting_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    
+    # Shuffling lists in order to pick a random slot
     specialties = copy.deepcopy(input["Si"])
     rand.shuffle(specialties)
     days = copy.deepcopy(input["Di"][0:days_in_cycle])
@@ -227,20 +177,21 @@ def swap_fixed_slot(input, results, print_swap = False):
     rooms = copy.deepcopy(input["RSi"])
     for s in specialties:
         rand.shuffle(rooms[s])
-        
+    
+    # Swapping fixed and not extended slot from one specialty to another
     for s in specialties:
         if swap_done == True:
-                        break
+            break
         for d in days:
             if swap_done == True:
-                        break
+                break
             slots = sum(results["gamm"][s][r][d] for r in input["Ri"])
             teams = input["K"][s][d]
             if (teams > slots):
                 for r in rooms[s]:
                     if swap_done == True:
                         break
-                    if ((results["gamm"][s][r][d] == 0) and (sum(results["lamb"][ss][r][d] for ss in input["Si"])==0)):
+                    if ((results["gamm"][s][r][d] == 0) and (sum(results["lamb"][ss][r][d] for ss in input["Si"])==0) and (sum(results["gamm"][ss][r][d] for ss in input["Si"]) >= 1)):
                         for ss in input["Si"]:
                             if (results["gamm"][ss][r][d] == 1):
                                 prev_spec = ss
@@ -253,11 +204,13 @@ def swap_fixed_slot(input, results, print_swap = False):
                                 giving_slot["s"].append(prev_spec)
                                 giving_slot["r"].append(r)
                                 giving_slot["d"].append(int(d+i*days_in_cycle))
+                        getting_slot["size"] = len(getting_slot["s"])
+                        giving_slot["size"] = len(giving_slot["s"])
                         swap_done = True
-    if print_swap:
-        if swap_done:
-            getting_slot["size"] = len(getting_slot["s"])
-            giving_slot["size"] = len(giving_slot["s"])
+    
+    # Printing the swaps that have been made
+    if swap_done:
+        if print_swap:
             if prev_occupied:
                 print("The following swaps were made:")
                 for i in range(getting_slot["size"]):
@@ -275,6 +228,110 @@ def swap_fixed_slot(input, results, print_swap = False):
                     day = getting_slot["d"][i]+1
                     day = "{:.0f}".format(day)
                     print("%s in room %s on day %s." % (new_spec, room, day))
-        else:
-            print("No swap or assignment has been made.")
+    else:
+        print("No swap or assignment has been made.")
+        
     return swap_done, getting_slot, giving_slot
+
+
+def swap_extension(input, results, print_swap = False):
+    
+    swap_done = False
+    prev_occupied = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    new_extended_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    new_regular_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    
+    # Shuffling lists in order to pick a random slot
+    specialties = copy.deepcopy(input["Si"])
+    rand.shuffle(specialties)
+    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days)
+    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days2)
+    rooms = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms[s])
+    rooms2 = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms2[s])
+    
+    for s in specialties:
+        if swap_done == True:
+            break
+        for d in days:
+            if swap_done == True:
+                break
+            for r in rooms[s]:
+                if swap_done == True:
+                    break
+                if ((results["gamm"][s][r][d] == 1) and (results["lamb"][s][r][d]==1)):
+                    for dd in days2:
+                        if swap_done == True: 
+                            break
+                        for rr in rooms2[s]:
+                            if swap_done == True:
+                                break
+                            if (d != dd and r != rr and results["gamm"][s][rr][dd] == 1 and results["lamb"][s][rr][dd] == 0):
+                                for i in range(input["I"]):
+                                    new_extended_slot["s"].append(s)
+                                    new_extended_slot["r"].append(rr)
+                                    new_extended_slot["d"].append(int(dd+i*days_in_cycle))
+                                    new_regular_slot["s"].append(s)
+                                    new_regular_slot["r"].append(r)
+                                    new_regular_slot["d"].append(int(d+i*days_in_cycle))
+                                new_extended_slot["size"] = len(new_extended_slot["s"])
+                                new_regular_slot["size"] = len(new_regular_slot["s"])
+                                swap_done = True
+                                
+    # Printing the swaps that have been made
+    if swap_done:
+        if print_swap:
+            if prev_occupied:
+                print("The following swaps were made:")
+                for i in range(new_extended_slot["size"]):
+                    old_spec = input["S"][giving_slot["s"][i]]
+                    new_spec = input["S"][getting_slot["s"][i]]
+                    room = input["R"][getting_slot["r"][i]]
+                    day = getting_slot["d"][i]+1
+                    day = "{:.0f}".format(day)
+                    print("%s gave their slot to %s in room %s on day %s." % (old_spec, new_spec, room, day))
+            else:
+                print("The following slots were assigned without swapping:")
+                for i in range(getting_slot["size"]):
+                    new_spec = input["S"][getting_slot["s"][i]]
+                    room = input["R"][getting_slot["r"][i]]
+                    day = getting_slot["d"][i]+1
+                    day = "{:.0f}".format(day)
+                    print("%s in room %s on day %s." % (new_spec, room, day))
+    else:
+        print("No swap or assignment has been made.")
+
+def change_bound(m, swap_found, getting_slot, giving_slot, swap_back = False):
+    if swap_back:
+        getting_val = 0
+        giving_val = 1
+    else:
+        getting_val = 1
+        giving_val = 0
+    
+    if swap_found:
+        for i in range(getting_slot["size"]):
+            s=getting_slot["s"][i]
+            r=getting_slot["r"][i]
+            d=getting_slot["d"][i]
+            name = f"gamma[{s},{r},{d}]"
+            var = m.getVarByName(name)
+            var.lb=getting_val
+            var.ub=getting_val
+        for i in range(giving_slot["size"]):
+            s=giving_slot["s"][i]
+            r=giving_slot["r"][i]
+            d=giving_slot["d"][i]
+            name = f"gamma[{s},{r},{d}]"
+            var = m.getVarByName(name)
+            var.lb=giving_val
+            var.ub=giving_val  
+    else:
+        print("Swap not found")
+    return m
