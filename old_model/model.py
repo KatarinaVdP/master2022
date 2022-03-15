@@ -7,75 +7,77 @@ import numpy as np
 from output_functions import *
 
 
-def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):
-    input = input_dict
-    
+def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
     #----- Sets ----- #  
-    nDays           =   input["nDays"]
-    nWards          =   input["nWards"]
-    nGroups         =   input["nGroups"]
-    nSpecialties    =   input["nSpecialties"]
-    nRooms          =   input["nRooms"]
+    nDays           =   input_dict["nDays"]
+    nWards          =   input_dict["nWards"]
+    nGroups         =   input_dict["nGroups"]
+    nSpecialties    =   input_dict["nSpecialties"]
+    nRooms          =   input_dict["nRooms"]
     
-    Wi  =   input["Wi"]
-    Si  =   input["Si"]
-    Gi  =   input["Gi"]
-    GWi =   input["GWi"]
-    GSi =   input["GSi"]    
-    Ri  =   input["Ri"]
-    RSi =   input["RSi"]
-    RGi =   input["RGi"]
-    Di  =   input["Di"]
+    Wi  =   input_dict["Wi"]
+    Si  =   input_dict["Si"]
+    Gi  =   input_dict["Gi"]
+    GWi =   input_dict["GWi"]
+    GSi =   input_dict["GSi"]    
+    Ri  =   input_dict["Ri"]
+    RSi =   input_dict["RSi"]
+    RGi =   input_dict["RGi"]
+    Di  =   input_dict["Di"]
 
     #----- Parameter ----- #  
     F   =   flexibility
-    input["F"]  = flexibility
-    E   =   input["E"]
-    TC  =   input["TC"]
-    I   =   input["I"]
-    B   =   input["B"]
-    H   =   input["H"]
-    K   =   input["K"]
-    L   =   input["L"]
-    U   =   input["U"]
-    N   =   input["N"]
-    T   =   input["T"]
-    Co  =   input["Co"]
-    J   =   input["J"]
-    P   =   input["P"]
-    Y   =   input["Y"]
+    input_dict["F"]  = flexibility
+    E   =   input_dict["E"]
+    TC  =   input_dict["TC"]
+    I   =   input_dict["I"]
+    B   =   input_dict["B"]
+    H   =   input_dict["H"]
+    K   =   input_dict["K"]
+    L   =   input_dict["L"]
+    U   =   input_dict["U"]
+    N   =   input_dict["N"]
+    T   =   input_dict["T"]
+    Co  =   input_dict["Co"]
+    J   =   input_dict["J"]
+    P   =   input_dict["P"]
+    Y   =   input_dict["Y"]
     
+    #----- EVS configuration ----- #  
     if expected_value_solution:
         nScenarios          =   1
         Ci                  =   [c for c in range(nScenarios)]
         Pi                  =   [1/nScenarios]*nScenarios
-        Q                   =   [[0 for _ in range(nScenarios)] for _ in range(input["nGroups"])]
+        Q                   =   [[0 for _ in range(nScenarios)] for _ in range(input_dict["nGroups"])]
         for c in Ci:
             for g in Gi:
                 Q[g][c] = int(T[g])
-        input["Ci"]         =   Ci                           
-        input["Pi"]         =   [1/nScenarios]*nScenarios
-        input["nScenarios"] =   nScenarios
-        input["Q"]          =   Q
+        input_dict["Ci"]         =   Ci                           
+        input_dict["Pi"]         =   [1/nScenarios]*nScenarios
+        input_dict["nScenarios"] =   nScenarios
+        input_dict["Q"]          =   Q
     else:
-        nScenarios          =   input["nScenarios"]
-        Pi                  =   input["Pi"]
-        Q                   =   input["Q"]
-        Ci                  =   input["Ci"]
+        nScenarios          =   input_dict["nScenarios"]
+        Pi                  =   input_dict["Pi"]
+        Q                   =   input_dict["Q"]
+        Ci                  =   input_dict["Ci"]
+    
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    m.setParam("MIPFocus", 3) 
+    # finding feasible solutions quickly:1
+    # no trouble finding good quality solutions, more attention on proving optimality: 2 
+    # If the best objective bound is moving very slowly (or not at all)and want to focus on the bound:3
     if not print_optimizer:
         m.Params.LogToConsole = 0
-    
-    
+
     '--- Variables ---'
     gamm    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="gamma")
     lamb    =   m.addVars(Si, Ri, Di, vtype=GRB.BINARY, name="lambda")
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
     x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
-    """v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")"""
     
     for s in Si:
         for r in (list(set(Ri)^set(RSi[s]))):
@@ -92,7 +94,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
                     x[g,r,d,c].lb=0
                     x[g,r,d,c].ub=0             
     
-
     max_fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)))
     '--- Objective ---' 
     m.setObjective(
@@ -154,18 +155,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
-    """ m.addConstrs(
-        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
-        for w in Wi for d in Di for c in Ci),
-    name = "Con_BedOccupationCapacity",
-    )
-    print('still Creating Model 90%')
-    for w in Wi:
-        m.addConstrs(
-            (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
-            for d in range(J[w]-1)),
-        name = "Con_BedOccupationBoundaries" + str(w),
-        )"""
     for s in Si:
         m.addConstrs(
             (gamm[s,r,d]==gamm[s,r,nDays/I+d] 
@@ -181,107 +170,62 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     print('Creating model (3/3)')
 
     m.optimize()
-    
-    statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
-    "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
-    
-    
-    result_dict =   {}
-    result_dict["status"]=statuses[m.STATUS]
-    result_dict["obj"] = m.ObjVal
-    result_dict["best_bound"] = m.ObjBound
-    result_dict["runtime"] = m.Runtime
-    result_dict["max_runtime"] = time_limit
-    result_dict["MIPGap"] = m.MIPGap  
+    result_dict = save_results_pre(m)
+    #result_dict["max_runtime"] = time_limit
+
     nSolutions=m.SolCount
     if nSolutions==0:
-        result_dict["status"]=statuses[0]
+        result_dict["status"]=0
     else:
-        # ----- Copying the desicion variable values to result dictionary -----
-        """result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
-        result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
-        result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-        
-        for s in input["Si"]:
-            for r in input["Ri"]:
-                for d in input["Di"]:    
-                    result_dict["gamm"][s][r][d] = gamm[s,r,d].getAttr("x")
-                    result_dict["lamb"][s][r][d] = lamb[s,r,d].X
-                    for c in input["Ci"]:
-                        result_dict["delt"][s][r][d][c] = delt[s,r,d,c].X                     
-        for g in input["Gi"]:
-            for r in input["Ri"]:
-                for d in input["Di"]:    
-                    for c in input["Ci"]:
-                        result_dict["x"][g][r][d][c] = x[g,r,d,c].X
-        for g in input["Gi"]:
-            for c in input["Ci"]:
-                result_dict["a"][g][c] = a[g,c].X
-                    
-        for w in Wi:
-            for d in range(J[w]-1):
-                result_dict["v"][w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * result_dict["x"][g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
-        
-        bed_occupationC =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-        result_dict["bed_occupation"] =[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-        for w in input_dict["Wi"]:
-            for d in input_dict["Di"]:
-                for c in input_dict["Ci"]:
-                    bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
-        for w in input_dict["Wi"]:
-                for d in input_dict["Di"]:
-                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])"""
+        result_dict =  save_results(m, input_dict, result_dict)
 
-        result_dict =  save_results(m, input, result_dict)
+    return result_dict, input_dict
 
-    return result_dict, input
-
-def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False):
-    input = input_dict
-    
+def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
     #----- Sets ----- #  
-    nDays           =   input["nDays"]
-    nWards          =   input["nWards"]
-    nScenarios      =   input["nScenarios"]
-    nGroups         =   input["nGroups"]
-    nSpecialties    =   input["nSpecialties"]
-    nRooms          =   input["nRooms"]
-    Wi  =   input["Wi"]
-    Si  =   input["Si"]
-    Gi  =   input["Gi"]
-    GWi =   input["GWi"]
-    GSi =   input["GSi"]    
-    Ri  =   input["Ri"]
-    RSi =   input["RSi"]
-    RGi =   input["RGi"]
-    Di  =   input["Di"]
-    Ci  =   input["Ci"]
+    nDays           =   input_dict["nDays"]
+    nWards          =   input_dict["nWards"]
+    nScenarios      =   input_dict["nScenarios"]
+    nGroups         =   input_dict["nGroups"]
+    nSpecialties    =   input_dict["nSpecialties"]
+    nRooms          =   input_dict["nRooms"]
+    Wi  =   input_dict["Wi"]
+    Si  =   input_dict["Si"]
+    Gi  =   input_dict["Gi"]
+    GWi =   input_dict["GWi"]
+    GSi =   input_dict["GSi"]    
+    Ri  =   input_dict["Ri"]
+    RSi =   input_dict["RSi"]
+    RGi =   input_dict["RGi"]
+    Di  =   input_dict["Di"]
+    Ci  =   input_dict["Ci"]
 
     #----- Parameter ----- #  
-    F   =   input["F"]
-    E   =   input["E"]
-    TC  =   input["TC"]
-    I   =   input["I"]
-    B   =   input["B"]
-    H   =   input["H"]
-    K   =   input["K"]
-    L   =   input["L"]
-    U   =   input["U"]
-    N   =   input["N"]
-    T   =   input["T"]
-    Co  =   input["Co"]
-    J   =   input["J"]
-    P   =   input["P"]
-    Pi  =   input["Pi"]
-    Q   =   input["Q"]
-    Y   =   input["Y"]
+    F   =   input_dict["F"]
+    E   =   input_dict["E"]
+    TC  =   input_dict["TC"]
+    I   =   input_dict["I"]
+    B   =   input_dict["B"]
+    H   =   input_dict["H"]
+    K   =   input_dict["K"]
+    L   =   input_dict["L"]
+    U   =   input_dict["U"]
+    N   =   input_dict["N"]
+    T   =   input_dict["T"]
+    Co  =   input_dict["Co"]
+    J   =   input_dict["J"]
+    P   =   input_dict["P"]
+    Pi  =   input_dict["Pi"]
+    Q   =   input_dict["Q"]
+    Y   =   input_dict["Y"]
     
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    m.setParam("MIPFocus", 3) 
+    # finding feasible solutions quickly:1
+    # no trouble finding good quality solutions, more attention on proving optimality: 2 
+    # If the best objective bound is moving very slowly (or not at all)and want to focus on the bound:3
     if not print_optimizer:
         m.Params.LogToConsole = 0
     
@@ -291,7 +235,6 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
     x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
-    """v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")"""
     
     for s in Si:
         for r in Ri:
@@ -366,18 +309,6 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
-    """ m.addConstrs(
-        (quicksum(P[w][g][d-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
-        for w in Wi for d in Di for c in Ci),
-    name = "Con_BedOccupationCapacity",
-    )
-    print('still Creating Model 90%')
-    for w in Wi:
-        m.addConstrs(
-            (quicksum(Pi[c] * quicksum(P[w][g][d+nDays-dd] * x[g,r,dd,c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
-            for d in range(J[w]-1)),
-        name = "Con_BedOccupationBoundaries" + str(w),
-        )"""
     for s in Si:
         m.addConstrs(
             (gamm[s,r,d]==gamm[s,r,nDays/I+d] 
@@ -394,61 +325,17 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
 
     m.optimize()
 
-    statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
-    "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
-    result_dict =   {}
-    result_dict["status"]=statuses[m.STATUS]
-    result_dict["obj"] = m.ObjVal
-    result_dict["best_bound"] = m.ObjBound
-    result_dict["runtime"] = m.Runtime
-    result_dict["max_runtime"] = time_limit
-    result_dict["MIPGap"] = m.MIPGap  
+
+    result_dict = save_results_pre(m)
+    #result_dict["max_runtime"] = time_limit
+
     nSolutions=m.SolCount
     if nSolutions==0:
-        result_dict["status"]=statuses[0]
+        result_dict["status"]=0
         print('Did not find any feasible initial solution in read_model_fixed()')
         return
     else:
         m.write('model.mps')
-        m.write('warmstart.mst')
-        # ----- Copying the desicion variable values to result dictionary -----
-        """result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["lamb"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["delt"] = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
-        result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
-        result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
-        result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-        
-        for s in input["Si"]:
-            for r in input["Ri"]:
-                for d in input["Di"]:    
-                    result_dict["gamm"][s][r][d] = gamm[s,r,d].getAttr("x")
-                    result_dict["lamb"][s][r][d] = lamb[s,r,d].X
-                    for c in input["Ci"]:
-                        result_dict["delt"][s][r][d][c] = delt[s,r,d,c].X                     
-        for g in input["Gi"]:
-            for r in input["Ri"]:
-                for d in input["Di"]:    
-                    for c in input["Ci"]:
-                        result_dict["x"][g][r][d][c] = x[g,r,d,c].X
-        for g in input["Gi"]:
-            for c in input["Ci"]:
-                result_dict["a"][g][c] = a[g,c].X
-                    
-        for w in Wi:
-            for d in range(J[w]-1):
-                result_dict["v"][w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * result_dict["x"][g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
-        
-        bed_occupationC =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-        result_dict["bed_occupation"] =[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-        for w in input_dict["Wi"]:
-            for d in input_dict["Di"]:
-                for c in input_dict["Ci"]:
-                    bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
-        for w in input_dict["Wi"]:
-                for d in input_dict["Di"]:
-                    result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])"""
-                    
-        result_dict =  save_results(m, input, result_dict)
+        m.write('warmstart.mst')               
+        result_dict =  save_results(m, input_dict, result_dict)
     return result_dict
-        

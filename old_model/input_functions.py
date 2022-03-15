@@ -307,6 +307,16 @@ def generate_scenario_data_for_EVS(input_dict,nScenarios, seed, return_dissadvan
         return input_dict, dissadvantage
     return input_dict
 
+def choose_correct_input_file(number_of_groups):
+    if number_of_groups in [4, 5, 9]:
+        num_max_groups= "_9groups"
+    elif number_of_groups in [12, 13, 25]:
+        num_max_groups= "_25groups"
+    else:
+        print("Invalid number of groups")    
+        return
+    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
+    return file_name
         
         
         

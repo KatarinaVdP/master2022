@@ -7,24 +7,17 @@ from heuristic import *
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
-    
-    #----- Choose input/output file ----  
-    if number_of_groups in [4, 5, 9]:
-        num_max_groups= "_9groups"
-    elif number_of_groups in [12, 13, 25]:
-        num_max_groups= "_25groups"
-    else:
-        print("Invalid number of groups")    
-        return
-    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
-    excel_file="input_output/" + "results.xlsx"
-    
+
+    #----- Choose input/output file ----   
+    input_file_name =   choose_correct_input_file(number_of_groups)
+    excel_file      =   "input_output/" + "results.xlsx"
+
     #----- Find EVS as initial MSS ---- 
-    input           =   read_input(file_name)
+    input           =   read_input(input_file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    for d in range(input["nDays"]):
+    """for d in range(input["nDays"]):
         input["B"][0][d]=input["B"][0][d]*0.7
-        input["B"][1][d]=input["B"][0][d]*0.7
+        input["B"][1][d]=input["B"][0][d]*0.7"""
     #input, dissadvantage           =   generate_scenario_data_for_EVS(input,20,1,return_dissadvantage=True)
     results, input  =   run_model(input, flexibility, 60,True,True)
     print("EVS found")
