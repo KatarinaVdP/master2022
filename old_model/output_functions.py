@@ -571,12 +571,14 @@ def save_results_pre(m):
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
     result_dict =   {}
     result_dict["status"]=statuses[m.STATUS]
+    if result_dict["status"] ==  "INFEASIBLE":
+        print('Model is INFEASIBLE')
+        return
     result_dict["obj"] = m.ObjVal
     result_dict["best_bound"] = m.ObjBound
     result_dict["max_runtime"] = m.Params.TimeLimit
     result_dict["runtime"] = m.Runtime
     result_dict["MIPGap"] = m.MIPGap  
+    result_dict["given_more_time"] = False 
     
-    
-
     return result_dict

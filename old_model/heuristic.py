@@ -6,6 +6,7 @@ from gurobipy import GRB
 from model import *
 from input_functions import *
 from output_functions import *
+import os.path
     
 def update_temperature(iter, iter_max):
     temperature = 1 - (iter/iter_max)
@@ -15,7 +16,10 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     input=input_dict
     
     best_sol = last_output
-    m = gp.read(model_file_name)
+    if os.path.exists('new_model.mps'):
+        m = gp.read('new_model.mps')
+    else:
+        m = gp.read(model_file_name)
     m.update()
     if not print_optimizer:
         m.Params.LogToConsole = 0
@@ -43,40 +47,41 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "flex":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol,print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
             m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
-            m.read(warm_start_file_name)
+            if os.path.exists('new_warmstart.mst'):
+                m.read('new_warmstart.mst')
+            else:
+                m.read(warm_start_file_name)
             m.optimize()
-            print('modell har kjørt ferdig')
 
             result_dict = save_results_pre(m)
-            result_dict["given_more_time"]  =   False  
             
             if result_dict["status"] == GRB.INFEASIBLE:
                 print('Swap is infeasible!')
                 return
             
-            #----- Granting more time if no feasible solution is found or swapping back -----
+                #----- Granting more time if no feasible solution is found or swapping back -----
             nSolutions=m.SolCount
             if nSolutions==0:
                 if result_dict["given_more_time"]==False:
                     print('Did not find feasible solution within time limit of %i' %time_limit)
-                    #m.write('new_warmstart.mst')
                     more_time = 3*time_limit
                     print('Try with new time limit of %i' %more_time)
-                    #m.load('new_warmstart.mst')
                     m.setParam("TimeLimit", more_time)
+                    m.setParam("MIPFocus", 1) #finding solutions quickly
                     m.optimize()
+                    result_dict["given_more_time"] = True
                 else:
                     m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
                     m.update()
 
-            #----- Comparing candidate performance to best solution -----
+                #----- Comparing candidate performance to best solution -----
             else:
                 #----- Storing entire solution if a new best solution is found -----
                 pick_worse_obj = rand.random()
@@ -90,7 +95,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     action = "MOVE"
                     
                     m.write('new_model.mps')
-                    m.write('warmstart.mst')
+                    m.write('new_warmstart.mst')
                     
                     best_sol = save_results(m, input, result_dict)
                     write_to_excel_model(excel_file,input,best_sol)
@@ -108,9 +113,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
             write_to_excel_heuristic(excel_file,input ,global_iter, level, iter, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
             iter += 1
-            global_iter += 1
-        
-        #temperature = update_temperature()   
+            global_iter += 1 
         
     return best_sol
 
@@ -228,7 +231,7 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
                     if swap_done == True:
                         break
                     # If min_specialty has the slot and is not extended
-                    if (results["gamm"][min_specialty][r][d] == 1 and results["lamb"][min_specialty][r][d] == 0):
+                    if ((results["gamm"][min_specialty][r][d] == 1) and (results["lamb"][min_specialty][r][d] == 0)):
                         for i in range(input["I"]):
                             getting_slot["s"].append(max_specialty)
                             getting_slot["r"].append(r)
@@ -254,7 +257,7 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         else:
             print("No swap or assignment has been made for specialty %s. We will try for the specialty with the slightly shorter queue length." % (max_specialty))
             relative_queues[max_specialty] = 0
-        if max(relative_queues = 0):
+        if max(relative_queues) == 0:
             print("No swap or assignment has been made.")
             break
         
@@ -262,70 +265,6 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
 
 def swap_extension(input, results, print_swap = False):
     
-    swap_done = False
-    days_in_cycle = int(input["nDays"]/input["I"])
-    new_extended_slot = {"s":[], "r":[], "d":[], "size":int(0)}
-    new_regular_slot = {"s":[], "r":[], "d":[], "size":int(0)}
-    
-    # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
-    rand.shuffle(specialties)
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
-    rand.shuffle(days)
-    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
-    rand.shuffle(days2)
-    rooms = copy.deepcopy(input["RSi"])
-    for s in specialties:
-        rand.shuffle(rooms[s])
-    rooms2 = copy.deepcopy(input["RSi"])
-    for s in specialties:
-        rand.shuffle(rooms2[s])
-    
-    for s in specialties:
-        if swap_done == True:
-            break
-        for d in days:
-            if swap_done == True:
-                break
-            for r in rooms[s]:
-                if swap_done == True:
-                    break
-                if ((results["gamm"][s][r][d] == 1) and (results["lamb"][s][r][d]==1)):
-                    for dd in days2:
-                        if swap_done == True: 
-                            break
-                        for rr in rooms2[s]:
-                            if swap_done == True:
-                                break
-                            if (d != dd and results["gamm"][s][rr][dd] == 1 and results["lamb"][s][rr][dd] == 0):
-                                for i in range(input["I"]):
-                                    new_extended_slot["s"].append(s)
-                                    new_extended_slot["r"].append(rr)
-                                    new_extended_slot["d"].append(int(dd+i*days_in_cycle))
-                                    new_regular_slot["s"].append(s)
-                                    new_regular_slot["r"].append(r)
-                                    new_regular_slot["d"].append(int(d+i*days_in_cycle))
-                                new_extended_slot["size"] = len(new_extended_slot["s"])
-                                new_regular_slot["size"] = len(new_regular_slot["s"])
-                                swap_done = True
-                                
-    # Printing the swaps that have been made
-    if swap_done:
-        if print_swap:
-            print("The following slots have been changed:")
-            for i in range(new_extended_slot["size"]):
-                spec = input["S"][new_extended_slot["s"][i]]
-                room_extended = input["R"][new_extended_slot["r"][i]]
-                day_extended = new_extended_slot["d"][i]+1
-                room_regular = input["R"][new_regular_slot["r"][i]]
-                day_regular = new_regular_slot["d"][i]+1
-                print("%s extended its slot on day %d in room %s and shortened its previously extended slot on day %d in room %s." % (spec, day_extended, room_extended, day_regular, room_regular))
-    else:
-        print("No swap or assignment has been made.")
-        
-    return swap_done, new_extended_slot, new_regular_slot
-
-def swap_extension_smart(input, results, print_swap = False):
     swap_done = False
     days_in_cycle = int(input["nDays"]/input["I"])
     new_extended_slot = {"s":[], "r":[], "d":[], "size":int(0)}
