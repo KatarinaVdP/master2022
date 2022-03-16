@@ -32,8 +32,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results = saved_values["results"]
         results = categorize_slots(input, results)
         print_MSS(input, results)
+        
         write_new_run_header_to_excel(excel_file,input,sheet_number=0)
-        write_to_excel_model()
+        write_to_excel_model(excel_file,input,results)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
         #----- Begin Heuristic ---- 
@@ -41,7 +42,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
+        obj_estimation_time = 5
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
@@ -58,16 +59,12 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING MIP-MODEL TO FIND EVS")
         print("------------------------------------------------------------------------------------------------------------------")
-        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
         print()
         print_solution_performance(input, results)
         if results["status"]==0:
             print('No solutions found in given runtime')
             return
-        results =   categorize_slots(input, results)
-        write_to_excel_model(excel_file,input,results)
-        print_MSS(input, results)
         print('\n' * 5)
         
         #----- Creating model and fixed first-stage solution to EVS  ----   
@@ -76,12 +73,14 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------") 
         input           = generate_scenarios(input, nScenarios, seed)
         results         = run_model_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
+        results         = categorize_slots(input, results)
+        print_solution_performance(input, results)
+        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
         
         print()
-        print_solution_performance(input, results)
-        #write_to_excel(excel_file,input,results)
+        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
         print('\n' * 5)
         #--- Saving solution in pickle ---
         saved_values            =   {}
@@ -95,13 +94,12 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
+        obj_estimation_time = 5
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
+        
         print_MSS(input, results)
-
-
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
 main(0.2, 9, 20, 1, 20)
