@@ -7,6 +7,7 @@ from model import *
 from input_functions import *
 from output_functions import *
 import os.path
+import time
     
 def update_temperature(iter, iter_max):
     temperature = 1 - (iter/iter_max)
@@ -62,9 +63,8 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
 
             result_dict = save_results_pre(m)
             
-            if result_dict["status"] == GRB.INFEASIBLE:
+            if result_dict["status"] == "INFEASIBLE":
                 print('Swap is infeasible!')
-                return
             
                 #----- Granting more time if no feasible solution is found or swapping back -----
             nSolutions=m.SolCount
@@ -73,10 +73,22 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     print('Did not find feasible solution within time limit of %i' %time_limit)
                     more_time = 3*time_limit
                     print('Try with new time limit of %i' %more_time)
+                    start = time.time()
                     m.setParam("TimeLimit", more_time)
                     m.setParam("MIPFocus", 1) #finding solutions quickly
                     m.optimize()
+                    end = time.time()
+                    print(f"Runtime of new optimizer is {end - start}")
+                    
+                    result_dict = save_results_pre(m)
                     result_dict["given_more_time"] = True
+                    if result_dict["status"] == "INFEASIBLE":
+                        print('still infeasible!')
+                    nSolutions=m.SolCount
+                    if nSolutions==0:
+                        print('still did not find any solutions')
+                    else:
+                        print('found %i solutions this time',nSolutions)
                 else:
                     m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
                     m.update()
@@ -195,12 +207,10 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
     giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
-    rand.shuffle(specialties)
     days = copy.deepcopy(input["Di"][0:days_in_cycle])
     rand.shuffle(days)
     rooms = copy.deepcopy(input["RSi"])
-    for s in specialties:
+    for s in input["Si"]:
         rand.shuffle(rooms[s])
     
     # Calculating the unoperated queue length compared to the demand queue length for all specialties    
@@ -231,7 +241,7 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
                     if swap_done == True:
                         break
                     # If min_specialty has the slot and is not extended
-                    if ((results["gamm"][min_specialty][r][d] == 1) and (results["lamb"][min_specialty][r][d] == 0)):
+                    if ((results["gamm"][min_specialty][r][d] > 0.5) and (results["lamb"][min_specialty][r][d] < 0.5)):
                         for i in range(input["I"]):
                             getting_slot["s"].append(max_specialty)
                             getting_slot["r"].append(r)

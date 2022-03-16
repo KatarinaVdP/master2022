@@ -317,6 +317,3 @@ def choose_correct_input_file(number_of_groups):
         return
     file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
     return file_name
-        
-        
-        
