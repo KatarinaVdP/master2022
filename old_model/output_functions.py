@@ -2,6 +2,7 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 from datetime import datetime
 import copy
+import os.path
 
 
 def categorize_slots(input_dict, output_dict):
@@ -414,6 +415,8 @@ def write_to_excel_MSS(excel_file_name,input_dict,output_dict,initial_MSS=False)
     wb.save(excel_file_name)
 
 def initiate_excel_book(excel_file_name,input_dict):
+        if os.path.exists(excel_file_name):
+            return
         wb  = Workbook()
         ws1 = wb.create_sheet("Model_Run",0)
         ws2 = wb.create_sheet("Heuristic_Run",-1)
@@ -453,10 +456,6 @@ def write_new_run_header_to_excel(excel_file_name,input_dict,sheet_number=0):
         headers_row_heuristic=["Global iter","Temp level","Temp iter","Best sol","Current sol","Current gap","Action"]
         ws = wb.worksheets[1]
         ws.append(headers_row_heuristic) 
-    elif sheet_number==2:    
-        headers_row_MSS=["--------------- MSS ---------------"]
-        ws = wb.worksheets[2]
-        ws.append(headers_row_MSS)
     wb.save(excel_file_name)
     
 def write_string_to_excel(excel_file_name, input_dict, string, sheet_number=0):

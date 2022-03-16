@@ -44,8 +44,8 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "fixed"
-            if swap_type == "flex":
+            swap_type = "flex" 
+            if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
                 swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol)

@@ -14,8 +14,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     excel_file      =   "input_output/" + "results.xlsx"
     input           =   read_input(input_file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    if not os.path.exists(excel_file):
+        initiate_excel_book(excel_file,input)
     initiate_excel_book(excel_file,input)
-    
     #----- Try to load initial model run from earlier ----  
     model_run_exists = False
     if os.path.exists("model_solution.pkl"):
@@ -47,7 +48,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         print_MSS(input, results)
-
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
 
