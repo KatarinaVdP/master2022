@@ -56,6 +56,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
         input_dict["Pi"]         =   [1/nScenarios]*nScenarios
         input_dict["nScenarios"] =   nScenarios
         input_dict["Q"]          =   Q
+        input_dict["seed"]       =   "T"
     else:
         nScenarios          =   input_dict["nScenarios"]
         Pi                  =   input_dict["Pi"]

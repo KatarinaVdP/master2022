@@ -310,24 +310,16 @@ def print_que(input_dict, output_dict):
     print()
     print()
 
-def write_to_excel(file_name,input_dict,output_dict):
+def write_to_excel_model(file_name,input_dict,output_dict):
     #filename = "myfile.xlsx"
     new_row = []
 
     try:
         wb = load_workbook(file_name)
-        ws = wb.worksheets[0]  # select first worksheet
+        ws = wb.worksheets[0]# select first worksheet
     except FileNotFoundError:
-        headers_row = ['groups','scenarios','flexibility','seed','primal_bound', 'dual_bound', 'gap','runtime','max_runtime','status','-','MC',]
-        for d in range(1,input_dict["nDays"]+1):
-            headers_row.append(d)
-        headers_row.append('-')
-        headers_row.append('IC')
-        for d in range(1,input_dict["nDays"]+1):
-            headers_row.append(d)
-        wb = Workbook()
-        ws = wb.active
-        ws.append(headers_row)
+        initiate_excel_book(file_name,input_dict)
+        ws = wb.worksheets[0]
 
     new_row.append(input_dict["number_of_groups"])
     new_row.append(input_dict["nScenarios"])
@@ -352,35 +344,132 @@ def write_to_excel(file_name,input_dict,output_dict):
 
     ws.append(new_row)
     wb.save(file_name)
-    
-def write_header_to_excel(file_name, type_of_header: str):
-    wb = load_workbook(file_name)
-    ws = wb.worksheets[0]
-    new_row = []
-    
-    if type_of_header == "begin_new":
-        new_row.append("------------------- New Run -------------------")
-        ws.append(new_row)
-        wb.save(file_name)
-        new_row = []
-        new_row.append("new")
-        new_row.append("heuristic")
-        new_row.append("run")
-        new_row.append("")
-        new_row.append("Date:")
-        now = datetime.now() # current date and time
-        date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-        new_row.append(date_time)
-        ws.append(new_row)
-        wb.save(file_name)
-    elif type_of_header == "first_iteration":
-        new_row.append("------------------- Begin Heuristic -------------------")
-        ws.append(new_row)
-        wb.save(file_name)
+
+def write_to_excel_heuristic(excel_file_name,input_dict,global_iter, level, iter, best_sol, current_sol, current_gap, action, only_if_move = False):
+    new_row = [global_iter, level, iter, best_sol, current_sol, current_gap, str(action)]
+    try:
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[1]# select first worksheet
+    except FileNotFoundError:
+        initiate_excel_book(excel_file_name,input_dict)
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[1]
+    if only_if_move:
+        if action == "MOVE":
+            ws.append(new_row)
+            wb.save(excel_file_name)
     else:
-        print('Invalid input in write_header_to_excel()')
-        return
+        ws.append(new_row)
+        wb.save(excel_file_name)
+
+def write_to_excel_MSS(excel_file_name,input_dict,output_dict,initial_MSS=False):
+    try:
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[2]
+    except FileNotFoundError:
+        initiate_excel_book(excel_file_name,input_dict)
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[2]  
     
+    if initial_MSS:
+        row = ["Initial MSS"]
+        ws.append(row) 
+    else:
+        row = ["Result MSS"]
+        ws.append(row) 
+        
+    """if print_all_cycles:
+        cycles = range(1,input_dict["I"]+1)
+    else:"""
+    row=[]
+    cycles = [1]
+    for i in cycles:
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        row.append(" ")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = str(d)
+            row.append(day)
+        ws.append(row)
+        row=[]
+        for r in input_dict["Ri"]:
+            row=[]
+            room = str(input_dict["R"][r])
+            row.append(room)
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    row.append("-")
+                elif output_dict["flexSlot"][r][d] == 1:
+                    row.append("#")
+                elif (output_dict["fixedSlot"][r][d] == 0) & (output_dict["flexSlot"][r][d] == 0):
+                    row.append("?") 
+                elif output_dict["fixedSlot"][r][d] == 1:
+                    for s in input_dict["Si"]:
+                        if output_dict["gamm"][s][r][d] == 1:
+                            slotLabel = input_dict["S"][s]
+                        if output_dict["lamb"][s][r][d] == 1:
+                            slotLabel = slotLabel+"*"
+                    row.append(slotLabel)    
+            ws.append(row)
+    wb.save(excel_file_name)
+
+def initiate_excel_book(excel_file_name,input_dict):
+        wb  = Workbook()
+        ws1 = wb.create_sheet("Model_Run",0)
+        ws2 = wb.create_sheet("Heuristic_Run",-1)
+        ws3 = wb.create_sheet("MSS",-1)
+        wb.save(excel_file_name)
+    
+def write_new_run_header_to_excel(excel_file_name,input_dict,sheet_number=0):
+    try:
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[sheet_number]
+    except FileNotFoundError:
+        initiate_excel_book(excel_file_name,input_dict)
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[sheet_number]
+    
+    new_row = []
+    new_row.append("------------------- New Run -------------------")
+    ws.append(new_row)
+    new_row = []
+    new_row.append("Date, Time: ")
+    now = datetime.now() # current date and time
+    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+    new_row.append(date_time)
+    ws.append(new_row)
+    
+    if sheet_number==0:
+        headers_row_model = ['groups','scenarios','flexibility','seed','primal_bound', 'dual_bound', 'gap','runtime','max_runtime','status','-','MC']
+        for d in range(1,input_dict["nDays"]+1):
+            headers_row_model.append(d)
+        headers_row_model.append('-')
+        headers_row_model.append('IC')
+        for d in range(1,input_dict["nDays"]+1):
+            headers_row_model.append(d)
+        ws = wb.worksheets[0]
+        ws.append(headers_row_model) 
+    elif sheet_number==1:
+        headers_row_heuristic=["Global iter","Temp level","Temp iter","Best sol","Current sol","Current gap","Action"]
+        ws = wb.worksheets[1]
+        ws.append(headers_row_heuristic) 
+    elif sheet_number==2:    
+        headers_row_MSS=["--------------- MSS ---------------"]
+        ws = wb.worksheets[2]
+        ws.append(headers_row_MSS)
+    wb.save(excel_file_name)
+    
+def write_string_to_excel(excel_file_name, input_dict, string, sheet_number=0):
+    try:
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[sheet_number]
+    except FileNotFoundError:
+        initiate_excel_book(excel_file_name,input_dict)
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[sheet_number]
+    ws.append(string)
+    wb.save(excel_file_name)
+
 def print_solution_performance(input, results):
     print("Solution performance")
     print("--------------------------------")
@@ -422,9 +511,9 @@ def print_heuristic_iteration(global_iter, level, levels, iter, level_iters, bes
     print("{0:<15}".format(action),end="")
     print()
     
-def save_results(m, input_dict, result_dict2):
+def save_results(m, input_dict, result_dict):
     #input = copy.deepcopy(input_dict)
-    result_dict = copy.deepcopy(result_dict2)
+    #result_dict = copy.deepcopy(result_dict2)
     
     # ----- Copying the desicion variable values to result dictionary -----
     result_dict["gamm"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
