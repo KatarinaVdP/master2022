@@ -8,9 +8,8 @@ from input_functions import *
 from output_functions import *
     
 def update_temperature(iter, iter_max):
-    temperature = 1 - ((iter + 1)/iter_max)
+    temperature = 1 - (iter/iter_max)
     return temperature
-    
 
 def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
@@ -24,23 +23,27 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     print("\n"*3)
 
     global_iter = 1
-    levels = [1,2,3]
+    levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
     level_iters = [10,10,10]
     
     print_heuristic_iteration_header()
     
     #----- Looping through temperature levels ----- 
+    temperature = 0
     for level in levels:
         iter = 1
+        temperature = update_temperature(level, levels[-1])
+        print(temperature)
+        
         #----- Looping through through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "flex"
+            swap_type = "fixed"
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol,print_swap = True)
             
@@ -75,7 +78,14 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             #----- Comparing candidate performance to best solution -----
             else:
                 #----- Storing entire solution if a new best solution is found -----
-                if result_dict["obj"] < best_sol["obj"]:
+                pick_worse_obj = rand.random()
+                if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < temperature:
+                    
+                    if result_dict["obj"] < best_sol["obj"]:
+                        print("Found better objective.")
+                    else:
+                        print("Chose worse objective in order to explore.")
+                    
                     action = "MOVE"
                     
                     m.write('new_model.mps')
@@ -99,6 +109,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             global_iter += 1
         
         #temperature = update_temperature()   
+        
     return best_sol
 
 def swap_fixed_slot(input, results, print_swap = False):
@@ -169,6 +180,80 @@ def swap_fixed_slot(input, results, print_swap = False):
                     print("%s in room %s on day %s." % (new_spec, room, day))
     else:
         print("No swap or assignment has been made.")
+        
+    return swap_done, getting_slot, giving_slot
+
+def swap_fixed_slot_smart(input, results, print_swap = False):
+    swap_done = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    getting_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    
+    # Shuffling lists in order to pick a random slot
+    specialties = copy.deepcopy(input["Si"])
+    rand.shuffle(specialties)
+    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days)
+    rooms = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms[s])
+    
+    # Calculating the unoperated queue length compared to the demand queue length for all specialties    
+    relative_queues = []
+    for s in input["Si"]:
+        unoperated_queue = 0
+        demand_queue = 0
+        for g in input["GSi"][s]:
+            unoperated_queue += sum(input["Pi"][c]*results["a"][g][c] for c in input["Ci"])
+            demand_queue += sum(input["Pi"][c]*input["Q"][g][c] for c in input["Ci"])
+        relative_queue = unoperated_queue/demand_queue
+        relative_queues.append(relative_queue)
+    
+    min_queue = min(relative_queues)
+    min_specialty = relative_queues.index(min_queue)
+    while swap_done == False:
+        max_queue = max(relative_queues)
+        max_specialty = relative_queues.index(max_queue)
+        
+        # Swapping fixed and not extended slot from specialty with max queue length to specialty with min queue length
+        for d in days:
+            if swap_done == True:
+                break
+            slots = sum(results["gamm"][max_specialty][r][d] for r in input["Ri"])
+            teams = input["K"][max_specialty][d]
+            if (teams > slots):
+                for r in rooms[s]:
+                    if swap_done == True:
+                        break
+                    # If min_specialty has the slot and is not extended
+                    if (results["gamm"][min_specialty][r][d] == 1 and results["lamb"][min_specialty][r][d] == 0):
+                        for i in range(input["I"]):
+                            getting_slot["s"].append(max_specialty)
+                            getting_slot["r"].append(r)
+                            getting_slot["d"].append(int(d+i*days_in_cycle))
+                            giving_slot["s"].append(min_specialty)
+                            giving_slot["r"].append(r)
+                            giving_slot["d"].append(int(d+i*days_in_cycle))
+                        getting_slot["size"] = len(getting_slot["s"])
+                        giving_slot["size"] = len(giving_slot["s"])
+                        swap_done = True
+        
+        # Printing the swaps that have been made
+        if swap_done:
+            if print_swap:
+                print("The following swaps were made:")
+                for i in range(getting_slot["size"]):
+                    old_spec = input["S"][giving_slot["s"][i]]
+                    new_spec = input["S"][getting_slot["s"][i]]
+                    room = input["R"][getting_slot["r"][i]]
+                    day = getting_slot["d"][i]+1
+                    day = "{:.0f}".format(day)
+                    print("%s gave their slot to %s in room %s on day %s." % (old_spec, new_spec, room, day))
+        else:
+            print("No swap or assignment has been made for specialty %s. We will try for the specialty with the slightly shorter queue length." % (max_specialty))
+            relative_queues[max_specialty] = 0
+        if max(relative_queues = 0):
+            print("No swap or assignment has been made.")
         
     return swap_done, getting_slot, giving_slot
 

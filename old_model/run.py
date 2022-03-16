@@ -14,6 +14,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     excel_file      =   "input_output/" + "results.xlsx"
     input           =   read_input(input_file_name)
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    initiate_excel_book(excel_file,input)
     
     #----- Try to load initial model run from earlier ----  
     model_run_exists = False
@@ -31,17 +32,25 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results = saved_values["results"]
         results = categorize_slots(input, results)
         print_MSS(input, results)
+        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
+        write_to_excel_model()
+        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
+        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
         #----- Begin Heuristic ---- 
         print("------------------------------------------------------------------------------------------------------------------")
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
-        obj_estimation_time = 30
-        initiate_excel_book(excel_file,input)
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
+        obj_estimation_time = 30
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
-        print_MSS(input, results)   
+        print_MSS(input, results)
+
+        write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
+
+
+
     
     #----- If initial model run is not found, run as usual -----   
     else:
@@ -49,6 +58,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING MIP-MODEL TO FIND EVS")
         print("------------------------------------------------------------------------------------------------------------------")
+        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
         print()
         print_solution_performance(input, results)
@@ -56,6 +66,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
             print('No solutions found in given runtime')
             return
         results =   categorize_slots(input, results)
+        write_to_excel_model(excel_file,input,results)
         print_MSS(input, results)
         print('\n' * 5)
         
@@ -65,6 +76,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------") 
         input           = generate_scenarios(input, nScenarios, seed)
         results         = run_model_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
+        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
+        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
+        
         print()
         print_solution_performance(input, results)
         #write_to_excel(excel_file,input,results)
@@ -80,11 +94,15 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
+        write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         obj_estimation_time = 30
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         print_MSS(input, results)
+
+
+        write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
 main(0.2, 9, 20, 1, 20)
 
