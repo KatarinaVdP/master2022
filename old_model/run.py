@@ -42,7 +42,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 15
+        obj_estimation_time = 5
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
