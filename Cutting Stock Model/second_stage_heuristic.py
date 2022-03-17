@@ -7,6 +7,7 @@ def udpate_non_ext_patterns(input, MSnxi, Q_rem,s,c):
         for g in input["GSi"][s]:
             if (input["A"][g][c] > Q_rem[g][c]):
                 MSnxi.remove(m)
+    return MSnxi
 
 
 def construct_second_stage_sol(input, first_stage):

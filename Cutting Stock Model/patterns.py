@@ -33,7 +33,7 @@ def max_operations_per_specialty_extended(input):
     for group in durations_per_specialty(input):
         max_operations_per_specialty_extended.append(math.floor(slot_time_extended/min(durations_per_specialty(input)[group])))
     return max_operations_per_specialty_extended
-      
+
 # Lager en dict med oversikt over alle mulige operasjonskombinasjoner gitt ved operasjonslengde ila en dag, per spesialitet
     
 def combinations_per_group(input):
@@ -125,8 +125,8 @@ def patterns_per_specialty_extended(input):
                             if i == j and duration == duration2 - cleaning_time:
                                 patterns[i][duration] += 1      
     
-    return patterns_per_specialty_extended
-                             
+    return patterns_per_specialty_extended                          
+
 def patterns_extended(input):  
     groups = input["G"]                             
     list_patterns_extended = []

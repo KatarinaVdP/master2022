@@ -33,7 +33,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_expected_bed_util(input, results) 
         print_que(input, results)
         
-    write_to_excel('results.xlsx',input,results)
     
 
 

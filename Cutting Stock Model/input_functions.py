@@ -2,7 +2,7 @@ import pandas as pd
 import math
 import numpy as np
 from scipy.stats import poisson
-
+from patterns import generate_pattern_data
 
 
 def read_list(sheet, name,integerVal=False):
@@ -125,6 +125,16 @@ def read_input(file_name):
     input_dict["J"]     =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
     input_dict["P"]     =   read_3d([MC, IC], "J", max(input_dict["J"]))            #Probabilies                P_(g,w,d)
     input_dict["Y"]     =   read_matrix(parameters,"Y",input_dict["nDays"])        #bed occupations from last period Y_(w,d)
+    
+    input_dict = generate_pattern_data(input_dict)
+    
+    # Parameters and sets specific to cutting stock model
+    """A       =   input["A"]
+    Psum    =   input["Psum"]
+    Mi      =   input["Mi"]
+    Mnxi    =   input["Mnxi"]
+    Mxi     =   input["Mxi"]
+    MSi     =   input["MSi"]"""
     return input_dict
 
 def edit_input_to_number_of_groups(input, number_of_groups):
@@ -286,3 +296,34 @@ def generate_scenarios(input_dict, nScenarios, seed):
         input_dict["Q"]         =   transposed_matrix
         
         return input_dict
+    
+def generate_scenario_data_for_EVS(input_dict,nScenarios, seed, return_dissadvantage = False):
+    input_dict                      =   generate_scenarios(input_dict,nScenarios,seed)                      
+    Q_single_scenario               =   [[0 for _ in range(1)] for _ in range(input_dict["nGroups"])]
+    dissadvantage                   =   0
+    for g in input_dict["Gi"]:
+        expected_group_preceil      =   sum(input_dict["Pi"][c]*input_dict["Q"][g][c] for c in input_dict["Ci"])
+        expected_group              =   int(np.round(expected_group_preceil))
+        dissadvantage               +=  (expected_group - expected_group_preceil)*(input_dict["L"][g] + input_dict["TC"])
+        Q_single_scenario[g][0]     =   expected_group
+        
+    nScenarios                      =   1
+    input_dict["nScenarios"]        =   nScenarios       
+    input_dict["Ci"]                =   [c for c in range(nScenarios)]                             
+    input_dict["Pi"]                =   [1/nScenarios]*nScenarios                 
+    input_dict["Q"]                 =   Q_single_scenario
+    
+    if return_dissadvantage:
+        return input_dict, dissadvantage
+    return input_dict
+
+def choose_correct_input_file(number_of_groups):
+    if number_of_groups in [4, 5, 9]:
+        num_max_groups= "_9groups"
+    elif number_of_groups in [12, 13, 25]:
+        num_max_groups= "_25groups"
+    else:
+        print("Invalid number of groups")    
+        return
+    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
+    return file_name
