@@ -17,10 +17,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     input=input_dict
     
     best_sol = last_output
-    if os.path.exists('new_model.mps'):
-        m = gp.read('new_model.mps')
-    else:
-        m = gp.read(model_file_name)
+    m = gp.read(model_file_name)
     m.update()
     if not print_optimizer:
         m.Params.LogToConsole = 0
@@ -55,7 +52,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             #----- Changing variable bound to evaluate candidate -----
             m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
-            if os.path.exists('new_warmstart.mst'):
+            if os.path.exists('new_warmstart.mst') and global_iter!=1:
                 m.read('new_warmstart.mst')
             else:
                 m.read(warm_start_file_name)
@@ -69,21 +66,21 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 #----- Granting more time if no feasible solution is found or swapping back -----
             nSolutions=m.SolCount
             if nSolutions==0:
-                if result_dict["given_more_time"]==False:
+                if result_dict["given_more_time"]==False and result_dict["status"] != "INFEASIBLE":
                     print('Did not find feasible solution within time limit of %i' %time_limit)
                     more_time = 3*time_limit
                     print('Try with new time limit of %i' %more_time)
-                    start = time.time()
+                    #start = time.time()
                     m.setParam("TimeLimit", more_time)
                     m.setParam("MIPFocus", 1) #finding solutions quickly
                     m.optimize()
-                    end = time.time()
-                    print(f"Runtime of new optimizer is {end - start}")
+                    #end = time.time()
+                    #print(f"Runtime of new optimizer is {end - start}")
                     
                     result_dict = save_results_pre(m)
                     result_dict["given_more_time"] = True
                     if result_dict["status"] == "INFEASIBLE":
-                        print('still infeasible!')
+                        print('Swap is infeasible! - found after giving more time')
                     nSolutions=m.SolCount
                     if nSolutions==0:
                         print('still did not find any solutions')
@@ -105,8 +102,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                         print("Chose worse objective in order to explore.")
                     
                     action = "MOVE"
-                    
-                    m.write('new_model.mps')
+                
                     m.write('new_warmstart.mst')
                     
                     best_sol = save_results(m, input, result_dict)
