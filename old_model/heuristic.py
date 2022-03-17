@@ -45,9 +45,9 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = True)
             elif swap_type == "flex":
-                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol,print_swap = True)
+                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
             m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
@@ -64,9 +64,10 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 print('Swap is infeasible!')
                 print('MSS before swap')
                 print_MSS(input, best_sol)
-                m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
+                m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                 m.update()
                 print('Swapped back')
+                continue
             
                 #----- Granting more time if no feasible solution is found or swapping back -----
             nSolutions=m.SolCount
@@ -92,7 +93,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                     else:
                         print('found %i solutions this time',nSolutions)
                 else:
-                    m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
+                    m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
 
                 #----- Comparing candidate performance to best solution -----
@@ -102,18 +103,16 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < temperature:
                     
                     if result_dict["obj"] < best_sol["obj"]:
-                        print("Found better objective.")
+                        action = "MOVE"
                     else:
-                        print("Chose worse objective in order to explore.")
-                    
-                    action = "MOVE"
+                        action = "MOVE*"
                 
                     m.write('new_warmstart.mst')
                     
                     best_sol = save_results(m, input, result_dict)
                     write_to_excel_model(excel_file,input,best_sol)
                     best_sol = categorize_slots(input, best_sol)
-                    print_MSS(input, best_sol)
+                    #print_MSS(input, best_sol)
                 else:
                     # ----- Copying the desicion variable values to result dictionary -----
                     result_dict =  save_results(m, input, result_dict)
