@@ -41,7 +41,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "flex" 
+            swap_type = "fixed" 
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
@@ -62,6 +62,11 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             
             if result_dict["status"] == "INFEASIBLE":
                 print('Swap is infeasible!')
+                print('MSS before swap')
+                print_MSS(input, best_sol)
+                m = change_bound(m, swap_found, getting_slot, giving_slot, extended, swap_back = True)
+                m.update()
+                print('Swapped back')
             
                 #----- Granting more time if no feasible solution is found or swapping back -----
             nSolutions=m.SolCount
