@@ -9,8 +9,8 @@ from output_functions import *
 import os.path
 import time
     
-def update_temperature(iter, iter_max):
-    temperature = 1 - (iter/iter_max)
+def update_temperature(temperature):
+    temperature = temperature/2
     return temperature
 
 def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
@@ -25,6 +25,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     m.update()
     print("\n"*3)
 
+    run_new_warmstart = False
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
     level_iters = [10,10,10]
@@ -32,10 +33,10 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     print_heuristic_iteration_header()
     
     #----- Looping through temperature levels ----- 
-    temperature = 0
+    temperature = 1
     for level in levels:
         iter = 1
-        temperature = update_temperature(level, levels[-1])
+        temperature = update_temperature(temperature)
         
         #----- Looping through through iterations at temperature level -----
         while iter <= level_iters[level-1]:
@@ -45,17 +46,19 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
             m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
-            if os.path.exists('new_warmstart.mst') and global_iter!=1:
+            if os.path.exists('new_warmstart.mst') and run_new_warmstart:
                 m.read('new_warmstart.mst')
+                print("Reading new warmstart file.")
             else:
                 m.read(warm_start_file_name)
+                print("Reading original warmstart file.")
             m.optimize()
 
             result_dict = save_results_pre(m)
@@ -100,7 +103,11 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             else:
                 #----- Storing entire solution if a new best solution is found -----
                 pick_worse_obj = rand.random()
-                if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < temperature:
+                delta = result_dict["obj"] - best_sol["obj"]
+                exponential = math.exp(-delta/temperature)
+                ("Exponential:")
+                print(exponential)
+                if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                     
                     if result_dict["obj"] < best_sol["obj"]:
                         action = "MOVE"
@@ -108,6 +115,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                         action = "MOVE*"
                 
                     m.write('new_warmstart.mst')
+                    run_new_warmstart = True
                     
                     best_sol = save_results(m, input, result_dict)
                     write_to_excel_model(excel_file,input,best_sol)
@@ -230,6 +238,10 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         max_queue = max(relative_queues)
         max_specialty = relative_queues.index(max_queue)
         
+        if max(relative_queues) == 0:
+            print("No swap or assignment has been made.")
+            break
+        
         # Swapping fixed and not extended slot from specialty with max queue length to specialty with min queue length
         for d in days:
             if swap_done == True:
@@ -237,7 +249,7 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
             slots = sum(results["gamm"][max_specialty][r][d] for r in input["Ri"])
             teams = input["K"][max_specialty][d]
             if (teams > slots):
-                for r in rooms[s]:
+                for r in rooms[max_specialty]:
                     if swap_done == True:
                         break
                     # If min_specialty has the slot and is not extended
@@ -267,9 +279,6 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         else:
             print("No swap or assignment has been made for specialty %s. We will try for the specialty with the slightly shorter queue length." % (max_specialty))
             relative_queues[max_specialty] = 0
-        if max(relative_queues) == 0:
-            print("No swap or assignment has been made.")
-            break
         
     return swap_done, getting_slot, giving_slot
 
