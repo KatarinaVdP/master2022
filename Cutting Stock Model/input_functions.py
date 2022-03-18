@@ -104,6 +104,18 @@ def read_input(file_name):
     input_dict["nDays"]= nDays
     input_dict["Di"]=[d for d in range(nDays)]
 
+    input_dict["SRi"] = [[] for _ in input_dict["Ri"]]
+    for s in input_dict["Si"]:
+        for r in input_dict["Ri"]:
+            if r in input_dict["RSi"][s]:
+                input_dict["SRi"][r].append(s) 
+    input_dict["WSi"] = [[] for _ in input_dict["Si"]]
+    for w in input_dict["Wi"]:
+        for s in input_dict["Si"]:
+            g = input_dict["GSi"][s][0]
+            if g in input_dict["GWi"][w]:
+                input_dict["WSi"][s].append(w)
+    
 # ----- Reading/Creating Parameters ----- #
     input_dict["F"]     =   float(parameters["Flexible Share"].values[0])           #Flexible Share             F
     input_dict["E"]     =   int(parameters["Extended Time"].values[0])              #Extended time              E
