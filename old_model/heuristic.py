@@ -46,7 +46,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol, print_swap = False)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = True)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = True)
             
@@ -104,9 +104,11 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 #----- Storing entire solution if a new best solution is found -----
                 pick_worse_obj = rand.random()
                 delta = result_dict["obj"] - best_sol["obj"]
-                exponential = math.exp(-delta/temperature)
-                ("Exponential:")
-                print(exponential)
+                try:
+                    exponential = math.exp(-delta/temperature)
+                except:
+                    exponential = 0
+                    
                 if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                     
                     if result_dict["obj"] < best_sol["obj"]:
@@ -232,8 +234,6 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         relative_queue = unoperated_queue/demand_queue
         relative_queues.append(relative_queue)
     
-    min_queue = min(relative_queues)
-    min_specialty = relative_queues.index(min_queue)
     while swap_done == False:
         max_queue = max(relative_queues)
         max_specialty = relative_queues.index(max_queue)
@@ -246,14 +246,23 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         for d in days:
             if swap_done == True:
                 break
+            
+            # Excluding specialties who have not been assigned an un-extended room on the given day
+            modified_relative_queues = copy.deepcopy(relative_queues)
+            for s in input["Si"]:
+                if sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == 0 or sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == sum(results["lamb"][s][r][d] for r in rooms[max_specialty]):
+                    modified_relative_queues[s] = 2
+                    
             slots = sum(results["gamm"][max_specialty][r][d] for r in input["Ri"])
             teams = input["K"][max_specialty][d]
             if (teams > slots):
+                min_queue = min(modified_relative_queues)
+                min_specialty = modified_relative_queues.index(min_queue)
                 for r in rooms[max_specialty]:
                     if swap_done == True:
                         break
                     # If min_specialty has the slot and is not extended
-                    if ((results["gamm"][min_specialty][r][d] > 0.5) and (results["lamb"][min_specialty][r][d] < 0.5)):
+                    if (max_specialty != min_specialty and results["gamm"][min_specialty][r][d] > 0.5 and results["lamb"][min_specialty][r][d] < 0.5):
                         for i in range(input["I"]):
                             getting_slot["s"].append(max_specialty)
                             getting_slot["r"].append(r)
@@ -369,6 +378,7 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
     for s in specialties:
         rand.shuffle(rooms2[s])
     
+    # Swaps a fixed slot (extended or regular) with a flexible slot on another day
     for s in specialties:
         if swap_done == True:
             break
@@ -418,6 +428,113 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
                 print("The fixed slot that belonged to specialty %s on day %d in room %s was swapped with the flexible slot on day %d in room %s" % (spec, day_flexible, room_flexible, day_fixed, room_fixed)) # day_flexible og room_flexible er de som NÅ er fleksible og derfor tidligere var fikserte. Omvendt for fixed.
     else:
         print("No swap or assignment has been made.")
+        
+    return swap_done, new_fixed_slot, new_flexible_slot, extended
+
+def swap_fixed_with_flexible_smart(input, results, print_swap = False):
+    
+    swap_done = False
+    extended = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    new_fixed_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    
+    # Shuffling lists in order to pick a random slot
+    specialties = copy.deepcopy(input["Si"])
+    rand.shuffle(specialties)
+    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days)
+    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days2)
+    rooms = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms[s])
+    rooms2 = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms2[s])
+        
+    # GN and GO
+    GN = input["Si"].index("GN")
+    GO = input["Si"].index("GO")
+    specialties_GN_GO = [GN, GO]
+    for d in days:
+        if sum(results["gamm"][s][r][d] for r in rooms[GN] for s in specialties_GN_GO) <= 1: # Two or more flexible slots
+            for d2 in days2:
+                if sum(results["gamm"][s][r][d2] for r in rooms[GN] for s in specialties_GN_GO) == 3: # No flexible slots
+                    for s in specialties_GN_GO:
+                        if sum(results["gamm"][s][r][d2] for r in rooms[GN]) >= 2: # The specialty that has two fixed slots on the given day
+                            max_slots = s # The index of the specialty with two or more fixed slots on the given day
+                            for r in rooms[GN]:
+                                if results["gamm"][max_slots][r][d2] == 1: # The room is fixed to the specialty with two or more fixed slots on the given day
+                                    new_flexible_room = r
+                                if sum(results["gamm"][s][r][d] for s in specialties_GN_GO) == 0: # The room is flexible
+                                    new_fixed_room = r
+                                    
+                             
+                    # teams > slots per def, because new_fixed_slot is on a day with previously two or more flexible slots
+                    for i in range(input["I"]):
+                        new_fixed_slot["s"].append(max_slots)
+                        new_fixed_slot["r"].append(new_fixed_room)
+                        new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                        new_flexible_slot["s"].append(max_slots)
+                        new_flexible_slot["r"].append(new_flexible_room)
+                        new_flexible_slot["d"].append(int(d2+i*days_in_cycle))
+                    new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                    new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                    if results["lamb"][s][r][d] == 1:
+                        extended = True
+                    swap_done = True
+    
+    # Swaps a fixed slot (extended or regular) with a flexible slot on another day
+    """for s in specialties:
+        if swap_done == True:
+            break
+        for d in days:
+            if swap_done == True:
+                break
+            for r in rooms[s]:
+                if swap_done == True:
+                    break
+                if results["gamm"][s][r][d] == 1:
+                    for dd in days2:
+                        if swap_done == True: 
+                            break
+                        for rr in rooms2[s]:
+                            if swap_done == True:
+                                break
+                            if (d != dd and sum(results["gamm"][ss][rr][dd] for ss in input["Si"]) == 0):
+                                slots = sum(results["gamm"][s][rrr][dd] for rrr in input["Ri"])
+                                teams = input["K"][s][dd]
+                                if (teams > slots):
+                                    for i in range(input["I"]):
+                                        new_fixed_slot["s"].append(s)
+                                        new_fixed_slot["r"].append(rr)
+                                        new_fixed_slot["d"].append(int(dd+i*days_in_cycle))
+                                        new_flexible_slot["s"].append(s)
+                                        new_flexible_slot["r"].append(r)
+                                        new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                                    new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                                    new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                                    if results["lamb"][s][r][d] == 1:
+                                        extended = True
+                                    swap_done = True
+                                
+    # Printing the swaps that have been made
+    if swap_done:
+        if print_swap:
+            print("The following slots have been changed:")
+            for i in range(new_fixed_slot["size"]):
+                if extended:
+                    spec = input["S"][new_fixed_slot["s"][i]]+"*"
+                else:
+                    spec = input["S"][new_fixed_slot["s"][i]]
+                room_fixed = input["R"][new_fixed_slot["r"][i]]
+                day_fixed = new_fixed_slot["d"][i]+1
+                room_flexible = input["R"][new_flexible_slot["r"][i]]
+                day_flexible = new_flexible_slot["d"][i]+1
+                print("The fixed slot that belonged to specialty %s on day %d in room %s was swapped with the flexible slot on day %d in room %s" % (spec, day_flexible, room_flexible, day_fixed, room_fixed)) # day_flexible og room_flexible er de som NÅ er fleksible og derfor tidligere var fikserte. Omvendt for fixed.
+    else:
+        print("No swap or assignment has been made.")"""
         
     return swap_done, new_fixed_slot, new_flexible_slot, extended
 

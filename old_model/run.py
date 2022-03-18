@@ -13,14 +13,16 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     input_file_name =   choose_correct_input_file(number_of_groups)
     excel_file      =   "input_output/" + "results.xlsx"
     input           =   read_input(input_file_name)
-    for d in input["Di"]:
-        input["B"][0][d] = input["B"][0][d]*1.5
-        input["B"][1][d] = input["B"][1][d]*1.5
-    print(input["B"][0][0])
-    print(input["B"][0][5])
-    print(input["B"][1][0])
-    print(input["B"][1][5])
     
+    #---- Increasing the capacity of bed wards to normal level
+    input = change_ward_capacity(input, "MC", 60, 49)
+    input = change_ward_capacity(input, "IC", 11, 6)
+    
+    #---- Adjusting the number of ORs available
+    input = change_number_of_rooms_available(input, 6,6,6,6,6)
+
+    #----- OBS! Funksjonen under vil gi gjøre det trangt på wards uavhengig av om
+    #----- change_ward_capacity har blitt brukt til å relaksere
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)
@@ -52,7 +54,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 40
+        obj_estimation_time = 30
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
@@ -103,7 +105,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 40
+        obj_estimation_time = 30
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
@@ -111,6 +113,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0, 25, 50, 1, 200)
+main(0.15, 25, 50, 1, 120)
 
     
