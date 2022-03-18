@@ -46,7 +46,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot(input_dict, best_sol, print_swap = False)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = True)
             
@@ -105,8 +105,6 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 pick_worse_obj = rand.random()
                 delta = result_dict["obj"] - best_sol["obj"]
                 exponential = math.exp(-delta/temperature)
-                ("Exponential:")
-                print(exponential)
                 if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                     
                     if result_dict["obj"] < best_sol["obj"]:
@@ -232,8 +230,6 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         relative_queue = unoperated_queue/demand_queue
         relative_queues.append(relative_queue)
     
-    min_queue = min(relative_queues)
-    min_specialty = relative_queues.index(min_queue)
     while swap_done == False:
         max_queue = max(relative_queues)
         max_specialty = relative_queues.index(max_queue)
@@ -246,9 +242,15 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         for d in days:
             if swap_done == True:
                 break
+            modified_relative_queues = copy.deepcopy(relative_queues)
+            for s in input["Si"]:
+                if sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == 0 or sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == sum(results["lamb"][s][r][d] for r in rooms[max_specialty]):
+                    modified_relative_queues[s] = 2
             slots = sum(results["gamm"][max_specialty][r][d] for r in input["Ri"])
             teams = input["K"][max_specialty][d]
             if (teams > slots):
+                min_queue = min(modified_relative_queues)
+                min_specialty = modified_relative_queues.index(min_queue)
                 for r in rooms[max_specialty]:
                     if swap_done == True:
                         break
