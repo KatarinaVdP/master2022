@@ -317,3 +317,23 @@ def choose_correct_input_file(number_of_groups):
         return
     file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
     return file_name
+
+def change_ward_capacity(input_dict, ward_name: str, weekday_capacity: float, weekend_capacity: float):
+    weekdays = [weekday_capacity for _ in range(4)]
+    weekends = [weekend_capacity for _ in range(3)]
+    week = weekdays + weekends
+    planning_period = []
+    for _ in range((input_dict["I"]*2)):
+        planning_period += week
+    # Finding the index of the ward in the input dictionary
+    ward_index = input_dict["W"].index(ward_name)
+    input_dict["B"][ward_index] = planning_period
+    return input_dict
+
+def change_number_of_rooms_available(input, mon: int, tue: int, wed: int, thu: int, fri: int):
+    week = [mon, tue, wed, thu, fri, 0, 0]
+    planning_period = []
+    for _ in range((input["I"]*2)):
+        planning_period += week
+    input["N"] = planning_period
+    return input
