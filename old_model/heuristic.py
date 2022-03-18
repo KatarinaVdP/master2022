@@ -46,7 +46,7 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = False)
+                swap_found, getting_slot, giving_slot = swap_fixed_slot_smart(input_dict, best_sol, print_swap = True)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = True)
             
@@ -104,7 +104,11 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
                 #----- Storing entire solution if a new best solution is found -----
                 pick_worse_obj = rand.random()
                 delta = result_dict["obj"] - best_sol["obj"]
-                exponential = math.exp(-delta/temperature)
+                try:
+                    exponential = math.exp(-delta/temperature)
+                except:
+                    exponential = 0
+                    
                 if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                     
                     if result_dict["obj"] < best_sol["obj"]:
@@ -242,10 +246,13 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
         for d in days:
             if swap_done == True:
                 break
+            
+            # Excluding specialties who have not been assigned an un-extended room on the given day
             modified_relative_queues = copy.deepcopy(relative_queues)
             for s in input["Si"]:
                 if sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == 0 or sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == sum(results["lamb"][s][r][d] for r in rooms[max_specialty]):
                     modified_relative_queues[s] = 2
+                    
             slots = sum(results["gamm"][max_specialty][r][d] for r in input["Ri"])
             teams = input["K"][max_specialty][d]
             if (teams > slots):
@@ -255,7 +262,7 @@ def swap_fixed_slot_smart(input, results, print_swap = False):
                     if swap_done == True:
                         break
                     # If min_specialty has the slot and is not extended
-                    if ((results["gamm"][min_specialty][r][d] > 0.5) and (results["lamb"][min_specialty][r][d] < 0.5)):
+                    if (max_specialty != min_specialty and results["gamm"][min_specialty][r][d] > 0.5 and results["lamb"][min_specialty][r][d] < 0.5):
                         for i in range(input["I"]):
                             getting_slot["s"].append(max_specialty)
                             getting_slot["r"].append(r)
@@ -371,6 +378,7 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
     for s in specialties:
         rand.shuffle(rooms2[s])
     
+    # Swaps a fixed slot (extended or regular) with a flexible slot on another day
     for s in specialties:
         if swap_done == True:
             break
