@@ -26,17 +26,31 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         demand_string = "{:>2.0f}".format(input["T"][g])
         old_minutes += input["T"][g]*input["L"][g]
         print(demand_string+"     ", end="")
-        input["T"][g] = int(round(input["T"][g]*1.4))
+        input["T"][g] = int(round(input["T"][g]*1.35))
         new_minutes += input["T"][g]*input["L"][g]
         demand_string = "{:>2.0f}".format(input["T"][g])
         print(demand_string)
-    print('\n'*2)
+    print()
     print("Old minutes:  "+"{:.0f}".format(old_minutes))
     print("New minutes:  "+"{:.0f}".format(new_minutes))
-
+    print()
     
-    #----- If initial model run is not found, run as usual -----   
-    #----- Find EVS as initial MSS ----  
+    
+    print("------------------------------------------------------------------------------------------------------------------")
+    print("RUNNING MIP-MODEL WITH SCENARIOS")
+    print("------------------------------------------------------------------------------------------------------------------")
+    input           = generate_scenarios(input, nScenarios, seed)
+    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = False, print_optimizer = False)
+    print()
+    print_solution_performance(input, results)
+    if results["status"]==0:
+        print('No solutions found in given runtime')
+        return
+    print('\n' * 2)
+    results = categorize_slots(input, results)
+    print_MSS(input, results)
+    
+    
     print("------------------------------------------------------------------------------------------------------------------")
     print("RUNNING MIP-MODEL TO FIND EVS")
     print("------------------------------------------------------------------------------------------------------------------")
@@ -49,6 +63,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print('\n' * 2)
     results = categorize_slots(input, results)
     print_MSS(input, results)
+    
 main(0, 25, 50, 1, 120)
 
     
