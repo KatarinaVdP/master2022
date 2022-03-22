@@ -521,6 +521,303 @@ def swap_fixed_with_flexible_GN_GO(input, results, print_swap = False):
         
     return swap_done, new_fixed_slot, new_flexible_slot, extended
 
+def swap_fixed_with_flexible_UR_KA_EN(input, results, print_swap = False):
+    
+    swap_done = False
+    extended = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    new_fixed_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
+    
+    # Shuffling lists in order to pick a random slot
+    specialties = copy.deepcopy(input["Si"])
+    rand.shuffle(specialties)
+    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days)
+    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    rand.shuffle(days2)
+    rooms = copy.deepcopy(input["RSi"])
+    for s in specialties:
+        rand.shuffle(rooms[s])
+        
+    # UR, KA and EN-
+    UR = input["S"].index("UR")
+    KA = input["S"].index("KA")
+    EN = input["S"].index("EN")
+    specialties_UR_KA_EN = [UR, KA, EN]
+    
+    for d in days:
+        if swap_done:
+            break
+        if sum(results["gamm"][s][1][d] for s in specialties) == 0: # GA-2 is flexible
+            if sum(results["gamm"][s][0][d] for s in specialties) == 0: # GA-1 is flexible
+                # Alt er good
+                continue
+            else: # GA-1 is fixed
+                if sum(results["gamm"][s][2][d] for s in specialties) == 0 or sum(results["gamm"][s][5][d] for s in specialties) == 0: # GA-3 or GA-6 is flexible
+                    rooms_3_6 = [2, 5]
+                    rand.shuffle(rooms_3_6)
+                    for r in rooms: # GA-3 and GA-6
+                        if swap_done:
+                            break
+                        if sum(results["gamm"][s][r][d] for s in specialties) == 0: # The room is flexible
+                            # Bytt GA-1 og r, hvis lov
+                            for s in specialties_UR_KA_EN:
+                                if results["gamm"][s][0][d] == 1: 
+                                    s_in_GA1 = s
+                            if r in rooms[s_in_GA1]:
+                                # Bytt GA-1 og r
+                                for i in range(input["I"]):
+                                    new_fixed_slot["s"].append(s_in_GA1)
+                                    new_fixed_slot["r"].append(r)
+                                    new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                    new_flexible_slot["s"].append(s_in_GA1)
+                                    new_flexible_slot["r"].append(0) # GA-1
+                                    new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                                new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                                new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                                if results["lamb"][s_in_GA1][0][d] == 1:
+                                    extended = True
+                                swap_done = True
+                else: # GA-3 and GA-6 are both fixed
+                    # Alt er good   
+                    continue   
+        else: # GA-2 is fixed
+            if sum(results["gamm"][s][0][d] for s in specialties) == 0: # GA-1 is flexible
+                if sum(results["gamm"][s][2][d] for s in specialties) == 0 and sum(results["gamm"][s][5][d] for s in specialties) == 0: # Both GA-3 and GA-6 are flexible
+                    rooms_3_6 = [2, 5]
+                    rand.shuffle(rooms_3_6)
+                    for r in rooms: # GA-3 and GA-6
+                        if swap_done:
+                            break
+                        # Bytt r med GA-2, hvis lovlig
+                        for s in specialties_UR_KA_EN:
+                            if results["gamm"][s][1][d] == 1: 
+                                s_in_GA2 = s
+                        if r in rooms[s_in_GA2]:
+                            # Bytt r med GA-2
+                            for i in range(input["I"]):
+                                new_fixed_slot["s"].append(s_in_GA2)
+                                new_fixed_slot["r"].append(r)
+                                new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                new_flexible_slot["s"].append(s_in_GA2)
+                                new_flexible_slot["r"].append(1) # GA-2
+                                new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                            new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                            new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                            if results["lamb"][s_in_GA2][1][d] == 1:
+                                extended = True
+                            swap_done = True
+                    # Hvis ingen av r over kunne bytte med GA-2, bytt GA-1 med GA-2, hvis lovlig
+                    # Dekket lenger ned
+                elif sum(results["gamm"][s][2][d] for s in specialties) == 0: # Only GA-3 is flexible
+                    # Bytt GA-3 med GA-2, hvis lovlig
+                    for s in specialties_UR_KA_EN:
+                        if results["gamm"][s][1][d] == 1: 
+                            s_in_GA2 = s
+                    if 2 in rooms[s_in_GA2]: # If room GA-3 is amongst the rooms that the current specialty in GA-2 can utilize
+                        # Bytt GA-3 med GA-2
+                        for i in range(input["I"]):
+                            new_fixed_slot["s"].append(s_in_GA2)
+                            new_fixed_slot["r"].append(2) # GA-3
+                            new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                            new_flexible_slot["s"].append(s_in_GA2)
+                            new_flexible_slot["r"].append(1) # GA-2
+                            new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                        new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                        new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                        if results["lamb"][s_in_GA2][1][d] == 1:
+                            extended = True
+                        swap_done = True
+                    # Hvis byttet over ikke er lovlig, bytt GA-1 med GA-2, hvis lovlig
+                    # Dekket lenger ned
+                elif sum(results["gamm"][s][5][d] for s in specialties) == 0: # Only GA-6 is flexible
+                    # Bytt GA-6 med GA-2, hvis lovlig
+                    for s in specialties_UR_KA_EN:
+                        if results["gamm"][s][1][d] == 1: 
+                            s_in_GA2 = s
+                    if 5 in rooms[s_in_GA2]: # If room GA-6 is amongst the rooms that the current specialty in GA-2 can utilize
+                        # Bytt GA-6 med GA-2
+                        for i in range(input["I"]):
+                            new_fixed_slot["s"].append(s_in_GA2)
+                            new_fixed_slot["r"].append(5) # GA-6
+                            new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                            new_flexible_slot["s"].append(s_in_GA2)
+                            new_flexible_slot["r"].append(1) # GA-2
+                            new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                        new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                        new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                        if results["lamb"][s_in_GA2][1][d] == 1:
+                            extended = True
+                        swap_done = True
+                    # Hvis byttet over ikke er lovlig, bytt GA-1 med GA-2, hvis lovlig
+                    # Dekket lenger ned
+                else: # GA-3 and GA-6 are both fixed
+                    # Bytt GA-1 med GA-2, hvis lovlig
+                    # Blir dekket av det under
+                    continue
+                if not swap_done:
+                    for s in specialties_UR_KA_EN:
+                        if results["gamm"][s][1][d] == 1: 
+                            s_in_GA2 = s
+                    if 0 in rooms[s_in_GA2]: # If room GA-1 is amongst the rooms that the current specialty in GA-2 can utilize
+                        for i in range(input["I"]):
+                            new_fixed_slot["s"].append(s_in_GA2)
+                            new_fixed_slot["r"].append(0) # GA-1
+                            new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                            new_flexible_slot["s"].append(s_in_GA2)
+                            new_flexible_slot["r"].append(1) # GA-2
+                            new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                        new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                        new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                        if results["lamb"][s_in_GA2][1][d] == 1:
+                            extended = True
+                        swap_done = True
+            else: # GA-1 is fixed
+                if sum(results["gamm"][s][2][d] for s in specialties) == 0 and sum(results["gamm"][s][5][d] for s in specialties) == 0: # Both GA-3 and GA-6 are flexible
+                    rooms_3_6 = [2, 5]
+                    rand.shuffle(rooms_3_6)
+                    swap_GA2 = False
+                    for r_i in len(rooms): # GA-3 and GA-6
+                        # Bytt r med GA-2, hvis lovlig. Hvis ikke, bytt r med GA-1, hvis lovlig
+                        # Hvis bytte med GA-2 i første iterasjon, bytt r med GA-1 i andre iterasjon, hvis lovlig
+                        # Bytt r med GA-2, hvis lovlig
+                        if r_i == 0: 
+                            for s in specialties_UR_KA_EN:
+                                if results["gamm"][s][1][d] == 1: 
+                                    s_in_GA2 = s
+                            if r in rooms[s_in_GA2]:
+                                # Bytt r med GA-2
+                                for i in range(input["I"]):
+                                    new_fixed_slot["s"].append(s_in_GA2)
+                                    new_fixed_slot["r"].append(rooms_3_6[r_i])
+                                    new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                    new_flexible_slot["s"].append(s_in_GA2)
+                                    new_flexible_slot["r"].append(1) # GA-2
+                                    new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                                new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                                new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                                if results["lamb"][s_in_GA2][1][d] == 1:
+                                    extended = True
+                                swap_done = True
+                                swap_GA2 = True
+                        if (r_i == 0 and not swap_done) or (r_i == 1 and swap_GA2):
+                            # Bytt r med GA-1, hvis lovlig
+                            for s in specialties_UR_KA_EN:
+                                if results["gamm"][s][0][d] == 1: 
+                                    s_in_GA1 = s
+                            if r in rooms[s_in_GA1]:
+                                # Bytt r med GA-1
+                                for i in range(input["I"]):
+                                    new_fixed_slot["s"].append(s_in_GA1)
+                                    new_fixed_slot["r"].append(rooms_3_6[r_i])
+                                    new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                    new_flexible_slot["s"].append(s_in_GA1)
+                                    new_flexible_slot["r"].append(0) # GA-1
+                                    new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                                new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                                new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                                if results["lamb"][s_in_GA1][0][d] == 1:
+                                    extended = True
+                                swap_done = True
+                elif sum(results["gamm"][s][2][d] for s in specialties) == 0: # Only GA-3 is flexible
+                    # Bytt GA-3 med GA-2, hvis lovlig. Hvis ikke, bytt GA-3 med GA-1, hvis lovlig
+                    for s in specialties_UR_KA_EN:
+                        if results["gamm"][s][1][d] == 1: 
+                            s_in_GA2 = s
+                    if r in rooms[s_in_GA2]:
+                        # Bytt GA-3 med GA-2
+                        for i in range(input["I"]):
+                            new_fixed_slot["s"].append(s_in_GA2)
+                            new_fixed_slot["r"].append(2) # GA-3
+                            new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                            new_flexible_slot["s"].append(s_in_GA2)
+                            new_flexible_slot["r"].append(1) # GA-2
+                            new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                        new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                        new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                        if results["lamb"][s_in_GA2][1][d] == 1:
+                            extended = True
+                        swap_done = True
+                        
+                    if not swap_done:
+                        for s in specialties_UR_KA_EN:
+                            if results["gamm"][s][0][d] == 1: 
+                                s_in_GA1 = s
+                        if r in rooms[s_in_GA2]:
+                            # Bytt GA-3 med GA-1
+                            for i in range(input["I"]):
+                                new_fixed_slot["s"].append(s_in_GA1)
+                                new_fixed_slot["r"].append(2) # GA-3
+                                new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                new_flexible_slot["s"].append(s_in_GA1)
+                                new_flexible_slot["r"].append(0) # GA-1
+                                new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                            new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                            new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                            if results["lamb"][s_in_GA1][0][d] == 1:
+                                extended = True
+                            swap_done = True
+                elif sum(results["gamm"][s][5][d] for s in specialties) == 0: # Only GA-6 is flexible
+                    # Bytt GA-6 med GA-2, hvis lovlig. Hvis ikke, bytt GA-6 med GA-1, hvis lovlig
+                    for s in specialties_UR_KA_EN:
+                        if results["gamm"][s][1][d] == 1: 
+                            s_in_GA2 = s
+                    if r in rooms[s_in_GA2]:
+                        # Bytt GA-6 med GA-2
+                        for i in range(input["I"]):
+                            new_fixed_slot["s"].append(s_in_GA2)
+                            new_fixed_slot["r"].append(5) # GA-6
+                            new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                            new_flexible_slot["s"].append(s_in_GA2)
+                            new_flexible_slot["r"].append(1) # GA-2
+                            new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                        new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                        new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                        if results["lamb"][s_in_GA2][1][d] == 1:
+                            extended = True
+                        swap_done = True
+                        
+                    if not swap_done:
+                        for s in specialties_UR_KA_EN:
+                            if results["gamm"][s][0][d] == 1: 
+                                s_in_GA1 = s
+                        if r in rooms[s_in_GA2]:
+                            # Bytt GA-3 med GA-1
+                            for i in range(input["I"]):
+                                new_fixed_slot["s"].append(s_in_GA1)
+                                new_fixed_slot["r"].append(5) # GA-6
+                                new_fixed_slot["d"].append(int(d+i*days_in_cycle))
+                                new_flexible_slot["s"].append(s_in_GA1)
+                                new_flexible_slot["r"].append(0) # GA-1
+                                new_flexible_slot["d"].append(int(d+i*days_in_cycle))
+                            new_fixed_slot["size"] = len(new_fixed_slot["s"])
+                            new_flexible_slot["size"] = len(new_flexible_slot["s"])
+                            if results["lamb"][s_in_GA1][0][d] == 1:
+                                extended = True
+                            swap_done = True
+                else: # GA-3 and GA-6 are both fixed
+                    # Alt er good
+                    continue
+                
+    # Printing the swaps that have been made
+    if swap_done:
+        if print_swap:
+            print("The following slots have been changed:")
+            for i in range(new_fixed_slot["size"]):
+                if extended:
+                    spec = input["S"][new_fixed_slot["s"][i]]+"*"
+                else:
+                    spec = input["S"][new_fixed_slot["s"][i]]
+                day = new_fixed_slot["d"][i]+1
+                room_fixed = input["R"][new_fixed_slot["r"][i]]
+                room_flexible = input["R"][new_flexible_slot["r"][i]]
+                print("The fixed slot that belonged to specialty %s on day %d in room %s was swapped with the flexible slot in room %s" % (spec, day, room_flexible, room_fixed)) # day_flexible og room_flexible er de som NÅ er fleksible og derfor tidligere var fikserte. Omvendt for fixed.
+    else:
+        print("No swap or assignment has been made.")
+        
+    return swap_done, new_fixed_slot, new_flexible_slot, extended
+
 def change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lambda"
