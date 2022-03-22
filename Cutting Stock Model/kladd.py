@@ -9,3 +9,7 @@ MSnxi.reverse()
 
 print(MSnxi)
 print(MSnxi_dur)
+
+MSi =[[5],[11,12]]
+MSi[0].remove(4)
+print(MSi)
