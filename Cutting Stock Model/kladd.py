@@ -9,3 +9,15 @@ MSnxi.reverse()
 
 print(MSnxi)
 print(MSnxi_dur)
+
+MSi =[[],[11,12]]
+
+if MSi[0]:
+    print(' 0not empty')
+elif not MSi[0]:
+    print('0 empty')
+    
+if MSi[1]:
+    print('1 not empty')
+elif not MSi[1]:
+    print('1 empty')

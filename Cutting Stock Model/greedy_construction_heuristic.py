@@ -1,4 +1,6 @@
 from urllib.parse import quote_from_bytes
+
+from sympy import true
 from input_functions import *
 from scipy.stats import poisson
 import gurobipy as gp
@@ -228,9 +230,36 @@ def update_patterns_list(input_dict, MSi_c, Q_rem,s,c):
     A   =   input_dict["A"]
     for m in MSi_c[c][s]:
         for g in GSi[s]:
-            if A[m][g] > Q_rem[g][c]:
+            if A[m][g] >= Q_rem[g][c]-0.5:
+                if m==20:
+                    print('nå')
                 MSi_c[c][s].remove(m)
+                return MSi_c 
     return MSi_c 
+
+def update_patterns_list2(input_dict,pattern, MSi_c, Q_rem,s,c):
+    GSi =   input_dict["GSi"]
+    A   =   input_dict["A"]
+    for g in GSi[s]:
+        if A[pattern][g] > Q_rem[g][c]:
+            print('pattern list')
+            print(MSi_c[c][s])
+            print('pattern that have lack of demand')
+            print(pattern)
+            print('Q_rem when flag group%i '%g)
+            print(Q_rem[g][c])
+            print('A_mg')
+            print(A[pattern][g])
+            MSi_c[c][s].remove(pattern)
+            print('pattern list')
+            print(MSi_c[c][s])
+            return MSi_c 
+    return MSi_c 
+
+def update_remaining_que(input_dict,pattern, Q_rem,s,c):
+    for g in input_dict["GSi"][s]:
+        Q_rem[g][c] -= input_dict["A"][pattern][g]
+    return Q_rem
 
 def sort_list_by_another(list_to_sort,list_to_sort_by, decending=True):
     list_to_sort  =   [x for _,x in sorted(zip(list_to_sort_by,list_to_sort))]
@@ -309,10 +338,26 @@ def choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,Pattern_matrix_c,s
                 possible_patterns_left = False  
     if illegal_bed_occ==False:
         bed_occ = bed_occ2
-        slot_matrix[r][d][c] = Pattern_matrix_c[c][s][i]
-        for g in input_dict["GSi"][s]:
+        """slot_matrix[r][d][c] = Pattern_matrix_c[c][s][i]"""
+        choosen_pattern = Pattern_matrix_c[c][s][i]
+        """for g in input_dict["GSi"][s]:
             Q_rem[g][c] -= A[Pattern_matrix_c[c][s][i]][g]
-    return slot_matrix,bed_occ,Q_rem
+            if Q_rem[g][c]<0:
+                print(g)
+                print(c)
+                Q_rem[g][c] += A[Pattern_matrix_c[c][s][i]][g]
+                print('Q_rem')
+                print(Q_rem)
+                print('pattern matrix')
+                print(Pattern_matrix_c)
+                print('choosen Pattern')
+                print(Pattern_matrix_c[c][s][i])
+                print('A')
+                print(A[Pattern_matrix_c[c][s][i]])"""
+    else:
+        choosen_pattern=-1
+                
+    return bed_occ,choosen_pattern
 
 def choose_best_pattern_with_legal_bed_occ_temporary(input_dict,bed_occ,Pattern_matrix_c,c,s,d):
     A               =   input_dict["A"]
@@ -423,13 +468,10 @@ def print_assigned_pattern_heuristic(input_dict, assigned_pattern_matrix_rdc,sce
                 if input_dict["N"][d] == 0:
                     print("{0:<5}".format("-"), end="")
                 else:
-                    operations = 0
-                    if assigned_pattern_matrix_rdc[r][d][scenario]>-0.5:
-                        operations += assigned_pattern_matrix_rdc[r][d][scenario]
-                    if operations > 0:
-                        operations_str = "{:.0f}".format(operations)
-                    else:
-                        operations_str = "{:.0f}".format(operations)
+                    operations = -2
+                    if assigned_pattern_matrix_rdc[r][d][scenario]>-1.5:
+                        operations = assigned_pattern_matrix_rdc[r][d][scenario]
+                    operations_str = "{:.0f}".format(operations)
                     print("{0:<5}".format(str(operations_str)), end="")
             print()
         print("        ", end="")
@@ -497,11 +539,18 @@ def run_greedy_construction_heuristic(input_dict,result_dict,flexibility,nScenar
     #----- initializing ----- # 
     MSnxi_dur       =   construct_dur_to_MSi(input_dict,MSnxi)
     MSxi_dur        =   construct_dur_to_MSi(input_dict,MSxi) 
+    MSi_dur         =   construct_dur_to_MSi(input_dict,MSi) 
     Mi_dur          =   construct_dur_to_Mi(input_dict,Mi)     
     MSnxi, MSnxi_dur=   sort_MS_after_duration(input_dict,MSnxi,MSnxi_dur)
     MSxi, MSxi_dur  =   sort_MS_after_duration(input_dict,MSxi,MSxi_dur)
+    MSi, MSi_dur    =   sort_MS_after_duration(input_dict,MSi,MSi_dur)
     slot            =   [[[-1 for _ in Ci] for _ in Di] for _ in Ri]
     
+    """for m in MSi[2]:
+        print(A[m])"""
+    
+    """print(MSi)
+    print(MSi_dur)"""
     fixed_slots     = result_dict["fixedSlot"]
     flex_slot       = result_dict["flexSlot"]
     ext_slot        = result_dict["extSlot"]
@@ -511,16 +560,32 @@ def run_greedy_construction_heuristic(input_dict,result_dict,flexibility,nScenar
     """for d in Di:
         print(bed_occ[0][d][0])"""
     Q_rem           =   copy.deepcopy(Q)
+    print(Q_rem)
     MSnxi_c         =   []
     MSxi_c          =   []
+    MSi_c           =   []
     for c in Ci:
         MSnxi_c.append(MSnxi)
         MSxi_c.append(MSxi)
+        MSi_c.append(MSi)
     for s in Si:
         for c in Ci:
             MSnxi_c =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
             MSxi_c  =   update_patterns_list(input_dict, MSxi_c, Q_rem, s, c)
-            
+            MSi_c   =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+    """print(MSi)
+    print(MSi_dur)"""
+    print(MSi_c[0])
+    print(MSnxi_c[0])
+    print(Mi_dur[0])
+    print('pattern w/ g=0')
+    for m in MSi_c[0][0]:
+        if A[m][0]>0:
+            print(m)
+    print('pattern 18')
+    print(A[18])
+    print('pattern 0')
+    print(A[0])
     #----- Begin Heuristic ----- # 
     for d in Di:
         for r in Ri:
@@ -530,24 +595,28 @@ def run_greedy_construction_heuristic(input_dict,result_dict,flexibility,nScenar
                 if ext_slot[r][d]> 0.5:
                     '---pack ext slots---'
                     for c in Ci:
-                        if len(MSxi_c[c][s])>0.5:
-                            '---pack w/ remaining ext patterns---'
-                            slot,bed_occ, Q_rem =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSxi_c,slot,Q_rem,c,s,r,d)
-                            MSxi_c   =   update_patterns_list(input_dict, MSxi_c, Q_rem, s, c)
-                            
-                        else:
-                            '---pack w/ non-ext patterns if no ext patterns remain---'
-                            if len(MSnxi_c[c][s])>0.5:
-                                slot,bed_occ, Q_rem =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSnxi_c,slot,Q_rem,c,s,r,d)
-                                MSnxi_c  =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                        if MSi_c[c][s]:
+                            bed_occ, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSi_c,slot,Q_rem,c,s,r,d)
+                            slot[r][d][c] = best_pattern
+                            if best_pattern >(-0.5):
+                                Q_rem = update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSi_c   =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+                                if best_pattern in MSnxi_c[c][s]:
+                                    MSnxi_c   =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                                    
                 else:
                     '---pack non-ext slots---'
                     for c in Ci:
-                        if len(MSnxi_c[c][s])>0.5:
-                            slot,bed_occ, Q_rem =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSnxi_c,slot,Q_rem,c,s,r,d)
-                            MSnxi_c  =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                        if MSnxi_c[c][s]:
+                            bed_occ, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSnxi_c,slot,Q_rem,c,s,r,d)
+                            slot[r][d][c] = best_pattern
+                            if best_pattern > -0.5:
+                                Q_rem = update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSnxi_c   =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                                if best_pattern in MSi_c[c][s]:
+                                    MSi_c   =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
             #----- Pack flexible slots ----- #
-            else:
+            """else:
                 flex_pack_temp  =   [[[[0 for _ in Ci] for _ in Di] for _ in Ri] for s in Si]
                 total = [0 for _ in Si]
                 for c in Ci:
@@ -562,17 +631,21 @@ def run_greedy_construction_heuristic(input_dict,result_dict,flexibility,nScenar
                     best_spec = total.index(max(total))
                     '---pack w/ non-ext patterns ---'
                     if len(MSnxi_c[c][best_spec])>0.5:
-                        sslot,bed_occ, Q_rem =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSnxi_c,slot,Q_rem,c,best_spec,r,d)
-                        MSnxi_c[c]  =   update_patterns_list(input_dict, MSnxi_c[c], Q_rem, best_spec, c)
+                        slot,bed_occ, Q_rem =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ,MSnxi_c,slot,Q_rem,c,best_spec,r,d)
+                        MSnxi_c[c]  =   update_patterns_list(input_dict, MSnxi_c[c], Q_rem, best_spec, c)"""
     #----- Calculate objective -----#
     obj = sum(Pi[c]*(Q_rem[g][c]*L[g]) for c in Ci for g in Gi)            
     print(obj)
     #print( bed_occ[0][19][0])
-    print(Q)
-    print(Q_rem)
-    print_expected_bed_util_percent_heuristic(input_dict,bed_occ,5)
-    print_assigned_pattern_heuristic(input_dict, slot,5)
-    print_expected_minutes_heuristic(input_dict,pattern_dur, slot,5)
+    print(MSi_c[0])
+    print(MSnxi_c[0])
+    Q_rem2=[]
+    for g in input_dict["Gi"]:
+        Q_rem2.append(Q_rem[g][0])
+    print(Q_rem2)
+    print_expected_bed_util_percent_heuristic(input_dict,bed_occ,0)
+    print_assigned_pattern_heuristic(input_dict, slot,0)
+    print_expected_minutes_heuristic(input_dict,pattern_dur, slot,0)
     print
    
     return obj, slot           
@@ -597,4 +670,4 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
             pickle.dump(saved_values,f)
     run_greedy_construction_heuristic(input,results, flexibility,nScenarios,seed)
 
-main(9,0,10,1)
+main(9,0,1,1)
