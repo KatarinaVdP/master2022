@@ -66,7 +66,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
-    m.setParam("MIPFocus", 3) 
+    # m.setParam("MIPFocus", 3) 
     # finding feasible solutions quickly:1
     # no trouble finding good quality solutions, more attention on proving optimality: 2 
     # If the best objective bound is moving very slowly (or not at all)and want to focus on the bound:3
