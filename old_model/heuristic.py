@@ -28,41 +28,41 @@ def heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, las
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
     level_iters = [10,10,10]
     
-    print_heuristic_iteration_header()
-    
-    # IKKE SLETT det som er kommentert ut under
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
     
+    swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
         swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = True)
         if swap_found:
+            swap_ever_found = True
             swap_type = "flex"
             m = change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
-            if os.path.exists('new_warmstart.mst') and run_new_warmstart:
-                m.read('new_warmstart.mst')
-            else:
-                m.read(warm_start_file_name)
-            m.optimize()
-            
-            result_dict = save_results_pre(m)
-            
-            m.write('new_warmstart.mst')
-            run_new_warmstart = True
+    m.read(warm_start_file_name)
+    m.optimize()
+    result_dict = save_results_pre(m)
+    m.write('warmstart.mst')
 
-            best_sol = save_results(m, input, result_dict)
-            write_to_excel_model(excel_file,input,best_sol)
-            best_sol = categorize_slots(input, best_sol)
-            print_MSS(input, best_sol)
-            
-            action = "MOVE"
-            print_heuristic_iteration(global_iter, 0, levels, 0, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
-            write_to_excel_heuristic(excel_file,input ,global_iter, 0, 0, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
-        d += 1
+    best_sol = save_results(m, input, result_dict)
+    write_to_excel_model(excel_file,input,best_sol)
+    best_sol = categorize_slots(input, best_sol)
+    print()
+    print_MSS(input, best_sol)
+    
+    print_heuristic_iteration_header()
+
+    if swap_ever_found:
+        action = "MOVE"
+    else:
+        action = "NO MOVE"
+    print_heuristic_iteration(0, 1, [1], 1, [1], best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
+    write_to_excel_heuristic(excel_file, input, 0, 1, 1, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
         
-    print("\n\nHeuristic starts now.\n\n")"""
+    print("\n\nHeuristic starts now.\n\n")
+    
+    print_heuristic_iteration_header()
     
     #----- Looping through temperature levels ----- 
     temperature = 1
@@ -821,7 +821,7 @@ def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap = False):
                     for s in specialties_UR_KA_EN:
                         if results["gamm"][s][0][d] == 1: 
                             s_in_GA1 = s
-                    if r in rooms[s_in_GA2]:
+                    if 2 in rooms[s_in_GA1]:
                         # Swap GA-3 with GA-1
                         for i in range(input["I"]):
                             new_fixed_slot["s"].append(s_in_GA1)
@@ -840,7 +840,7 @@ def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap = False):
                 for s in specialties_UR_KA_EN:
                     if results["gamm"][s][1][d] == 1: 
                         s_in_GA2 = s
-                if r in rooms[s_in_GA2]:
+                if 5 in rooms[s_in_GA2]:
                     # Swap GA-6 with GA-2
                     for i in range(input["I"]):
                         new_fixed_slot["s"].append(s_in_GA2)
@@ -859,7 +859,7 @@ def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap = False):
                     for s in specialties_UR_KA_EN:
                         if results["gamm"][s][0][d] == 1: 
                             s_in_GA1 = s
-                    if r in rooms[s_in_GA2]:
+                    if 2 in rooms[s_in_GA1]:
                         # Swap GA-3 with GA-1
                         for i in range(input["I"]):
                             new_fixed_slot["s"].append(s_in_GA1)

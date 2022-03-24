@@ -44,6 +44,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results = saved_values["results"]
         results = categorize_slots(input, results)
         print_MSS(input, results)
+        print_solution_performance(input, results)
         
         write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         write_to_excel_model(excel_file,input,results)
@@ -54,7 +55,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
+        obj_estimation_time = 20
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
@@ -105,7 +106,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
+        obj_estimation_time = 20
         results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
@@ -113,6 +114,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.15, 25, 50, 1, 120)
+main(0.3, 9, 50, 1, 60)
 
     
