@@ -2,9 +2,9 @@ import copy
 import random as rand
 import gurobipy as gp
 from gurobipy import GRB
-from model import *
-from input_functions import *
-from output_functions import *
+from model_mip import *
+from functions_input import *
+from functions_output import *
 
 def update_temperature(temperature):
     temperature = temperature/2

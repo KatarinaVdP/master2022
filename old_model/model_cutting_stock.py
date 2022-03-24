@@ -3,7 +3,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
-from patterns import generate_pattern_data
+from patterns import *
 
 def run_model(input_dict, flexibility, time_limit):
     input=input_dict
@@ -15,7 +15,6 @@ def run_model(input_dict, flexibility, time_limit):
     nSpecialties    =   input["nSpecialties"]
     nRooms          =   input["nRooms"]
     
-
     Wi      =   input["Wi"]
     Si      =   input["Si"]
     Gi      =   input["Gi"]
@@ -227,5 +226,3 @@ def run_model(input_dict, flexibility, time_limit):
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
 
     return result_dict, input           
-
-    

@@ -4,7 +4,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import numpy as np
-from output_functions import *
+from functions_output import *
 
 
 def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    

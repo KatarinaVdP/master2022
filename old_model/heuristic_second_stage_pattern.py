@@ -1,11 +1,11 @@
 import random as rand
 import gurobipy as gp
 from gurobipy import GRB
-from model import *
-from input_functions import *
-from output_functions import *
+from model_mip import *
+from functions_input import *
+from functions_output import *
 import os.path
-from heuristic_functions import *
+from functions_heuristic import *
 
 def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict

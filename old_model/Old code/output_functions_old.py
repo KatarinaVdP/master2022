@@ -38,6 +38,45 @@ def categorize_slots(input_dict, output_dict):
     output_dict["extSlot"]      = ext_slot
     return output_dict    
 
+def categorize_slots2(input_dict: dict, output_dict: dict):
+    #adds layers to the result dictionary to make the MIP-model output more readable
+    #fixedSlot          = 1 if slot is fixed, 0 otherwize
+    #flexSlot           = 1 if slot is flexible, 0 othervize
+    #extSlot            = 1 if slot is extended, 0 otherwize   (adds a possibly extra layer to if slot is fixed)
+    #specialty_in_slot  = the index of the specialty assigned to the slot if fixed and -1 of the slot is flexible
+    '---parameters---'
+    days_in_cycle       =   int(input_dict["nDays"]/input_dict["I"])
+    '---variables---'
+    fixed_slot          =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    flex_slot           =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    ext_slot            =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    specialty_in_slot   =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    '---program---'
+    for r in input_dict["Ri"]:
+        day_in_cycle=0
+        for d in range(input_dict["nDays"]):
+            if day_in_cycle >= days_in_cycle:
+                    day_in_cycle=0
+            '---fixed slots---'
+            for s in input_dict["SRi"][r]:
+                if output_dict["gamm"][s][r][d]>0.5:
+                    specialty_in_slot[r][d] = s
+                    fixed_slot[r][d]=1
+            '---extended slots---'   
+            if sum(output_dict["lamb"][s][r][d] for s in input_dict["Si"])>0.5:
+                ext_slot[r][d]=1
+            '---flexible slots---'
+            if fixed_slot[r][d]<0.5:
+                flex_slot[r][d] = 1
+                specialty_in_slot[r][d] = -1         
+    '---results---'
+    output_dict["fixedSlot"]            =   fixed_slot
+    output_dict["flexSlot"]             =   flex_slot
+    output_dict["extSlot"]              =   ext_slot
+    output_dict["specialty_in_slot"]    =   specialty_in_slot
+    
+    return output_dict    
+
 def print_MSS(input_dict, output_dict, print_all_cycles = False):
 
     if print_all_cycles:

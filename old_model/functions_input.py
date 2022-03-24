@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import poisson
 from patterns import generate_pattern_data
 
-
+#--- input functions to read input from excel ---#
 def read_list(sheet, name,integerVal=False):
         set =  sheet[name].values
         list = []
@@ -49,7 +49,7 @@ def read_subset(matrix, affiliating_set, index_set):
             subsetIndex.append(subsublistIndex)
         return subset, subsetIndex
 
-def read_input(file_name):
+def read_input(file_name: str):
     input_dict ={}
     file        =   file_name
     parameters  =   pd.read_excel(file, sheet_name='Parameters')
@@ -57,36 +57,36 @@ def read_input(file_name):
     MC          =   pd.read_excel(file, sheet_name='MC')    
     IC          =   pd.read_excel(file, sheet_name='IC')  
                         
-# ----- Reading/Creating sets -----
-    '--- Set of Wards ---'
-    input_dict["W"]     =   read_list(sets, "Wards")
-    input_dict["nWards"] = len(input_dict["W"])
-    input_dict["Wi"]    =   [i for i in range(input_dict["nWards"])]    
-    '--- Set of Specialties ---'
-    input_dict["S"]     =   read_list(sets, "Specialties")
-    input_dict["nSpecialties"] = len(input_dict["S"])    
-    input_dict["Si"]    =   [i for i in range(input_dict["nSpecialties"])]              
-    '--- Set of Surgery Groups ---'
-    input_dict["G"]     =   read_list(sets, "Surgery Groups")             
-    input_dict["nGroups"] = len(input_dict["G"])    
-    input_dict["Gi"]    =   [i for i in range(input_dict["nGroups"])]
-    '--- Subset of Groups in Wards ---'
-    GroupWard           =   read_matrix(sets,"Gr",len(input_dict["G"]))
-    input_dict["GW"] , input_dict["GWi"]    =   read_subset(GroupWard,input_dict["G"],input_dict["W"])                         
-    '--- Subset of Groups in Specialties ---'    
-    GroupSpecialty      =   read_matrix(sets,"G",len(input_dict["G"]))
-    input_dict["GS"], input_dict["GSi"]     =   read_subset(GroupSpecialty,input_dict["G"],input_dict["S"])
-    '--- Set of Rooms ---'   
-    input_dict["R"]     =   read_list(sets, "Operating Rooms") 
-    input_dict["nRooms"] = len(input_dict["R"])
-    input_dict["Ri"]    =   [i for i in range(input_dict["nRooms"])]                             
-    '--- Subset of Rooms in Specialties ---' 
-    RoomSpecialty       =   read_matrix(sets,"R",len(input_dict["R"])) 
-    input_dict["RS"], input_dict["RSi"]     =   read_subset(RoomSpecialty,input_dict["R"],input_dict["S"])                 
-    '--- Subset of Rooms for Groups ---'     
-    input_dict["RG"] = []
-    input_dict["RGi"] = []
+# ----- Reading/Creating sets ----- #
+    input_dict["W"]             =   read_list(sets, "Wards")
+    input_dict["nWards"]        =   len(input_dict["W"])
+    input_dict["Wi"]            =   [i for i in range(input_dict["nWards"])]  
+    input_dict["S"]             =   read_list(sets, "Specialties")   
+    input_dict["nSpecialties"]  =   len(input_dict["S"]) 
+    input_dict["Si"]            =   [i for i in range(input_dict["nSpecialties"])]              
+    input_dict["G"]             =   read_list(sets, "Surgery Groups")    
+    input_dict["nGroups"]       =   len(input_dict["G"])            
+    input_dict["Gi"]            =   [i for i in range(input_dict["nGroups"])]
+    input_dict["R"]             =   read_list(sets, "Operating Rooms") 
+    input_dict["nRooms"]        =   len(input_dict["R"]) 
+    input_dict["Ri"]            =   [i for i in range(input_dict["nRooms"])]                                              
+    nDays                       =   int(parameters["Planning Days"].values[0])
+    input_dict["Di"]            =   [d for d in range(nDays)]
+    input_dict["nDays"]         =   nDays
     
+    RoomSpecialty                           =   read_matrix(sets,"R",len(input_dict["R"]))  
+    GroupWard                               =   read_matrix(sets,"Gr",len(input_dict["G"]))                     
+    GroupSpecialty                          =   read_matrix(sets,"G",len(input_dict["G"]))
+    input_dict["GW"], input_dict["GWi"]     =   read_subset(GroupWard,input_dict["G"],input_dict["W"])
+    input_dict["GS"], input_dict["GSi"]     =   read_subset(GroupSpecialty,input_dict["G"],input_dict["S"])
+    input_dict["RS"], input_dict["RSi"]     =   read_subset(RoomSpecialty,input_dict["R"],input_dict["S"])      
+
+    '---construct subsets---'    
+    input_dict["WSi"]           =   [[] for _ in input_dict["Si"]]
+    input_dict["RG"]            =   []
+    input_dict["RGi"]           =   []
+    input_dict["SRi"]           =   [[] for _ in input_dict["Ri"]]
+
     for g in range(len(input_dict["G"])):
         sublist = []
         for s in range(len(input_dict["S"])):
@@ -98,18 +98,13 @@ def read_input(file_name):
                     sublistIndex.append(j)
                 break
         input_dict["RG"].append(sublist)   
-        input_dict["RGi"].append(sublistIndex)   
-    '--- Set of Days ---'  
-    nDays = int(parameters["Planning Days"].values[0])
-    input_dict["nDays"]= nDays
-    input_dict["Di"]=[d for d in range(nDays)]
+        input_dict["RGi"].append(sublistIndex)
 
-    input_dict["SRi"] = [[] for _ in input_dict["Ri"]]
     for s in input_dict["Si"]:
         for r in input_dict["Ri"]:
             if r in input_dict["RSi"][s]:
                 input_dict["SRi"][r].append(s) 
-    input_dict["WSi"] = [[] for _ in input_dict["Si"]]
+                
     for w in input_dict["Wi"]:
         for s in input_dict["Si"]:
             g = input_dict["GSi"][s][0]
@@ -126,29 +121,40 @@ def read_input(file_name):
     input_dict["K"]     =   read_matrix(parameters,"K",nDays)                       #Team Capacity per day      K_(s,d)
     input_dict["L"]     =   read_list(parameters,"Surgery Duration")                #Surgery uration            L_(g)
     input_dict["U"]     =   read_list(parameters,"Max Extended Days")               #Max long days              U_(s)   
+    input_dict["T"]     =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
+    input_dict["Co"]    =   [element+input_dict["TC"] for element in input_dict["L"]] #Cost                       C_(g)
+    input_dict["J"]     =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
+    input_dict["P"]     =   read_3d([MC, IC], "J", max(input_dict["J"]))            #Probabilies                P_(g,w,d)
+    input_dict["Y"]     =   read_matrix(parameters,"Y",input_dict["nDays"])         #bed occupations from last period Y_(w,d)
     input_dict["N"]     =   []                                                      #Open ORs each days         N_(d)
     for day in range(1,len(input_dict["Di"])+1):
         if day%7 == 0 or day%7 == 6:
             input_dict["N"].append(0) 
         else:
             input_dict["N"].append(len(input_dict["R"]))
-    input_dict["T"]     =   read_list(parameters,"Target Throughput")               #Target troughput           T_(g)
-    input_dict["Co"]    =   [element+input_dict["TC"] for element in input_dict["L"]] #Cost                       C_(g)
-    input_dict["J"]     =   read_list(parameters,"Max LOS",True)                    #Maximum LOS at the wards   J_(w)
-    input_dict["P"]     =   read_3d([MC, IC], "J", max(input_dict["J"]))            #Probabilies                P_(g,w,d)
-    input_dict["Y"]     =   read_matrix(parameters,"Y",input_dict["nDays"])        #bed occupations from last period Y_(w,d)
     
-    input_dict = generate_pattern_data(input_dict)
-    
-    # Parameters and sets specific to cutting stock model
-    """A       =   input["A"]
-    Psum    =   input["Psum"]
-    Mi      =   input["Mi"]
-    Mnxi    =   input["Mnxi"]
-    Mxi     =   input["Mxi"]
-    MSi     =   input["MSi"]"""
+# ----- Reading/Creating Patterns input ----- #
+    input_dict                                  =   generate_pattern_data(input_dict)
+    MSnxi_dur                                   =   construct_dur_to_MSi(input_dict,input_dict["MSnxi"]) 
+    MSi_dur                                     =   construct_dur_to_MSi(input_dict,input_dict["MSi"]) 
+    input_dict["Mi_dur"]                        =   construct_dur_to_Mi(input_dict,input_dict["Mi"])
+    input_dict["MSnxi"], MSnxi_dur              =   sort_MS_after_duration(input_dict,input_dict["MSnxi"], MSnxi_dur)
+    input_dict["MSi"], MSi_dur                  =   sort_MS_after_duration(input_dict,input_dict["MSi"], MSi_dur)
+
     return input_dict
 
+def choose_correct_input_file(number_of_groups):
+    if number_of_groups in [4, 5, 9]:
+        num_max_groups= "_9groups"
+    elif number_of_groups in [12, 13, 25]:
+        num_max_groups= "_25groups"
+    else:
+        print("Invalid number of groups")    
+        return
+    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
+    return file_name
+
+#--- input functions overrite input dictionary according to instances to run ---#
 def edit_input_to_number_of_groups(input, number_of_groups):
     input["number_of_groups"]=number_of_groups
     if number_of_groups==4 or number_of_groups==12:
@@ -249,42 +255,6 @@ def edit_input_to_number_of_groups(input, number_of_groups):
             
     return input
 
-def print_MSS_minutes(input_dict, output_dict):
-
-    print("Planning period modified MSS")
-    print("-----------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                if input_dict["N"][d] == 0:
-                    print("{0:<5}".format("-"), end="")
-                else:
-                    minutes= sum((input_dict["L"][g]+input_dict["TC"]) * output_dict["x"][g][r][d][5] for g in input_dict["Gi"])
-            
-                    print("{0:<5}".format(int(minutes)), end="")
-            print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        print()
-        print()
-        print()
-
 def generate_scenarios(input_dict, nScenarios, seed):
         groups                  =   input_dict["G"]
         groups_index            =   input_dict["Gi"]
@@ -329,13 +299,73 @@ def generate_scenario_data_for_EVS(input_dict,nScenarios, seed, return_dissadvan
         return input_dict, dissadvantage
     return input_dict
 
-def choose_correct_input_file(number_of_groups):
-    if number_of_groups in [4, 5, 9]:
-        num_max_groups= "_9groups"
-    elif number_of_groups in [12, 13, 25]:
-        num_max_groups= "_25groups"
-    else:
-        print("Invalid number of groups")    
-        return
-    file_name= "input_output/" + "model_input" + num_max_groups + ".xlsx"
-    return file_name
+def change_ward_capacity(input_dict, ward_name: str, weekday_capacity: float, weekend_capacity: float):
+    weekdays = [weekday_capacity for _ in range(4)]
+    weekends = [weekend_capacity for _ in range(3)]
+    week = weekdays + weekends
+    planning_period = []
+    for _ in range((input_dict["I"]*2)):
+        planning_period += week
+    # Finding the index of the ward in the input dictionary
+    ward_index = input_dict["W"].index(ward_name)
+    input_dict["B"][ward_index] = planning_period
+    return input_dict
+
+def change_number_of_rooms_available(input, mon: int, tue: int, wed: int, thu: int, fri: int):
+    week = [mon, tue, wed, thu, fri, 0, 0]
+    planning_period = []
+    for _ in range((input["I"]*2)):
+        planning_period += week
+    input["N"] = planning_period
+    return input
+
+#--- input functions spesific for greedy construction heuristic ---#
+def sort_list_by_another(list_to_sort: list,list_to_sort_by: list, decending=True):
+    #sort one list on the basis of another list of the same length ehre each element 
+    #of the same index in both lists have a relation of some sort in desending order if not told otherwice
+    list_to_sort  =   [x for _,x in sorted(zip(list_to_sort_by,list_to_sort))]
+    list_to_sort_by.sort(reverse=decending)
+    list_to_sort.reverse()
+    return list_to_sort, list_to_sort_by
+
+def sort_MS_after_duration(input_dict: dict ,MS_index_sm: list[list],MS_duration_sm: list[list],decending=True):
+    #sort the set of indicies M^S_index_(s) by it's set of duration M^S_duration_(s)
+    '---parameters---'
+    Si      =   input_dict["Si"]
+    MSi     =   MS_index_sm
+    MS_dur  =   MS_duration_sm
+    '---program---'
+    for s in Si:
+        MSi_sorted_s, MSi_dur_sorted_s  =   sort_list_by_another(MSi[s],MS_dur[s],decending=True)
+        MSi[s]                          =   MSi_sorted_s
+        MS_dur[s]                       =   MSi_dur_sorted_s
+    return MSi, MS_dur
+
+def construct_dur_to_MSi(input_dict: dict, MS_index_sm: list[list]):
+    #creates a index realted subset for the total duration of the patterns included cleaning time 
+    '---parameters---'
+    Si                  =   input_dict["Si"]
+    MSi                 =   MS_index_sm
+    '---variables---'
+    MSi_dur             =   []
+    '---program---'
+    for s in Si:
+            duration_sm  =   construct_dur_to_Mi(input_dict,MSi[s])
+            MSi_dur.append(duration_sm)
+    return MSi_dur
+
+def construct_dur_to_Mi(input_dict: dict, M_index_m: list):
+    #creates a index realted subset for the total duration of the patterns included cleaning time 
+    '---parameters---'
+    Gi                  =   input_dict["Gi"]
+    A                   =   input_dict["A"]
+    L                   =   input_dict["L"]
+    TC                  =   input_dict["TC"]
+    Mi                  =   M_index_m 
+    '---variables---'
+    Mi_dur                     =   []
+    '---program---'
+    for m in Mi:
+        duration            = sum(A[m][g]*(L[g]+TC) for g in Gi)
+        Mi_dur.append(duration)
+    return Mi_dur

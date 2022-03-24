@@ -1,13 +1,13 @@
 import random as rand
 import gurobipy as gp
 from gurobipy import GRB
-from model import *
-from input_functions import *
-from output_functions import *
+from model_mip import *
+from functions_input import *
+from functions_output import *
 import os.path
-from heuristic_functions import *
+from functions_heuristic import *
 
-def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
+def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
     
     best_sol = last_output
@@ -34,7 +34,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
         if swap_found:
             swap_ever_found = True
             swap_type = "flex"
-            m = old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
+            m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
     m.read(warm_start_file_name)
     m.optimize()
@@ -79,7 +79,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_GN_GO(input_dict, best_sol, print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
-            m = old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
+            m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
             if os.path.exists('new_warmstart.mst') and run_new_warmstart:
                 m.read('new_warmstart.mst')
@@ -93,7 +93,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
                 print('Swap is infeasible!')
                 print('MSS before swap')
                 print_MSS(input, best_sol)
-                m = old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                 m.update()
                 print('Swapped back')
                 continue
@@ -122,7 +122,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
                     else:
                         print('found %i solutions this time',nSolutions)
                 else:
-                    m = old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                    m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
 
                 #----- Comparing candidate performance to best solution -----
@@ -154,7 +154,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
                     result_dict =  save_results(m, input, result_dict)
                     write_to_excel_model(excel_file,input,result_dict)
                     action = "NO MOVE"
-                    m = old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                    m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
             
             # ----- Printing iteration to console -----
@@ -165,7 +165,7 @@ def old_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict,
         
     return best_sol
 
-def old_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
+def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lambda"
     elif swap_type == "fixed":

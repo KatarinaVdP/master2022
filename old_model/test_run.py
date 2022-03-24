@@ -1,6 +1,6 @@
-from input_functions import *
-from output_functions import *
-from model import *
+from functions_input import *
+from functions_output import *
+from model_mip import *
 
 input_file_name =   choose_correct_input_file(9)
 input           =   read_input(input_file_name)

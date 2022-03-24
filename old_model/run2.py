@@ -1,9 +1,7 @@
-from model import *
-import pickle
+from model_mip import *
 from typing import IO
-from input_functions import *
-from output_functions import *
-from heuristic import *
+from functions_input import *
+from functions_output import *
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
@@ -40,26 +38,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     compare+= " RPS: " + str(results["obj"]) 
     
     print(compare)
-    #print_que(input, results)
 
 
 for i in range(1,2):    
     main(0,4, 60,i,120)
-
-    
-"""try:
-    with open("Old Model/file.pkl","rb") as f:
-        saved_values = pickle.load(f)
-    input           = saved_values["input"]
-    results         = saved_values["results"]  
-except IOError:
-    input           =   read_input(file_name)
-    input           =   generate_scenarios(input,nScenarios,seed)
-    input           =   edit_input_to_number_of_groups(input, number_of_groups)
-    results, input  =   run_model(input, flexibility, time_limit)
-    saved_values            =   {}
-    saved_values["input"]   =   input
-    saved_values["results"] =   results
-    with open("Cutting Stock Model/file.pkl","wb") as f:
-        pickle.dump(saved_values,f)"""
-    
