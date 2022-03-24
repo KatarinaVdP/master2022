@@ -3,7 +3,7 @@ import pickle
 from typing import IO
 from input_functions import *
 from output_functions import *
-from heuristic import *
+from old_heuristic import *
 import os.path
 
 
@@ -56,7 +56,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         obj_estimation_time = 20
-        results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = old_heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         print_MSS(input, results)
@@ -107,7 +107,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         obj_estimation_time = 20
-        results = heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = old_heuristic('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         
