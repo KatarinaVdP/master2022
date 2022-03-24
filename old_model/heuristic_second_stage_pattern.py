@@ -7,7 +7,7 @@ from functions_output import *
 import os.path
 from functions_heuristic import *
 
-def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
+def heuristic_second_stage_pattern(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
     
     best_sol = last_output
@@ -34,7 +34,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
         if swap_found:
             swap_ever_found = True
             swap_type = "flex"
-            m = pattern_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
+            m = change_bound_second_stage_pattern(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
     m.read(warm_start_file_name)
     m.optimize()
@@ -79,7 +79,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_GN_GO(input_dict, best_sol, print_swap = True)
             
             #----- Changing variable bound to evaluate candidate -----
-            m = pattern_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended)
+            m = change_bound_second_stage_pattern(m, swap_found, getting_slot, giving_slot, swap_type, extended)
             
             if os.path.exists('new_warmstart.mst') and run_new_warmstart:
                 m.read('new_warmstart.mst')
@@ -93,7 +93,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
                 print('Swap is infeasible!')
                 print('MSS before swap')
                 print_MSS(input, best_sol)
-                m = pattern_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                m = change_bound_second_stage_pattern(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                 m.update()
                 print('Swapped back')
                 continue
@@ -122,7 +122,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
                     else:
                         print('found %i solutions this time',nSolutions)
                 else:
-                    m = pattern_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                    m = change_bound_second_stage_pattern(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
 
                 #----- Comparing candidate performance to best solution -----
@@ -154,7 +154,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
                     result_dict =  save_results(m, input, result_dict)
                     write_to_excel_model(excel_file,input,result_dict)
                     action = "NO MOVE"
-                    m = pattern_change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
+                    m = change_bound_second_stage_pattern(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
                     m.update()
             
             # ----- Printing iteration to console -----
@@ -165,7 +165,7 @@ def pattern_heuristic(model_file_name, warm_start_file_name, excel_file, input_d
         
     return best_sol
 
-def pattern_change_bound(input, results, swap_found, getting_slot, giving_slot,swap_type, extended, swap_back = False):
+def change_bound_second_stage_pattern(input, results, swap_found, getting_slot, giving_slot,swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lambda"
     elif swap_type == "fixed":
@@ -237,7 +237,7 @@ def pattern_change_bound(input, results, swap_found, getting_slot, giving_slot,s
         print("Invalid swap type passed to pattern_change_bound().")
     return results
 
-def change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
+"""def change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lambda"
     elif swap_type == "fixed":
@@ -309,4 +309,4 @@ def change_bound(m, swap_found, getting_slot, giving_slot, swap_type, extended, 
                     var.ub=giving_val
         else:
             print("Swap not found")
-    return m
+    return m"""
