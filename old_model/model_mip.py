@@ -9,12 +9,7 @@ from functions_output import *
 
 def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
     #----- Sets ----- #  
-    nDays           =   input_dict["nDays"]
-    nWards          =   input_dict["nWards"]
-    nGroups         =   input_dict["nGroups"]
-    nSpecialties    =   input_dict["nSpecialties"]
-    nRooms          =   input_dict["nRooms"]
-    
+    nDays =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
     Si  =   input_dict["Si"]
     Gi  =   input_dict["Gi"]
@@ -185,11 +180,6 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
 def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
-    nWards          =   input_dict["nWards"]
-    nScenarios      =   input_dict["nScenarios"]
-    nGroups         =   input_dict["nGroups"]
-    nSpecialties    =   input_dict["nSpecialties"]
-    nRooms          =   input_dict["nRooms"]
     Wi  =   input_dict["Wi"]
     Si  =   input_dict["Si"]
     Gi  =   input_dict["Gi"]
@@ -325,10 +315,7 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
     print('Creating model (3/3)')
 
     m.optimize()
-
-
     result_dict = save_results_pre(m)
-    #result_dict["max_runtime"] = time_limit
 
     nSolutions=m.SolCount
     if nSolutions==0:
