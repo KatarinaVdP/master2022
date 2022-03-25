@@ -7,7 +7,7 @@ import numpy as np
 from functions_output import *
 
 
-def run_model(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
+def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     nWards          =   input_dict["nWards"]
@@ -95,7 +95,12 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
                     x[g,r,d,c].lb=0
                     x[g,r,d,c].ub=0             
     
-    max_fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)))
+    fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)/I))
+    
+    fixed_slots = fixed_slots*I
+        
+    flex_slots = sum(N[d] for d in Di) - fixed_slots
+    print('flexibility of %.2f equals %i fixed slots (ceiled to closest integer in one cycle) and %i flexible slots with current parameter N'%(F,fixed_slots,flex_slots))
     '--- Objective ---' 
     m.setObjective(
                 quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
@@ -104,7 +109,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  max_fixed_slots ,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  fixed_slots ,
         name = "Con_PercentFixedRooms"
         )
         
@@ -172,7 +177,6 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
 
     m.optimize()
     result_dict = save_results_pre(m)
-    #result_dict["max_runtime"] = time_limit
 
     nSolutions=m.SolCount
     if nSolutions==0:
@@ -182,7 +186,7 @@ def run_model(input_dict, flexibility, time_limit, expected_value_solution = Fal
 
     return result_dict, input_dict
 
-def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
+def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     nWards          =   input_dict["nWards"]
@@ -257,9 +261,10 @@ def run_model_fixed(input_dict,output_dict, time_limit, print_optimizer = False)
     )   
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
-    max_fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)))
+    fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)/I))
+    fixed_slots = fixed_slots*I
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  max_fixed_slots ,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  fixed_slots ,
         name = "Con_PercentFixedRooms"
         )
     m.addConstrs(

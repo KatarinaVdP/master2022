@@ -71,7 +71,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING MIP-MODEL TO FIND EVS")
         print("------------------------------------------------------------------------------------------------------------------")
-        results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
+        results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
         print()
         print_solution_performance(input, results)
         if results["status"]==0:
@@ -84,7 +84,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("RUNNING FIXED FIRST-STAGE TO EVALUATE EVS PERFORMANCE")
         print("------------------------------------------------------------------------------------------------------------------") 
         input           = generate_scenarios(input, nScenarios, seed)
-        results         = run_model_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
+        results         = run_model_mip_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
         results         = categorize_slots(input, results)
         print_solution_performance(input, results)
         write_new_run_header_to_excel(excel_file,input,sheet_number=0)

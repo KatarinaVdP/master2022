@@ -17,23 +17,23 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         input["B"][0][d]=input["B"][0][d]*0.7
         input["B"][1][d]=input["B"][0][d]*0.7"""
     #input, dissadvantage           =   generate_scenario_data_for_EVS(input,20,1,return_dissadvantage=True)
-    results, input  =   run_model(input, flexibility, 60,True,True)
+    results, input  =   run_model_mip(input, flexibility, 60,True,True)
     print("EVS found")
     
     #----- fix first stage solution to EVS  ----   
     input           = generate_scenarios(input,50,2)
-    results         = run_model_fixed(input,results,60,True)
+    results         = run_model_mip_fixed(input,results,60,True)
     print("EVS found - EVS fixed on large tree")
     compare= "EVS: " + str(results["obj"])
     print(compare)
     #----- find RPS  ----  
     input           =   generate_scenarios(input,20,1)
-    results, input  =   run_model(input, flexibility, 300,False,True)
+    results, input  =   run_model_mip(input, flexibility, 300,False,True)
     print("EVS found - EVS fixed on large tree - RPS found")
     
     #----- fix first stage solution to RPS  ----  
     input           = generate_scenarios(input,50,2)
-    results         = run_model_fixed(input,results,60,True)
+    results         = run_model_mip_fixed(input,results,60,True)
     print("EVS found - EVS fixed on large tree - RPS found - RPS fixed on large tree")
     compare+= " RPS: " + str(results["obj"]) 
     
