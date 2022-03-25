@@ -9,3 +9,5 @@ konstruksjonsheuristikken kan ikke ta høyde for antall stengte rom per dag.
 patternsmodell kjører ikke lengere
 4
 Patternsgenerering og konstruksjonsheuristikk fungerer ikke for redusert antall spesialiteter
+5.
+test_run_construction_heuristic_vs_fixed_model ikke ferdig
