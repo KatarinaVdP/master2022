@@ -1,0 +1,11 @@
+Se på senere:
+-------------------------
+1 
+N_d utvidelsen må vi ta en titt på... modellen kan nå bestemme i hvert scenario hvilket det skal stenge eller ha fleksibelt om det er et fleksibelt rom den dagen.
+dette gjør at ci ikke kan si hvilet rom de har stengt... ødelegger og for print...
+2 
+konstruksjonsheuristikken kan ikke ta høyde for antall stengte rom per dag.
+3 
+patternsmodell kjører ikke lengere
+4
+Patternsgenerering og konstruksjonsheuristikk fungerer ikke for redusert antall spesialiteter

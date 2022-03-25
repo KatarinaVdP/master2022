@@ -59,11 +59,6 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     output_dict["unassSlot"]            =   unass_slot
     output_dict["specialty_in_slot"]    =   specialty_in_slot
     
-    print('Flex slots')
-    print(flex_slot)
-    print('Unassigned slots')
-    print(unass_slot)
-    
     
     return output_dict    
 

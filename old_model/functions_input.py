@@ -2,6 +2,7 @@ import pandas as pd
 import math
 import numpy as np
 from scipy.stats import poisson
+import copy
 from patterns import generate_pattern_data
 
 #--- input functions to read input from excel ---#
@@ -139,6 +140,7 @@ def read_input(file_name: str):
     input_dict["nFixed"]= (int(np.ceil((1-input_dict["F"]) * sum(input_dict["N"][d] for d in input_dict["Di"])/input_dict["I"])))*input_dict["I"]
 # ----- Reading/Creating Patterns input ----- #
     input_dict                                  =   generate_pattern_data(input_dict)
+    input_dict["MSi_unsorted"]                  =   copy.deepcopy(input_dict["MSi"])
     MSnxi_dur                                   =   construct_dur_to_MSi(input_dict,input_dict["MSnxi"]) 
     MSi_dur                                     =   construct_dur_to_MSi(input_dict,input_dict["MSi"]) 
     input_dict["Mi_dur"]                        =   construct_dur_to_Mi(input_dict,input_dict["Mi"])
@@ -315,17 +317,12 @@ def change_ward_capacity(input_dict, ward_name: str, weekday_capacity: float, we
     input_dict["B"][ward_index] = planning_period
     return input_dict
 
-def change_number_of_rooms_available(input, mon: int, tue: int, wed: int, thu: int, fri: int):
+def change_number_of_rooms_available(input: dict, mon: int, tue: int, wed: int, thu: int, fri: int):
     week = [mon, tue, wed, thu, fri, 0, 0]
     planning_period = []
     for _ in range((input["I"]*2)):
         planning_period += week
     input["N"] = planning_period
-    return input
-
-def change_flexibility(input: dict, flex: float):
-    input["F"] = flex
-    input["nFixed"] = (int(np.ceil((1-input["F"]) * sum(input["N"][d] for d in input["Di"])/input["I"])))*input["I"]
     return input
 
 #--- input functions spesific for greedy construction heuristic ---#

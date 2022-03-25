@@ -5,7 +5,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 from patterns import *
 
-def run_model(input_dict, flexibility, time_limit):
+def run_model_cutting_stock(input_dict, flexibility, time_limit):
     input=input_dict
     #----- Sets ----- #  
     nDays           =   input["nDays"]
@@ -45,8 +45,8 @@ def run_model(input_dict, flexibility, time_limit):
     Q   =   input["Q"]
     P   =   input["P"]
     Y   =   input["Y"]
-    
-    input = generate_pattern_data(input)
+    nFixed = int(np.ceil((1-F) * sum(N[d] for d in Di)/I)*I)
+    input_dict["nFixed"] = nFixed
     
     # Parameters and sets specific to cutting stock model
     A       =   input["A"]
@@ -54,7 +54,7 @@ def run_model(input_dict, flexibility, time_limit):
     Mi      =   input["Mi"]
     Mnxi    =   input["Mnxi"]
     Mxi     =   input["Mxi"]
-    MSi     =   input["MSi"]
+    MSi     =   input_dict["MSi_unsorted"]  #standard MSi becomes sorted in read_input, but MSi_unsorted is direct from generate_pattern_data
 
  
     #----- Model ----- #
@@ -67,7 +67,6 @@ def run_model(input_dict, flexibility, time_limit):
     delt    =   m.addVars(Si, Ri, Di, Ci, vtype=GRB.BINARY, name="delta")
     pat     =   m.addVars(Mi, Ri, Di, Ci, vtype=GRB.BINARY, name="pat")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
-    """v       =   m.addVars(Wi, Di, vtype=GRB.CONTINUOUS, name="v")"""
 
     for s in Si:
         for r in (list(set(Ri)^set(RSi[s]))):
@@ -143,18 +142,6 @@ def run_model(input_dict, flexibility, time_limit):
         for w in Wi for d in Di for c in Ci),
     name = "Con_BedOccupationCapacity",
     )
-    """m.addConstrs(
-        (quicksum(Psum[m][w][d-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - v[w,d] 
-        for w in Wi for d in Di for c in Ci),
-    name = "Con_BedOccupationCapacity",
-    )
-    print('still Creating Model 90%')
-    for w in Wi:
-        m.addConstrs(
-            (quicksum(Pi[c] * quicksum(Psum[m][w][d+nDays-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) == v[w,d] 
-            for d in range(J[w]-1)),
-        name = "Con_BedOccupationBoundaries" + str(w),
-        )"""
     for s in Si:
         m.addConstrs(
             (gamm[s,r,d]==gamm[s,r,nDays/I+d] 
@@ -175,14 +162,19 @@ def run_model(input_dict, flexibility, time_limit):
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
     result_dict =   {}
     result_dict["status"]=statuses[m.STATUS]
+    if statuses[m.STATUS]==GRB.INFEASIBLE:
+        print('Model is proven infeasible!!!!!!!')
+        return
     result_dict["obj"] = m.ObjVal
     result_dict["best_bound"] = m.ObjBound
     result_dict["runtime"] = m.Runtime
     result_dict["max_runtime"] = time_limit   
     result_dict["MIPGap"] = m.MIPGap  
     nSolutions=m.SolCount
+    
     if nSolutions==0:
         result_dict["status"]=statuses[0]
+        print('0 solutions found')
     else:
         # ----- Copying the desicion variable values to result dictionary -----
         result_dict["gamm"] = [[[0 for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nSpecialties"])]
@@ -191,7 +183,6 @@ def run_model(input_dict, flexibility, time_limit):
         result_dict["x"]    = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(input["nGroups"])]
         result_dict["a"]    = [[0 for _ in range(input["nScenarios"])] for _ in range(input["nGroups"])]
         result_dict["v"]    = [[0 for _ in range(input["nDays"])] for _ in range(input["nWards"])]
-        result_dict["phi"]  = [[[[0 for _ in range(input["nScenarios"])] for _ in range(input["nDays"])] for _ in range(input["nRooms"])] for _ in range(len(Mi))]
         
         for s in input["Si"]:
             for r in input["Ri"]:
@@ -221,6 +212,7 @@ def run_model(input_dict, flexibility, time_limit):
             for d in input_dict["Di"]:
                 for c in input_dict["Ci"]:
                     bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
+        result_dict["bed_occupation_wdc"] = bed_occupationC
         for w in input_dict["Wi"]:
                 for d in input_dict["Di"]:
                     result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])

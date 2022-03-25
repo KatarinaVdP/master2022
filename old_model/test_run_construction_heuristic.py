@@ -27,12 +27,7 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
         saved_values["results"] =   results
         with open("solution_saved.pkl","wb") as f:
             pickle.dump(saved_values,f)
-    run_greedy_construction_heuristic(input,results)
-    #print(results["fixedSlot"]) 
-    #print(results["flexSlot"])  
-    #print(results["extSlot"])
-    #print(results["unassSlot"])
-    #print(results["specialty_in_slot"])   
+    run_greedy_construction_heuristic(input,results) 
     
     #results = translate_heristic_results(input,results)
     #print_MSS(input,results)
