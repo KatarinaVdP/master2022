@@ -105,7 +105,7 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) >=  nFixed ,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  nFixed ,
         name = "Con_PercentFixedRooms"
         )
         
