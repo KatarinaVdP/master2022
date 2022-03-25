@@ -12,35 +12,58 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     #extSlot            = 1 if slot is extended, 0 otherwize   (adds a possibly extra layer to if slot is fixed)
     #specialty_in_slot  = the index of the specialty assigned to the slot if fixed and -1 of the slot is flexible
     '---parameters---'
-    days_in_cycle       =   int(input_dict["nDays"]/input_dict["I"])
+    N                   =   input_dict["N"]
+    nDays               =   input_dict["nDays"]
+    nRooms              =   input_dict["nRooms"]
+    Di                  =   input_dict["Di"]
+    Ri                  =   input_dict["Ri"]
+    Ci                  =   input_dict["Ci"]
+    Gi                  =   input_dict["Gi"]
+    RSi                 =   input_dict["RSi"]
+    SRi                 =   input_dict["SRi"]
+    Si                  =   input_dict["Si"]
+    GSi                 =   input_dict["GSi"]
+    GRi                 =   input_dict["GRi"]
+    gamm                =   output_dict["gamm"]
+    lamb                =   output_dict["lamb"]
+    x                   =   output_dict["x"]
+    
     '---variables---'
-    fixed_slot          =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
-    flex_slot           =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
-    ext_slot            =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
-    specialty_in_slot   =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])]
+    fixed_slot          =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
+    flex_slot           =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
+    ext_slot            =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
+    unass_slot          =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
+    specialty_in_slot   =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
     '---program---'
-    for r in input_dict["Ri"]:
-        day_in_cycle=0
-        for d in range(input_dict["nDays"]):
-            if day_in_cycle >= days_in_cycle:
-                    day_in_cycle=0
+    for r in Ri:
+        for d in Di:
             '---fixed slots---'
-            for s in input_dict["SRi"][r]:
-                if output_dict["gamm"][s][r][d]>0.5:
+            for s in SRi[r]:
+                if gamm[s][r][d]>0.5:
                     specialty_in_slot[r][d] = s
                     fixed_slot[r][d]=1
             '---extended slots---'   
-            if sum(output_dict["lamb"][s][r][d] for s in input_dict["Si"])>0.5:
+            if sum(lamb[s][r][d] for s in Si)>0.5:
                 ext_slot[r][d]=1
+            '---unassigned slots---'
+            if (sum(x[g][r][d][c] for g in Gi for c in Ci)<0.5) and (fixed_slot[r][d]<0.5):
+                unass_slot[r][d]=1
             '---flexible slots---'
-            if fixed_slot[r][d]<0.5:
+            if (fixed_slot[r][d]<0.5) and (unass_slot[r][d]<0.5):
                 flex_slot[r][d] = 1
                 specialty_in_slot[r][d] = -1         
     '---results---'
     output_dict["fixedSlot"]            =   fixed_slot
     output_dict["flexSlot"]             =   flex_slot
     output_dict["extSlot"]              =   ext_slot
+    output_dict["unassSlot"]            =   unass_slot
     output_dict["specialty_in_slot"]    =   specialty_in_slot
+    
+    print('Flex slots')
+    print(flex_slot)
+    print('Unassigned slots')
+    print(unass_slot)
+    
     
     return output_dict    
 
@@ -87,15 +110,15 @@ def save_results(m, input_dict, result_dict):
         for d in range(input_dict["J"][w]-1):
             result_dict["v"][w][d] = sum(input_dict["Pi"][c] * sum(input_dict["P"][w][g][d+input_dict["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(d+input_dict["nDays"]+1-input_dict["J"][w],input_dict["nDays"])) for c in input_dict["Ci"]) 
     
-    bed_occupationC =[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-    result_dict["bed_occupation"] =[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    result_dict["bed_occupation_wdc"]   =   [[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    result_dict["bed_occupation"]       =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
     for w in input_dict["Wi"]:
         for d in input_dict["Di"]:
             for c in input_dict["Ci"]:
-                bed_occupationC[w][d][c]= sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
+                result_dict["bed_occupation_wdc"][w][d][c]  =   sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
     for w in input_dict["Wi"]:
             for d in input_dict["Di"]:
-                result_dict["bed_occupation"][w][d] = sum(bed_occupationC[w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+                result_dict["bed_occupation"][w][d]         =   sum(result_dict["bed_occupation_wdc"][w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
     
     return result_dict
 
@@ -216,7 +239,7 @@ def write_to_excel_MSS(excel_file_name,input_dict,output_dict,initial_MSS=False)
                     row.append("-")
                 elif output_dict["flexSlot"][r][d] == 1:
                     row.append("#")
-                elif (output_dict["fixedSlot"][r][d] == 0) & (output_dict["flexSlot"][r][d] == 0):
+                elif (output_dict["unassSlot"][r][d] == 1) and (input_dict["N"][d]>0.5):
                     row.append("?") 
                 elif output_dict["fixedSlot"][r][d] == 1:
                     for s in input_dict["Si"]:
@@ -303,10 +326,10 @@ def print_MSS(input_dict, output_dict, print_all_cycles = False):
             for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
                 if input_dict["N"][d] == 0:
                     print("{0:<5}".format("-"), end="")
+                elif (output_dict["unassSlot"][r][d] == 1):
+                    print("{0:<5}".format("?"), end="") 
                 elif output_dict["flexSlot"][r][d] == 1:
                     print("{0:<5}".format("#"), end="") 
-                elif (output_dict["fixedSlot"][r][d] == 0) & (output_dict["flexSlot"][r][d] == 0):
-                    print("{0:<5}".format("?"), end="") 
                 elif output_dict["fixedSlot"][r][d] == 1:
                     for s in input_dict["Si"]:
                         if output_dict["gamm"][s][r][d] == 1:

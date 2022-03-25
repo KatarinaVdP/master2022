@@ -307,6 +307,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     Pi              =   input_dict["Pi"]
     Q               =   input_dict["Q"]
     L               =   input_dict["L"]
+    TC              =   input_dict["TC"]
     ext_slot        =   result_dict["extSlot"]
     specialty_in_slot = result_dict["specialty_in_slot"]      
     Mi_dur          =   copy.deepcopy(input_dict["Mi_dur"])     
@@ -385,6 +386,8 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                                 Q_rem2.append(Q_rem[g][c])
                             print('Q_rem_pre[%i]: '%c, end="")
                             print(Q_rem2)
+                        else: 
+                            bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)
                         Q_rem                       =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
                         if debug: 
                             Q_rem2=[]
@@ -413,16 +416,16 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
             print_assigned_pattern_heuristic(input_dict, slot,c)
             #print_OR_minutes_heuristic(input_dict, Mi_dur, slot,c) 
     #----- Calculate objective -----#
-    obj = sum(Pi[c]*(Q_rem[g][c]*L[g]) for c in Ci for g in Gi)            
+    obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
     print("Heuristic solution:      %.1f" % obj)
     print("MIP solution primal:     %.1f" % result_dict["obj"])
     print("MIP solution dual:       %.1f" % result_dict["best_bound"])
     
-    result_dict["specialty_in_slot"]            =   specialty_in_slot
-    result_dict["obj"]                          =   obj
-    result_dict["pattern_to_slot_assignment"]   =   slot
-    result_dict["a"]                            =   Q_rem
-    result_dict["bed_occupation_wdc"]           =   bed_occ
+    result_dict["specialty_in_slot"]            =   specialty_in_slot  #_r,d # scxenariobasert? som i delta
+    result_dict["obj"]                          =   obj                 # real
+    result_dict["pattern_to_slot_assignment"]   =   slot                # _r,d,c
+    result_dict["a"]                            =   Q_rem               # _g,c
+    result_dict["bed_occupation_wdc"]           =   bed_occ             #
     
     return result_dict
 

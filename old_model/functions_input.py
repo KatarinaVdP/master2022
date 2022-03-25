@@ -74,18 +74,18 @@ def read_input(file_name: str):
     input_dict["Di"]            =   [d for d in range(nDays)]
     input_dict["nDays"]         =   nDays
     
+    '---construct subsets---'   
     RoomSpecialty                           =   read_matrix(sets,"R",len(input_dict["R"]))  
     GroupWard                               =   read_matrix(sets,"Gr",len(input_dict["G"]))                     
     GroupSpecialty                          =   read_matrix(sets,"G",len(input_dict["G"]))
     input_dict["GW"], input_dict["GWi"]     =   read_subset(GroupWard,input_dict["G"],input_dict["W"])
     input_dict["GS"], input_dict["GSi"]     =   read_subset(GroupSpecialty,input_dict["G"],input_dict["S"])
     input_dict["RS"], input_dict["RSi"]     =   read_subset(RoomSpecialty,input_dict["R"],input_dict["S"])      
-
-    '---construct subsets---'    
-    input_dict["WSi"]           =   [[] for _ in input_dict["Si"]]
-    input_dict["RG"]            =   []
-    input_dict["RGi"]           =   []
-    input_dict["SRi"]           =   [[] for _ in input_dict["Ri"]]
+    input_dict["WSi"]                       =   [[] for _ in input_dict["Si"]]
+    input_dict["RG"]                        =   []
+    input_dict["RGi"]                       =   []
+    input_dict["GRi"]                       =   [[] for _ in input_dict["Ri"]]
+    input_dict["SRi"]                       =   [[] for _ in input_dict["Ri"]]
 
     for g in range(len(input_dict["G"])):
         sublist = []
@@ -99,7 +99,11 @@ def read_input(file_name: str):
                 break
         input_dict["RG"].append(sublist)   
         input_dict["RGi"].append(sublistIndex)
-
+    
+    for g in input_dict["Gi"]:
+            for r in input_dict["RGi"][g]:
+                input_dict["GRi"][r].append(g)
+    
     for s in input_dict["Si"]:
         for r in input_dict["Ri"]:
             if r in input_dict["RSi"][s]:
@@ -132,7 +136,7 @@ def read_input(file_name: str):
             input_dict["N"].append(0) 
         else:
             input_dict["N"].append(len(input_dict["R"]))
-    
+    input_dict["nFixed"]= (int(np.ceil((1-input_dict["F"]) * sum(input_dict["N"][d] for d in input_dict["Di"])/input_dict["I"])))*input_dict["I"]
 # ----- Reading/Creating Patterns input ----- #
     input_dict                                  =   generate_pattern_data(input_dict)
     MSnxi_dur                                   =   construct_dur_to_MSi(input_dict,input_dict["MSnxi"]) 
@@ -317,6 +321,11 @@ def change_number_of_rooms_available(input, mon: int, tue: int, wed: int, thu: i
     for _ in range((input["I"]*2)):
         planning_period += week
     input["N"] = planning_period
+    return input
+
+def change_flexibility(input: dict, flex: float):
+    input["F"] = flex
+    input["nFixed"] = (int(np.ceil((1-input["F"]) * sum(input["N"][d] for d in input["Di"])/input["I"])))*input["I"]
     return input
 
 #--- input functions spesific for greedy construction heuristic ---#

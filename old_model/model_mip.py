@@ -42,7 +42,8 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
     J   =   input_dict["J"]
     P   =   input_dict["P"]
     Y   =   input_dict["Y"]
-    
+    nFixed = int(np.ceil((1-F) * sum(N[d] for d in Di)/I)*I)
+    input_dict["nFixed"] = nFixed
     #----- EVS configuration ----- #  
     if expected_value_solution:
         nScenarios          =   1
@@ -95,12 +96,7 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
                     x[g,r,d,c].lb=0
                     x[g,r,d,c].ub=0             
     
-    fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)/I))
-    
-    fixed_slots = fixed_slots*I
-        
-    flex_slots = sum(N[d] for d in Di) - fixed_slots
-    print('flexibility of %.2f equals %i fixed slots (ceiled to closest integer in one cycle) and %i flexible slots with current parameter N'%(F,fixed_slots,flex_slots))
+
     '--- Objective ---' 
     m.setObjective(
                 quicksum(Pi[c] * Co[g] * a[g,c] for g in Gi for c in Ci)
@@ -109,7 +105,7 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  fixed_slots ,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) >=  nFixed ,
         name = "Con_PercentFixedRooms"
         )
         
@@ -223,7 +219,8 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
     Pi  =   input_dict["Pi"]
     Q   =   input_dict["Q"]
     Y   =   input_dict["Y"]
-    
+    nFixed = int(np.ceil((1-F) * sum(N[d] for d in Di)/I)*I)
+    input_dict["nFixed"] = nFixed
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
@@ -261,10 +258,8 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
     )   
     m.ModelSense = GRB.MINIMIZE 
     '--- Constraints ---'
-    fixed_slots = int(np.ceil((1-F) * sum(N[d] for d in Di)/I))
-    fixed_slots = fixed_slots*I
     m.addConstr(
-        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  fixed_slots ,
+        quicksum( quicksum(gamm[s,r,d] for r in RSi[s]) for s in Si for d in Di) ==  nFixed ,
         name = "Con_PercentFixedRooms"
         )
     m.addConstrs(

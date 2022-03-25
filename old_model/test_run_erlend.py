@@ -40,7 +40,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print("RUNNING MIP-MODEL WITH SCENARIOS")
     print("------------------------------------------------------------------------------------------------------------------")
     input           = generate_scenarios(input, nScenarios, seed)
-    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = False, print_optimizer = False)
+    results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = False, print_optimizer = False)
     print()
     print_solution_performance(input, results)
     if results["status"]==0:
@@ -54,7 +54,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     print("------------------------------------------------------------------------------------------------------------------")
     print("RUNNING MIP-MODEL TO FIND EVS")
     print("------------------------------------------------------------------------------------------------------------------")
-    results, input  =   run_model(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
+    results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
     print()
     print_solution_performance(input, results)
     if results["status"]==0:
