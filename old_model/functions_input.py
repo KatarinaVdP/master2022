@@ -146,6 +146,16 @@ def read_input(file_name: str):
     input_dict["Mi_dur"]                        =   construct_dur_to_Mi(input_dict,input_dict["Mi"])
     input_dict["MSnxi"], MSnxi_dur              =   sort_MS_after_duration(input_dict,input_dict["MSnxi"], MSnxi_dur)
     input_dict["MSi"], MSi_dur                  =   sort_MS_after_duration(input_dict,input_dict["MSi"], MSi_dur)
+    
+    """print("MSi")
+    for s in input_dict["Si"]:
+        for m in input_dict["MSi"][s]:
+            print(input_dict["Mi_dur"][m])
+    print("MSnxi")
+    for s in input_dict["Si"]:
+        for m in input_dict["MSnxi"][s]:
+            print(input_dict["Mi_dur"][m])"""
+        
 
     return input_dict
 

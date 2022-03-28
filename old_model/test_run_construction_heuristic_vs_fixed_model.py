@@ -214,20 +214,21 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     wb.save(excel_file_name)  
     
 number_of_groups            =   9
-nScenarios                  =   100
-flexibilities               =   [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-time_to_mip                 =   300
-max_time_fixed_mip          =   120
+nScenarios                  =   20
+flexibilities               =   [0, 0.05, 0.10]
+time_to_mip                 =   60
+max_time_fixed_mip          =   20
 file_name                   =   choose_correct_input_file(number_of_groups)
 input                       =   read_input(file_name)
 excel_file_name             =   'input_output/test_heuristic.xlsx'
 
-first_flex_iter = False
+first_flex_iter = True
 for flex in flexibilities:
     if first_flex_iter:
         input                   =   generate_scenarios(input, nScenarios, 0)
         results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
         results                 =   categorize_slots(input,results)
+        print_MSS(input, results)
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
@@ -240,14 +241,13 @@ for flex in flexibilities:
             first_flex_iter = True
         with open("solution_saved.pkl","rb") as f:
             saved_values        =   pickle.load(f)
-        input                   =   saved_values["input"]
-        results                 =   saved_values["results"]
+        input                   =   copy.deepcopy(saved_values["input"])
+        results                 =   copy.deepcopy(saved_values["results"])
+        
         input                   =   generate_scenarios(input, nScenarios, seed)
-        input_heuristic         =   copy.deepcopy(input)
         results_heuristic       =   copy.deepcopy(results)
-        
-        
-        results_mip             =   run_model_mip_fixed(input,results,max_time_fixed_mip)
+        results_mip             =   copy.deepcopy(results)
+        results_mip             =   run_model_mip_fixed(input,results_mip,max_time_fixed_mip)
         results_heuristic       =   categorize_slots(input,results_heuristic)
         results_heuristic       =   run_greedy_construction_heuristic(input, results_heuristic)
         write_to_excel(excel_file_name,results_mip,results_heuristic,flex,nScenarios,seed,max_time_fixed_mip)
