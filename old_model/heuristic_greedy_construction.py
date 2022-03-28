@@ -1,6 +1,7 @@
 from functions_input import *
 from functions_output import *
 from model_mip import *
+import time
 
 def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_gc: list[list],specialty_index: int, scenario_index:int):
     #Removes patterns from subset M^S_c(c,s) if there are no remaining demand in some of the groups it containes
@@ -331,6 +332,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging
+    startTime = time.time()
     '---sets---'
     Si              =   input_dict["Si"]
     SRi             =   input_dict["SRi"]
@@ -346,8 +348,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     TC              =   input_dict["TC"]
     ext_slot        =   result_dict["extSlot"]
     specialty_in_slot = result_dict["specialty_in_slot"]
-    print("specialty_in_slot_in_heuristic:")
-    print(result_dict["specialty_in_slot"][6][2])      
+     
     Mi_dur          =   copy.deepcopy(input_dict["Mi_dur"])     
     MSnxi           =   copy.deepcopy(input_dict["MSnxi"])
     MSi             =   copy.deepcopy(input_dict["MSi"]) 
@@ -407,14 +408,14 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                                 operated_min_temp[s]+=  Mi_dur[pattern]
                                 flex_pack_temp[s]   =   pattern
                                 found_legal_pattern =   True
-                                #if debug:
-                                    #print('best legal pattern for s: %i in r: %i, d: %i, c: %i:  %i      w/ duration: %.1f'%(s,r,d,c,pattern,operated_min_temp[s]))
+                                """if debug:
+                                    print('best legal pattern for s: %i in r: %i, d: %i, c: %i:  %i      w/ duration: %.1f'%(s,r,d,c,pattern,operated_min_temp[s]))"""
                     if found_legal_pattern:
                         '---assigning best specialty and its best pattern---'
                         best_spec                   =   operated_min_temp.index(max(operated_min_temp))
                         best_pattern                =   flex_pack_temp[best_spec]
                         slot[r][d][c]               =   best_pattern
-                        if debug:  
+                        """if debug:  
                             #print('best spec in r: %i, d: %i, c: %i is spec s: %i w/ pattern m: %i' %(r,d,c,best_spec, best_pattern))
                             bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)      
                             #print('A[%i]:         '%best_pattern, end="")
@@ -424,18 +425,18 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                                 Q_rem2.append(Q_rem[g][c])
                             #print('Q_rem_pre[%i]: '%c, end="")
                             #print(Q_rem2)
-                        else: 
-                            bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)
+                        else: """
+                        bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)
                         Q_rem                       =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
-                        if debug: 
+                        """if debug: 
                             Q_rem2=[]
                             for g in input_dict["Gi"]:
                                 Q_rem2.append(Q_rem[g][c])
                             #print('Q_rem_pre[%i]: '%c, end="")
-                            #print(Q_rem2)
+                            #print(Q_rem2)"""
                         MSnxi_c                     =   update_patterns_list(input_dict, MSnxi_c, Q_rem, best_spec, c)
                         MSi_c                       =   update_patterns_list(input_dict, MSi_c, Q_rem, best_spec, c)
-        if debug:
+        """if debug:
             for s in Si:
                 for m in MSnxi_c[c][s]:
                     if not (m in MSi_c[c][s]):
@@ -446,15 +447,16 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                         for g in input_dict["Gi"]:
                             Q_rem2.append(Q_rem[g][c])
                         #print('Q_rem[c]: '+str(Q_rem2))
-            """for g in Gi:
+            for g in Gi:
                 if Q_rem[g][c] < -0.5:
-                    print('Q_rem[%i][%i] have negative value of %i'%(g,c,Q_rem[g][c]))"""  
+                    print('Q_rem[%i][%i] have negative value of %i'%(g,c,Q_rem[g][c]))
             #print_bed_util_percent_heuristic(input_dict, bed_occ, c)
             #print_assigned_pattern_heuristic(input_dict, slot,c)
             print_assigned_minutes_heuristic(input_dict, slot,c)
-            #print_scenario_que(input_dict,Q_rem,c) 
+            #print_scenario_que(input_dict,Q_rem,c) """
     #----- Calculate objective -----#
     obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
+    
     """print("Heuristic solution:      %.1f" % obj)
     print("MIP solution primal:     %.1f" % result_dict["obj"])
     print("MIP solution dual:       %.1f" % result_dict["best_bound"])"""
@@ -465,6 +467,9 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     result_dict["a"]                            =   Q_rem               # _g,c
     result_dict["bed_occupation_wdc"]           =   bed_occ             #
     
+    executionTime = (time.time() - startTime)
+    result_dict["heuristic_time"]           =   executionTime
+    print('Execution time in seconds: ' + str(executionTime))
     return result_dict
 
 def translate_heristic_results(input_dict: dict, result_dict: dict):
