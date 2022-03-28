@@ -417,9 +417,9 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
             #print_OR_minutes_heuristic(input_dict, Mi_dur, slot,c) 
     #----- Calculate objective -----#
     obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
-    print("Heuristic solution:      %.1f" % obj)
+    """print("Heuristic solution:      %.1f" % obj)
     print("MIP solution primal:     %.1f" % result_dict["obj"])
-    print("MIP solution dual:       %.1f" % result_dict["best_bound"])
+    print("MIP solution dual:       %.1f" % result_dict["best_bound"])"""
     
     result_dict["specialty_in_slot"]            =   specialty_in_slot  #_r,d # scxenariobasert? som i delta
     result_dict["obj"]                          =   obj                 # real
