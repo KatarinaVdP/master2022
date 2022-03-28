@@ -45,7 +45,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         results = categorize_slots(input, results)
         print_MSS(input, results)
         print_solution_performance(input, results)
-        
+         
         write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         write_to_excel_model(excel_file,input,results)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)

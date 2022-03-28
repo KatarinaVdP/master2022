@@ -47,14 +47,14 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     print()
     print_MSS(input, best_sol)
     
-    print_heuristic_iteration_header()
+    print_heuristic_iteration_header(False)
 
     if swap_ever_found:
         action = "MOVE"
     else:
         action = "NO MOVE"
-    print_heuristic_iteration(0, 1, [1], 1, [1], best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
-    write_to_excel_heuristic(excel_file, input, 0, 1, 1, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
+    print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, current_gap = result_dict["MIPGap"])
+    write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, 0, 0, 0, result_dict["MIPGap"])
         
     print("\n\nHeuristic starts now.\n\n")
     
@@ -158,8 +158,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
                     m.update()
             
             # ----- Printing iteration to console -----
-            print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
-            write_to_excel_heuristic(excel_file,input ,global_iter, level, iter, best_sol["obj"], result_dict["obj"], result_dict["MIPGap"], action)
+            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
+            write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, global_iter, level, iter, result_dict["MIPGap"])
             iter += 1
             global_iter += 1 
         

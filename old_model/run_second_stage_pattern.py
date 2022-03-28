@@ -19,9 +19,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     input = change_ward_capacity(input, "IC", 11, 6)"""
     
     #---- Adjusting the number of ORs available
-    input = change_number_of_rooms_available(input, 7,7,7,7,7)
+    """input = change_number_of_rooms_available(input, 7,7,7,7,7)"""
 
-    #----- OBS! Funksjonen under vil gi gjøre det trangt på wards uavhengig av om
+    #----- OBS! Funksjonen under vil gjøre det trangt på wards uavhengig av om
     #----- change_ward_capacity har blitt brukt til å relaksere
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
     if not os.path.exists(excel_file):
@@ -55,8 +55,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 20
-        results = heuristic_second_stage_pattern('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = heuristic_second_stage_pattern(excel_file, input, results) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         print_MSS(input, results)
@@ -72,7 +71,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("RUNNING MIP-MODEL TO FIND EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
-        print()
         print_solution_performance(input, results)
         if results["status"]==0:
             print('No solutions found in given runtime')
@@ -106,8 +104,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 20
-        results = heuristic_second_stage_pattern('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = heuristic_second_stage_pattern(excel_file, input, results) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         

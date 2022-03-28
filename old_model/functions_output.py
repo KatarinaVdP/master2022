@@ -178,8 +178,16 @@ def write_to_excel_model(file_name,input_dict,output_dict):
     ws.append(new_row)
     wb.save(file_name)
 
-def write_to_excel_heuristic(excel_file_name,input_dict,global_iter, level, iter, best_sol, current_sol, current_gap, action, only_if_move = False):
-    new_row = [global_iter, level, iter, best_sol, current_sol, current_gap, str(action)]
+def write_to_excel_heuristic(excel_file_name,input_dict, best_sol, current_sol, action, global_iter = 0, level = 0, iter = 0, current_gap = -1, only_if_move = False):
+    if global_iter > 0 and current_gap > 0:
+        new_row = [global_iter, level, iter, best_sol, current_sol, current_gap, str(action)]
+    elif global_iter > 0 and current_gap == -1:
+        new_row = [global_iter, level, iter, best_sol, current_sol, str(action)]
+    elif global_iter == 0 and current_gap > 0:
+        new_row = [best_sol, current_sol, current_gap, str(action)]
+    else:
+        new_row = [best_sol, current_sol, str(action)]
+        
     try:
         wb = load_workbook(excel_file_name)
         ws = wb.worksheets[1]# select first worksheet
@@ -474,6 +482,7 @@ def print_expected_que(input_dict, output_dict):
     print()
 
 def print_solution_performance(input, results):
+    print()
     print("Solution performance")
     print("--------------------------------")
     print("Status:          ", end="")
@@ -492,25 +501,29 @@ def print_solution_performance(input, results):
     print("{0:>10}".format(str(gap)+"%"))
     print()
     
-def print_heuristic_iteration_header():
-    print("{0:<15}".format("Global iter"), end="")
-    print("{0:<15}".format("Temp level"), end="")
-    print("{0:<15}".format("Temp iter"),end="")
+def print_heuristic_iteration_header(mip = True, gap = True):
+    if mip:
+        print("{0:<15}".format("Global iter"), end="")
+        print("{0:<15}".format("Temp level"), end="")
+        print("{0:<15}".format("Temp iter"),end="")
     print("{0:<15}".format("Best sol"),end="")
     print("{0:<15}".format("Current sol"),end="")
-    print("{0:<15}".format("Current gap"),end="")
+    if gap:
+        print("{0:<15}".format("Current gap"),end="")
     print("{0:<15}".format("Action"),end="")
     print()
 
-def print_heuristic_iteration(global_iter, level, levels, iter, level_iters, best_sol, current_sol, current_gap, action):
-    level_str = str(level)+"/"+str(len(levels))
-    iter_str = str(iter)+"/"+str(level_iters[level-1])
-    print("{0:<15}".format(global_iter), end="")
-    print("{0:<15}".format(level_str), end="")
-    print("{0:<15}".format(iter_str),end="")
+def print_heuristic_iteration(best_sol, current_sol, action, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
+    if global_iter != 0:
+        level_str = str(level)+"/"+str(len(levels))
+        iter_str = str(iter)+"/"+str(level_iters[level-1])
+        print("{0:<15}".format(global_iter), end="")
+        print("{0:<15}".format(level_str), end="")
+        print("{0:<15}".format(iter_str),end="")
     print("{0:<15}".format("{:.1f}".format(best_sol)),end="")
     print("{0:<15}".format("{:.1f}".format(current_sol)),end="")
-    print("{0:<15}".format(str("{:.1f}".format(current_gap*100))+"%"),end="")
+    if current_gap > -1:
+        print("{0:<15}".format(str("{:.1f}".format(current_gap*100))+"%"),end="")
     print("{0:<15}".format(action),end="")
     print()
 
