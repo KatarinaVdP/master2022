@@ -11,3 +11,5 @@ patternsmodell kjører ikke lengere
 Patternsgenerering og konstruksjonsheuristikk fungerer ikke for redusert antall spesialiteter
 5.
 test_run_construction_heuristic_vs_fixed_model ikke ferdig
+6.
+konstuksjonsheuristikk er ulovlig... tar ikke hensyn til antall teams per dag
