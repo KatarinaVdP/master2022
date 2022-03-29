@@ -335,6 +335,20 @@ def change_number_of_rooms_available(input: dict, mon: int, tue: int, wed: int, 
     input["N"] = planning_period
     return input
 
+def change_demand(input, scaling_factor, print_minutes = False):
+    print('Demand before and after increase:')
+    old_minutes = 0
+    new_minutes = 0
+    for g in input["Gi"]:
+        old_minutes += input["T"][g]*input["L"][g]
+        input["T"][g] = int(round(input["T"][g]*scaling_factor))
+        new_minutes += input["T"][g]*input["L"][g]
+    if print_minutes:
+        print("Old minutes:  "+"{:.0f}".format(old_minutes))
+        print("New minutes:  "+"{:.0f}".format(new_minutes))
+        print()
+    return input["T"]
+
 #--- input functions spesific for greedy construction heuristic ---#
 def sort_list_by_another(list_to_sort: list,list_to_sort_by: list, decending=True):
     #sort one list on the basis of another list of the same length ehre each element 
@@ -344,7 +358,7 @@ def sort_list_by_another(list_to_sort: list,list_to_sort_by: list, decending=Tru
     list_to_sort.reverse()
     return list_to_sort, list_to_sort_by
 
-def sort_MS_after_duration(input_dict: dict ,MS_index_sm: list[list],MS_duration_sm: list[list],decending=True):
+def sort_MS_after_duration(input_dict: dict ,MS_index_sm: list,MS_duration_sm: list,decending=True):
     #sort the set of indicies M^S_index_(s) by it's set of duration M^S_duration_(s)
     '---parameters---'
     Si      =   input_dict["Si"]
@@ -357,7 +371,7 @@ def sort_MS_after_duration(input_dict: dict ,MS_index_sm: list[list],MS_duration
         MS_dur[s]                       =   MSi_dur_sorted_s
     return MSi, MS_dur
 
-def construct_dur_to_MSi(input_dict: dict, MS_index_sm: list[list]):
+def construct_dur_to_MSi(input_dict: dict, MS_index_sm: list):
     #creates a index realted subset for the total duration of the patterns included cleaning time 
     '---parameters---'
     Si                  =   input_dict["Si"]

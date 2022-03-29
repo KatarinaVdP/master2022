@@ -515,9 +515,10 @@ def print_heuristic_iteration_header(mip = True, gap = True):
     if gap:
         print("{0:<15}".format("Current gap"),end="")
     print("{0:<15}".format("Action"),end="")
+    print("{0:<15}".format("Time"),end="")
     print()
 
-def print_heuristic_iteration(best_sol, current_sol, action, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
+def print_heuristic_iteration(best_sol, current_sol, action, time, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
     if global_iter != 0:
         level_str = str(level)+"/"+str(len(levels))
         iter_str = str(iter)+"/"+str(level_iters[level-1])
@@ -529,5 +530,7 @@ def print_heuristic_iteration(best_sol, current_sol, action, global_iter = 0, le
     if current_gap > -1:
         print("{0:<15}".format(str("{:.1f}".format(current_gap*100))+"%"),end="")
     print("{0:<15}".format(action),end="")
+    time_str = "{:.0f}".format(time)+'s'
+    print("{0:<15}".format(time_str),end="")
     print()
 
