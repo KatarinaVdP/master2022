@@ -2,6 +2,7 @@ from functions_input import *
 from functions_output import *
 from model_mip import *
 import time
+import copy
 
 def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_gc: list[list],specialty_index: int, scenario_index:int):
     #Removes patterns from subset M^S_c(c,s) if there are no remaining demand in some of the groups it containes
@@ -20,6 +21,7 @@ def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_g
             for g in GSi[s]:
                 if (A[m][g] > Q_rem[g][c]):
                     MSi_c[c][s].remove(m)
+                    break
                     
     return MSi_c 
 
@@ -332,7 +334,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging
-    startTime = time.time()
+    start_time = time.time()
     '---sets---'
     Si              =   input_dict["Si"]
     SRi             =   input_dict["SRi"]
@@ -348,21 +350,24 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     TC              =   input_dict["TC"]
     ext_slot        =   result_dict["extSlot"]
     specialty_in_slot = result_dict["specialty_in_slot"]
-     
-    Mi_dur          =   copy.deepcopy(input_dict["Mi_dur"])     
+    Mi_dur          =   input_dict["Mi_dur"]   
+    
     MSnxi           =   copy.deepcopy(input_dict["MSnxi"])
-    MSi             =   copy.deepcopy(input_dict["MSi"]) 
+    MSi             =   copy.deepcopy(input_dict["MSi"])
+    teams_avalible  =   copy.deepcopy(input_dict["K"]) 
     '---variables---'              
     slot            =   [[[-10 for _ in Ci] for _ in Di] for _ in Ri]    #_r,d,c
     bed_occ         =   initiate_total_bed_occupation(input_dict)       #_w,d,c
     Q_rem           =   copy.deepcopy(Q)                                #_g,c
     MSnxi_c         =   []                                              #_c,s,m
-    MSi_c           =   []                                              #_c,s,m
+    MSi_c           =   [] 
+    teams_avalible_c  =   []
     '---program---'
     for c in Ci:
         '---initialize scenario---'
         MSnxi_c.append(copy.deepcopy(MSnxi))
         MSi_c.append(copy.deepcopy(MSi))
+        teams_avalible_c.append(copy.deepcopy(teams_avalible))
         for s in Si:
             MSnxi_c =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
             MSi_c   =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
@@ -375,6 +380,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
             for r in Ri:
                 s = specialty_in_slot[r][d] 
                 if s>=0:
+                    teams_avalible_c[c][s][d]-=1
                     if ext_slot[r][d]==1:
                         '---pack ext slots---'
                         if MSi_c[c][s]:
@@ -402,6 +408,8 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                     found_legal_pattern             =   False
                     '---finding best specialty and its best pattern---'
                     for s in SRi[r]:
+                        if teams_avalible_c[c][s][d]<=0:
+                            continue
                         if MSnxi_c[c][s]:
                             pattern, found_temp_legal_pattern = choose_best_pattern_with_legal_bed_occ_temporary(input_dict,bed_occ,MSnxi_c,s,d,c)
                             if found_temp_legal_pattern:
@@ -426,7 +434,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
                             #print('Q_rem_pre[%i]: '%c, end="")
                             #print(Q_rem2)
                         else: """
-                        bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)
+                        bed_occ, legal_bed_occ      =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)
                         Q_rem                       =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
                         """if debug: 
                             Q_rem2=[]
@@ -467,9 +475,9 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     result_dict["a"]                            =   Q_rem               # _g,c
     result_dict["bed_occupation_wdc"]           =   bed_occ             #
     
-    executionTime = (time.time() - startTime)
-    result_dict["heuristic_time"]           =   executionTime
-    print('Execution time in seconds: ' + str(executionTime))
+    heuristic_time = (time.time() - start_time)
+    result_dict["heuristic_time"]           =   heuristic_time
+    print('Heuristic time: %.1f s' %heuristic_time)
     return result_dict
 
 def translate_heristic_results(input_dict: dict, result_dict: dict):

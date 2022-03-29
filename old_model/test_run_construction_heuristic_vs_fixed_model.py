@@ -1,6 +1,7 @@
 from functions_input import *
 from functions_output import *
 #from model_cutting_stock import *
+from model_mip import *
 from heuristic_greedy_construction import *
 import pickle
 from openpyxl import Workbook
@@ -10,7 +11,8 @@ import copy
 import os.path
 
 
-def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
+def run_model_mip_fixed2(input_dict,output_dict, time_limit, print_optimizer = False): 
+    start_time =  time.time()
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -168,14 +170,15 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
         name = "Con_RollingExtendedSlotCycles" + str(s),
         )
     print('Creating model (3/3)')
-
+    create_model_time = (time.time() - start_time)
+    print('Time to create model: %.1f s' % (create_model_time))    
     m.optimize()
     result_dict = save_results_pre(m)
 
     nSolutions=m.SolCount
     if nSolutions==0:
         result_dict["status"]=0
-        print('Did not find any feasible initial solution in read_model_fixed()')
+        print('Did not find any feasible initial solution in run_model_mip_fixed()')
         return
     else:
         #m.write('model.mps')      turn of during secons_stage_heuristic
@@ -238,18 +241,18 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     wb.save(excel_file_name)  
     
 number_of_groups            =   9
-nScenarios                  =   5
+nScenarios                  =   10
 flexibilities               =   [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-seeds                       =   range(1,31)
+seeds                       =   [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
 time_to_mip                 =   10
-nScenarios_initial_sol      =   5
-max_time_fixed_mip          =   10
+nScenarios_initial_sol      =   3
+max_time_fixed_mip          =   60
 file_name                   =   choose_correct_input_file(number_of_groups)
-input                       =   read_input(file_name)
 excel_file_name             =   'input_output/test_heuristic.xlsx'
 
 for flex in flexibilities:
     for seed in seeds:
+        input                   =   read_input(file_name)
         input                   =   generate_scenarios(input, nScenarios_initial_sol, seed)
         results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
         results                 =   categorize_slots(input,results)
@@ -258,8 +261,8 @@ for flex in flexibilities:
         input                   =   generate_scenarios(input, nScenarios, seed)
         results_heuristic       =   copy.deepcopy(results)
         results_mip             =   copy.deepcopy(results)
-        results_mip             =   run_model_mip_fixed(input,results_mip,max_time_fixed_mip)
         results_heuristic       =   run_greedy_construction_heuristic(input, results_heuristic)
+        results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
         write_to_excel(excel_file_name,results_mip,results_heuristic,flex,nScenarios,seed,max_time_fixed_mip)
         print_heuristic_vs_fixed(results_mip,results_heuristic, flex, nScenarios,seed,max_time_fixed_mip)
         
