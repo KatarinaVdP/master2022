@@ -1,15 +1,16 @@
 import random as rand
 import gurobipy as gp
 from gurobipy import GRB
+import os.path
+import time
 from model_mip import *
 from functions_input import *
 from functions_output import *
-import os.path
 from functions_heuristic import *
 
 def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
     input=input_dict
-    
+    start_time = time.time()
     best_sol = last_output
     m = gp.read(model_file_name)
     m.update()
@@ -21,11 +22,11 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
 
     run_new_warmstart = False
     global_iter = 1
-    levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [10,10,10]
+    levels = list(range(1, 5)) #levels blir følgende: levels = [1,2,3]
+    level_iters = [25,25,25,25]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
     
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
@@ -56,7 +57,7 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, current_gap = result_dict["MIPGap"])
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, 0, 0, 0, result_dict["MIPGap"])
         
-    print("\n\nHeuristic starts now.\n\n")
+    print("\n\nHeuristic starts now.\n\n")"""
     
     print_heuristic_iteration_header()
     
@@ -70,11 +71,11 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "ext" 
+            swap_type = "fixed" 
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_smart(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_GN_GO(input_dict, best_sol, print_swap = True)
             
@@ -158,7 +159,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
                     m.update()
             
             # ----- Printing iteration to console -----
-            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
+            current_time = (time.time()-start_time)
+            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, current_time, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, global_iter, level, iter, result_dict["MIPGap"])
             iter += 1
             global_iter += 1 

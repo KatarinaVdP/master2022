@@ -33,7 +33,7 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     flex_slot           =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
     ext_slot            =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
     unass_slot          =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
-    specialty_in_slot   =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
+    specialty_in_slot   =   [[-2 for _ in range(nDays)] for _ in range(nRooms)]
     '---program---'
     for r in Ri:
         for d in Di:
@@ -334,11 +334,15 @@ def print_MSS(input_dict, output_dict, print_all_cycles = False):
                 elif output_dict["flexSlot"][r][d] == 1:
                     print("{0:<5}".format("#"), end="") 
                 elif output_dict["fixedSlot"][r][d] == 1:
-                    for s in input_dict["Si"]:
-                        if output_dict["gamm"][s][r][d] == 1:
-                            slotLabel = input_dict["S"][s]
-                        if output_dict["lamb"][s][r][d] == 1:
-                            slotLabel = slotLabel+"*"
+                    if output_dict["specialty_in_slot"][r][d]>=0:
+                        slotLabel = input_dict["S"][output_dict["specialty_in_slot"][r][d]]
+                    if output_dict["extSlot"][r][d] == 1:
+                        slotLabel = slotLabel+"*"
+                    """output_dict["specialty_in_slot"][s][r]
+                    if output_dict["gamm"][s][r][d] == 1:
+                        slotLabel = input_dict["S"][s]
+                    if output_dict["lamb"][s][r][d] == 1:
+                        slotLabel = slotLabel+"*"""
                     print("{0:<5}".format(slotLabel), end="")
             print()
         print("        ", end="")
@@ -511,9 +515,10 @@ def print_heuristic_iteration_header(mip = True, gap = True):
     if gap:
         print("{0:<15}".format("Current gap"),end="")
     print("{0:<15}".format("Action"),end="")
+    print("{0:<15}".format("Time"),end="")
     print()
 
-def print_heuristic_iteration(best_sol, current_sol, action, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
+def print_heuristic_iteration(best_sol, current_sol, action, time, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
     if global_iter != 0:
         level_str = str(level)+"/"+str(len(levels))
         iter_str = str(iter)+"/"+str(level_iters[level-1])
@@ -525,5 +530,7 @@ def print_heuristic_iteration(best_sol, current_sol, action, global_iter = 0, le
     if current_gap > -1:
         print("{0:<15}".format(str("{:.1f}".format(current_gap*100))+"%"),end="")
     print("{0:<15}".format(action),end="")
+    time_str = "{:.0f}".format(time)+'s'
+    print("{0:<15}".format(time_str),end="")
     print()
 

@@ -1,6 +1,7 @@
 from functions_input import *
 from functions_output import *
-from model_cutting_stock import *
+#from model_cutting_stock import *
+from model_mip import *
 from heuristic_greedy_construction import *
 import pickle
 from openpyxl import Workbook
@@ -10,7 +11,8 @@ import copy
 import os.path
 
 
-def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
+def run_model_mip_fixed2(input_dict,output_dict, time_limit, print_optimizer = False): 
+    start_time =  time.time()
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -61,6 +63,28 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
     x       =   m.addVars(Gi, Ri, Di, Ci, vtype=GRB.INTEGER, name="x")
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
     
+    """#---- create from chategorize slot ----#
+    for r in Ri:
+        for d in Di:
+            for s in Si:
+                if output_dict["specialty_in_slot"][r][d]==s:
+                    gamm[s,r,d].lb=1
+                    gamm[s,r,d].ub=1
+                else:
+                    gamm[s,r,d].lb=0
+                    gamm[s,r,d].ub=0
+                if output_dict["extSlot"][r][d]==1:
+                    lamb[s,r,d].lb=1
+                    lamb[s,r,d].ub=1
+                else:
+                    lamb[s,r,d].lb=0
+                    lamb[s,r,d].ub=0
+    for g in Gi:
+        for r in (list(set(Ri)^set(RGi[g]))):
+            for d in Di:
+                for c in Ci:  
+                    x[g,r,d,c].lb=0
+                    x[g,r,d,c].ub=0 """
     for s in Si:
         for r in Ri:
             for d in Di:
@@ -73,7 +97,7 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
             for d in Di:
                 for c in Ci:  
                     x[g,r,d,c].lb=0
-                    x[g,r,d,c].ub=0 
+                    x[g,r,d,c].ub=0
                     
     '--- Objective ---' 
     m.setObjective(
@@ -146,14 +170,15 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
         name = "Con_RollingExtendedSlotCycles" + str(s),
         )
     print('Creating model (3/3)')
-
+    create_model_time = (time.time() - start_time)
+    print('Time to create model: %.1f s' % (create_model_time))    
     m.optimize()
     result_dict = save_results_pre(m)
 
     nSolutions=m.SolCount
     if nSolutions==0:
         result_dict["status"]=0
-        print('Did not find any feasible initial solution in read_model_fixed()')
+        print('Did not find any feasible initial solution in run_model_mip_fixed()')
         return
     else:
         #m.write('model.mps')      turn of during secons_stage_heuristic
@@ -199,6 +224,7 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
         header_row.append("dual")
         header_row.append("MIPGap")
         header_row.append("heuristic")
+        header_row.append("heuristic_time")
         ws.append(header_row)
         wb.save(excel_file_name) 
     new_row = []  
@@ -210,47 +236,33 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     new_row.append(results_mip["best_bound"])
     new_row.append(results_mip["MIPGap"])
     new_row.append(results_heuristic["obj"])
+    new_row.append(results_heuristic["heuristic_time"])
     ws.append(new_row)
     wb.save(excel_file_name)  
     
 number_of_groups            =   9
-nScenarios                  =   100
-flexibilities               =   [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-time_to_mip                 =   300
-max_time_fixed_mip          =   120
+nScenarios                  =   5
+flexibilities               =   [0, 0.05]
+seeds                       =   [1,2,3]
+time_to_mip                 =   10
+nScenarios_initial_sol      =   3
+max_time_fixed_mip          =   15
 file_name                   =   choose_correct_input_file(number_of_groups)
-input                       =   read_input(file_name)
 excel_file_name             =   'input_output/test_heuristic.xlsx'
 
-first_flex_iter = False
 for flex in flexibilities:
-    if first_flex_iter:
-        input                   =   generate_scenarios(input, nScenarios, 0)
-        results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
+    for seed in seeds:
+        input                   =   read_input(file_name)
+        input                   =   generate_scenarios(input, nScenarios_initial_sol, seed)
+        results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
         results                 =   categorize_slots(input,results)
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
-        with open("solution_saved.pkl","wb") as f:
-            pickle.dump(saved_values,f)
-        first_flex_iter = False
-        
-    for seed in range(1,11):
-        if seed==10:
-            first_flex_iter = True
-        with open("solution_saved.pkl","rb") as f:
-            saved_values        =   pickle.load(f)
-        input                   =   saved_values["input"]
-        results                 =   saved_values["results"]
+        print_MSS(input, results) 
+
         input                   =   generate_scenarios(input, nScenarios, seed)
-        input_heuristic         =   copy.deepcopy(input)
         results_heuristic       =   copy.deepcopy(results)
-        
-        
-        results_mip             =   run_model_mip_fixed(input,results,max_time_fixed_mip)
-        results_heuristic       =   categorize_slots(input,results_heuristic)
+        results_mip             =   copy.deepcopy(results)
         results_heuristic       =   run_greedy_construction_heuristic(input, results_heuristic)
+        results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
         write_to_excel(excel_file_name,results_mip,results_heuristic,flex,nScenarios,seed,max_time_fixed_mip)
         print_heuristic_vs_fixed(results_mip,results_heuristic, flex, nScenarios,seed,max_time_fixed_mip)
-        
         
