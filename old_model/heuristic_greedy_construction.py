@@ -2,10 +2,275 @@ from functions_input import *
 from functions_output import *
 from model_mip import *
 import time
-import copy
-from numba import jit
-import numpy as np
 
+#----- print functions for debugging -----#
+def print_assigned_pattern_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+    print("Expected number of planned operation minutes per slot")
+    print("-----------------------------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    print("{0:<5}".format("-"), end="")
+                else:
+                    operations = -2
+                    if assigned_pattern_matrix_rdc[r][d][scenario]>-1.5:
+                        operations = assigned_pattern_matrix_rdc[r][d][scenario]
+                    operations_str = "{:.0f}".format(operations)
+                    print("{0:<5}".format(str(operations_str)), end="")
+            print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        print()
+
+def print_assigned_minutes_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+    print("Expected number of planned operation minutes per slot")
+    print("-----------------------------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if input_dict["N"][d] == 0:
+                    print("{0:<5}".format("-"), end="")
+                else:
+                    operations = 0
+                    if assigned_pattern_matrix_rdc[r][d][scenario]>-1.5:
+                        m = assigned_pattern_matrix_rdc[r][d][scenario]
+                        for g in input_dict["Gi"]:
+                            if m>=0:  #neg index is possible....
+                                operations+=input_dict["A"][m][g]*(input_dict["L"][g]+input_dict["TC"])
+                    operations_str = "{:.0f}".format(operations)
+                    print("{0:<5}".format(str(operations_str)), end="")
+            print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+
+def print_MSS_in_scenario(input_dict: dict,result_dict: dict, assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+        
+    print("Planning period in ccenario %i: "%scenario)
+    print("-----------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for r in input_dict["Ri"]:
+            room = "{0:>8}".format(input_dict["R"][r]+"|")
+            print(room, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                if result_dict["flexSlot"][r][d] == 1:
+                    m=assigned_pattern_matrix_rdc[r][d][scenario]
+                    printed=False
+                    for s in input_dict["SRi"][r]:
+                        if m>=0:
+                            if (m in input_dict["MSi"][s]):
+                                print("{0:<5}".format(input_dict["S"][s]), end="") 
+                                printed=True
+                    if printed==False:
+                        print("{0:<5}".format("0"), end="")
+
+                elif result_dict["fixedSlot"][r][d] == 1:
+                    for s in input_dict["Si"]:
+                        if result_dict["gamm"][s][r][d] == 1:
+                            slotLabel = input_dict["S"][s]
+                        if result_dict["lamb"][s][r][d] == 1:
+                            slotLabel = slotLabel+"*"
+                    print("{0:<5}".format(slotLabel), end="")
+                else:
+                    print("{0:<5}".format("?"), end="")    
+                
+            print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+
+def print_bed_ward_in_scenario(input_dict: dict ,bed_occupation_wd: list[list]):
+    print("Expected bed ward utilization")
+    print("-----------------------------")
+    for i in range(1,input_dict["I"]+1):
+        print("Cycle: ", i)
+        print("        ", end="")
+        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
+        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            day = "{0:<5}".format(str(d))
+            print(day, end="")
+        print()
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+        for w in input_dict["Wi"]:
+            ward = "{0:>8}".format(input_dict["W"][w]+"|")
+            print(ward, end="")
+            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
+                total = bed_occupation_wd[w][d]
+                total = "{:.1f}".format(total)
+                print("{0:<5}".format(str(total)), end="")
+            print()
+                
+        print("        ", end="")
+        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
+            print("-----",end="")
+        print()
+
+#----- translate results functions -----#
+def calculate_total_bed_occupation_wdc(input_dict: dict, current_bed_occ_wdc: list[list[list]],pattern_index: int ,current_day: int, scenario_index: int):
+    #calculate bed occupation in all ward after assigning pattern pattern_index on day current_day in scenario scenario_index
+    #returns a boolean indicating if the bed ward capacity is broken or not. in the broken case, the calculations is not complete
+    '---parameters---'
+    nDays   =   input_dict["nDays"]
+    Wi      =   input_dict["Wi"]
+    J       =   input_dict["J"]
+    Psum    =   input_dict["Psum"]
+    B       =   input_dict["B"]
+    m       =   pattern_index
+    c       =   scenario_index 
+    '---variables---'
+    legal_bed_occ   =   True
+    bed_occ         =   current_bed_occ_wdc
+    '---program---'
+    for w in Wi:
+        dd = 0
+        for d in range(current_day,min(nDays,current_day+J[w])):
+            bed_occ[w][d][c] += Psum[m][w][dd]
+            dd+=1
+            if bed_occ[w][d][c]> B[w][d]:
+                legal_bed_occ = False
+                return bed_occ, legal_bed_occ 
+    return bed_occ, legal_bed_occ
+
+def translate_heristic_results(input_dict: dict, result_dict: dict):
+    # function that updates the result dictionary back to model values such that output functions are legal
+    
+    #--- left to update --- #
+    #result_dict["delt"]    
+    #result_dict["x"]
+    #result_dict["v"]
+    #result_dict["bed_occupation"]    _wd
+    #result_dict["flexSlot"]
+    #result_dict["fixedSlot"]
+    #result_dict["bed_occupation"]    _wdc ??? nessecary?
+    '---parameters---'
+    input               =   input_dict
+    result              =   result_dict
+    Wi                  =   input["Wi"]
+    Si                  =   input["Si"]
+    Gi                  =   input["Gi"]
+    GWi                 =   input["GWi"]
+    Ri                  =   input["Ri"]
+    Di                  =   input["Di"]
+    Ci                  =   input["Ci"]
+    MSi                 =   input["MSi"]
+    J                   =   input["J"]
+    Pi                  =   input["Pi"]
+    P                   =   input["P"]
+    nDays               =   input["nDays"]
+    A                   =   input["A"]
+    B                   =   input_dict["B"]
+    pat_slot            =   result["pattern_to_slot_assignment"]
+    specialty_in_slot   =   result["specialty_in_slot"]
+    
+    '---variables---'
+    delt                =   [[[[0 for _ in Ci] for _ in Di] for _ in Ri] for _ in Si]
+    x                   =   [[[[0 for _ in Ci] for _ in Di] for _ in Ri] for _ in Gi]
+    v                   =   [[0 for _ in Di] for _ in Wi]
+    bed_occupation_wd   =   [[0 for _ in Di] for _ in Wi]
+    flex_slot           =   [[0 for _ in Di] for _ in Ri]
+    fixed_slot          =   [[0 for _ in Di] for _ in Ri]
+    bed_occupation_wdc  =   [[[0 for _ in Ci] for _ in Di] for _ in Wi]
+
+    for r in Ri:
+        for d in Di:
+            '--- fixedSlot & flexSlot ---'
+            if specialty_in_slot[r][d] < -0.5:
+                flex_slot[r][d]     =   1
+                fixed_slot[r][d]    =   0
+            else:
+                flex_slot[r][d]     =   0
+                fixed_slot[r][d]    =   1
+            '--- x & delt ---'
+            for c in Ci:
+                m       =   pat_slot[r][d][c]
+                if m > -0.5:
+                    for g in Gi:
+                        x[g][r][d][c] = A[m][g]
+                else:
+                    for g in Gi:
+                        x[g][r][d][c] = 0
+                for s in Si:
+                    if m in MSi[s]:
+                        delt[s][r][d][c] = 1
+                    else:
+                        delt[s][r][d][c] = 0
+    '--- v & bed_occupation ---'     
+    #denne er ikke testet enda!
+    for w in Wi:
+        for d in Di:
+            for c in Ci:
+                bed_occupation_wdc[w][d][c] =+ B[w][d]
+                for r in Ri:
+                    m = specialty_in_slot[r][d][c]
+                    if m>=0:
+                        bed_occupation_wdc, legal_bed_occ      =   calculate_total_bed_occupation_wdc(input_dict, bed_occupation_wdc, m, d,c)        
+
+    for w in Wi:
+        for d in range(J[w]-1):
+            v[w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * x[g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
+        for d in Di:
+            bed_occupation_wd[w][d] = sum(Pi[c]*bed_occupation_wdc[w][d][c] for c in Ci)
+            
+    '--- results ---'
+    result["delt"]              =   delt
+    result["x"]                 =   x
+    result["v"]                 =   v
+    result["bed_occupation"]    =   bed_occupation_wd
+    result["fixedSlot"]         =   fixed_slot
+    result["flexSlot"]          =   flex_slot
+    result["bed_occupation_wdc"]=   bed_occupation_wdc # ikke testet enda!!
+    return result
+
+#----- help functions -----#
 def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_gc: list[list],specialty_index: int, scenario_index:int):
     #Removes patterns from subset M^S_c(c,s) if there are no remaining demand in some of the groups it containes
     #returns updated subset
@@ -16,7 +281,6 @@ def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_g
     c           =   scenario_index
     s           =   specialty_index
     Q_rem       =   remaining_demand_gc
-    #loop_range  =   copy.deepcopy(MSi_c[c][s])
     loop_range  = list(map(int,MSi_c[c][s]))
     '---program---'
     for m in loop_range:
@@ -54,27 +318,6 @@ def initiate_total_bed_occupation(input_dict: dict):
     Y       =   input_dict["Y"]
     J       =   input_dict["J"]
     '---variables---'
-    initial_bed_occ = [[[0 for _ in Ci] for _ in Di] for _ in Wi ]
-    '---program---'
-    for c in Ci:
-        for w in Wi:
-            for d in range(J[w]):
-                initial_bed_occ[w][d][c] = Y[w][d]
-    return initial_bed_occ
-
-#@jit(nopython=True)  
-def initiate_total_bed_occupation2(Wi: list, Di: list, Y: list[list] ,J: list):
-    #initiate initial bed occupation matrix(wards x days x scenarios) from the expected
-    #layovers from a fictive earlyer period represented in Y_(w,d)
-    '---parameters---'
-    #nDays   =   input_dict["nDays"]
-    #Wi      =   input_dict["Wi"]
-    #Di      =   input_dict["Di"]
-    #Ci      =   input_dict["Ci"]
-    #Y       =   input_dict["Y"]
-    #J       =   input_dict["J"]
-    np.array(Y)
-    '---variables---'
     initial_bed_occ = [[0 for _ in Di] for _ in Wi ]
     '---program---'
     for w in Wi:
@@ -82,33 +325,7 @@ def initiate_total_bed_occupation2(Wi: list, Di: list, Y: list[list] ,J: list):
             initial_bed_occ[w][d] = Y[w][d]
     return initial_bed_occ
 
-def calculate_total_bed_occupation(input_dict: dict, current_bed_occ_wdc: list[list[list]],pattern_index: int ,current_day: int, scenario_index: int):
-    #calculate bed occupation in all ward after assigning pattern pattern_index on day current_day in scenario scenario_index
-    #returns a boolean indicating if the bed ward capacity is broken or not. in the broken case, the calculations is not complete
-    '---parameters---'
-    nDays   =   input_dict["nDays"]
-    Wi      =   input_dict["Wi"]
-    J       =   input_dict["J"]
-    Psum    =   input_dict["Psum"]
-    B       =   input_dict["B"]
-    m       =   pattern_index
-    c       =   scenario_index 
-    '---variables---'
-    legal_bed_occ   =   True
-    bed_occ         =   current_bed_occ_wdc
-    '---program---'
-    for w in Wi:
-        dd = 0
-        for d in range(current_day,min(nDays,current_day+J[w])):
-            bed_occ[w][d][c] += Psum[m][w][dd]
-            dd+=1
-            if bed_occ[w][d][c]> B[w][d]:
-                legal_bed_occ = False
-                return bed_occ, legal_bed_occ 
-    return bed_occ, legal_bed_occ
-
-
-def calculate_total_bed_occupation2(input_dict: dict, current_bed_occ_wd: list[list],pattern_index: int ,current_day: int):
+def calculate_total_bed_occupation(input_dict: dict, current_bed_occ_wd: list[list],pattern_index: int ,current_day: int):
     #calculate bed occupation in all ward after assigning pattern pattern_index on day current_day in scenario scenario_index
     #returns a boolean indicating if the bed ward capacity is broken or not. in the broken case, the calculations is not complete
     '---parameters---'
@@ -131,7 +348,6 @@ def calculate_total_bed_occupation2(input_dict: dict, current_bed_occ_wd: list[l
                 legal_bed_occ = False
                 return bed_occ, legal_bed_occ 
     return bed_occ, legal_bed_occ
-
 
 def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list[list], MS_index_sorted_csm:list[list[list]], specialty_index: int, day_index: int, scenario_index: int):
     # choose the best pattern gready from the set of pattern's indicies M^S_(c,s,m) sorted afted priority w/ m=0 as top riority
@@ -160,7 +376,7 @@ def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list[list]
         #[bed_occ_temp.append(list(map(list,bed_occ[j]))) for j in range(len(bed_occ[0]))]
         #bed_occ_temp                    = [list(x) for x in bed_occ]
         
-        bed_occ_temp, legal_bed_occ     =   calculate_total_bed_occupation2(input_dict,bed_occ_temp,MSi_c[c][s][i],d)
+        bed_occ_temp, legal_bed_occ     =   calculate_total_bed_occupation(input_dict,bed_occ_temp,MSi_c[c][s][i],d)
         if not legal_bed_occ:
             i += 1
             if i == max_iter:
@@ -173,7 +389,7 @@ def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list[list]
         choosen_pattern                 =   -1
                 
     return bed_occ, choosen_pattern
- 
+
 def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: list[list], MS_index_sorted_csm:list[list[list]], specialty_index: int, day_index: int, scenario_index: int):
     # choose the best pattern gready from the set of pattern's indicies M^S_(c,s,m) sorted afted priority w/ m=0 as top riority
     # if there is a leagal pattern according to bed ward capacity in the set M^S_(c,s,m) for specialty s in scenario c 
@@ -202,7 +418,7 @@ def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: 
         #bed_occ_temp                        =   []
         #[bed_occ_temp.append(list(map(list,current_bed_occ_wdc[j]))) for j in range(len(current_bed_occ_wdc[0]))]
         #bed_occ_temp = [list(x) for x in current_bed_occ_wdc]
-        new_bed_occ, legal_bed_occ = calculate_total_bed_occupation2(input_dict, bed_occ_temp, MSi_c[c][s][i], d)
+        new_bed_occ, legal_bed_occ = calculate_total_bed_occupation(input_dict, bed_occ_temp, MSi_c[c][s][i], d)
         if not legal_bed_occ:
             i+=1
         if i==max_iter:
@@ -214,439 +430,126 @@ def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: 
         best_pattern_temp = -1
         
     return best_pattern_temp, legal_bed_occ
-        
-def print_assigned_pattern_heuristic(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
-    print("Expected number of planned operation minutes per slot")
-    print("-----------------------------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                if input_dict["N"][d] == 0:
-                    print("{0:<5}".format("-"), end="")
-                else:
-                    operations = -2
-                    if assigned_pattern_matrix_rdc[r][d][scenario]>-1.5:
-                        operations = assigned_pattern_matrix_rdc[r][d][scenario]
-                    operations_str = "{:.0f}".format(operations)
-                    print("{0:<5}".format(str(operations_str)), end="")
-            print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        print()
 
-def print_assigned_minutes_heuristic(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
-    print("Expected number of planned operation minutes per slot")
-    print("-----------------------------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                if input_dict["N"][d] == 0:
-                    print("{0:<5}".format("-"), end="")
-                else:
-                    operations = 0
-                    if assigned_pattern_matrix_rdc[r][d][scenario]>-1.5:
-                        m = assigned_pattern_matrix_rdc[r][d][scenario]
-                        for g in input_dict["Gi"]:
-                            if m>=0:  #neg index is possible....
-                                operations+=input_dict["A"][m][g]*(input_dict["L"][g]+input_dict["TC"])
-                    operations_str = "{:.0f}".format(operations)
-                    print("{0:<5}".format(str(operations_str)), end="")
-            print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        print()
-        print()
-        print()
-
-def print_scenario_que(input_dict: dict, Q_rem: list[list], scenario: int):
-    print("Unoperated patients:")
-    print("---------------------")
-    for g in input_dict["Gi"]:
-        print("%i - %s: %i "%(g,input_dict["G"][g], Q_rem[g][scenario]))
-    print()
-    
-def print_MSS_heuristic(input_dict: dict, output_dict: dict, print_all_cycles = False):
-
-    if print_all_cycles:
-        cycles = range(1,input_dict["I"]+1)
-    else:
-        cycles = range(1,2)
-        
-    print("Planning period modified MSS")
-    print("-----------------------------")
-    for i in cycles:
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                if input_dict["N"][d] == 0:
-                    print("{0:<5}".format("-"), end="")
-                elif output_dict["specialty_in_slot"][r][d] < -0.5:
-                    print("{0:<5}".format("#"), end="") 
-                elif (output_dict["fixedSlot"][r][d] == 0) & (output_dict["flexSlot"][r][d] == 0):
-                    print("{0:<5}".format("?"), end="")
-                elif output_dict["specialty_in_slot"][r][d] > -0.5:
-                    slotLabel = input_dict["S"][output_dict["specialty_in_slot"][r][d]]
-                    if output_dict["extSlot"][r][d] > 0.5:
-                        slotLabel = slotLabel+"*"
-                    print("{0:<5}".format(slotLabel), end="")
-            print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-
-def print_MSS(input_dict, output_dict, print_all_cycles = False):
-
-    if print_all_cycles:
-        cycles = range(1,input_dict["I"]+1)
-    else:
-        cycles = range(1,2)
-        
-    print("Planning period modified MSS")
-    print("-----------------------------")
-    for i in cycles:
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for r in input_dict["Ri"]:
-            room = "{0:>8}".format(input_dict["R"][r]+"|")
-            print(room, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                if input_dict["N"][d] == 0:
-                    print("{0:<5}".format("-"), end="")
-                elif output_dict["flexSlot"][r][d] == 1:
-                    print("{0:<5}".format("#"), end="") 
-                elif (output_dict["fixedSlot"][r][d] == 0) & (output_dict["flexSlot"][r][d] == 0):
-                    print("{0:<5}".format("?"), end="") 
-                elif output_dict["fixedSlot"][r][d] == 1:
-                    for s in input_dict["Si"]:
-                        if output_dict["gamm"][s][r][d] == 1:
-                            slotLabel = input_dict["S"][s]
-                        if output_dict["lamb"][s][r][d] == 1:
-                            slotLabel = slotLabel+"*"
-                    print("{0:<5}".format(slotLabel), end="")
-            print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-
-def print_bed_ward_heur(input_dict,bed_occupation_wd):
-    print("Expected bed ward utilization")
-    print("-----------------------------")
-    for i in range(1,input_dict["I"]+1):
-        print("Cycle: ", i)
-        print("        ", end="")
-        nDaysInCycle = int(input_dict["nDays"]/input_dict["I"])
-        firstDayInCycle = int(nDaysInCycle*(i-1)+1)
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            day = "{0:<5}".format(str(d))
-            print(day, end="")
-        print()
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-        for w in input_dict["Wi"]:
-            ward = "{0:>8}".format(input_dict["W"][w]+"|")
-            print(ward, end="")
-            for d in range(firstDayInCycle-1,firstDayInCycle+nDaysInCycle-1):
-                total = bed_occupation_wd[w][d]
-                total = "{:.2f}".format(total)
-                print("{0:<5}".format(str(total)), end="")
-            print()
-                
-        print("        ", end="")
-        for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
-            print("-----",end="")
-        print()
-
-       
+#----- Heuristic -----#
 def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug=False):
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
-    #fixed slots are filled first and then flexible slots scenario by scenario
+    #fixed slots are. filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging
-    start_time = time.time()
     '---sets---'
-    Si              =   input_dict["Si"]
-    SRi             =   input_dict["SRi"]
-    Gi              =   input_dict["Gi"] 
-    Ri              =   input_dict["Ri"]
-    Di              =   input_dict["Di"]
-    Ci              =   input_dict["Ci"]
-    Mi              =   input_dict["Mi"]   
-    Wi  =   input_dict["Wi"]
+    Si                  =   input_dict["Si"]
+    SRi                 =   input_dict["SRi"]
+    Gi                  =   input_dict["Gi"] 
+    Ri                  =   input_dict["Ri"]
+    Di                  =   input_dict["Di"]
+    Ci                  =   input_dict["Ci"]
+    MSnxi               =   input_dict["MSnxi"]
+    MSi                 =   input_dict["MSi"]
     '---parameters---'
-    Pi              =   input_dict["Pi"]
-    Q               =   input_dict["Q"]
-    L               =   input_dict["L"]
-    TC              =   input_dict["TC"]
-    ext_slot        =   result_dict["extSlot"]
-    specialty_in_slot = result_dict["specialty_in_slot"]
-    Mi_dur          =   input_dict["Mi_dur"]   
-    Wi  =   input_dict["Wi"]
-    Y   =   input_dict["Y"]
-    J =   input_dict["J"]
-    #MSnxi           =   copy.deepcopy(input_dict["MSnxi"])
-    #MSi             =   copy.deepcopy(input_dict["MSi"])
-    #teams_avalible  =   copy.deepcopy(input_dict["K"]) 
+    Pi                  =   input_dict["Pi"]
+    Q                   =   input_dict["Q"]
+    L                   =   input_dict["L"]
+    TC                  =   input_dict["TC"]
+    K                   =   input_dict["K"]
+    ext_slot            =   result_dict["extSlot"]
+    specialty_in_slot   =   result_dict["specialty_in_slot"]
+    Mi_dur              =   input_dict["Mi_dur"]  
+    start_time          =   time.time()
     '---variables---'              
-    slot            =   [[[-10 for _ in Ci] for _ in Di] for _ in Ri]    #_r,d,c
-    bed_occ         =   initiate_total_bed_occupation2(Wi,Di,Y,J)       #_w,d
-    Q_rem           =   list(map(list,Q))                                #_g,c
-    MSnxi_c         =   []                                              #_c,s,m
-    MSi_c           =   [] 
-    teams_avalible_c  =   []
+    slot                =   [[[-10 for _ in Ci] for _ in Di] for _ in Ri]       #_r,d,c
+    bed_occ             =   initiate_total_bed_occupation(input_dict)           #_w,d
+    Q_rem               =   list(map(list,Q))                                   #_g,c
+    MSnxi_c             =   []                                                  #_c,s,m
+    MSi_c               =   []                                                  #_c,s,m
+    teams_avalible_c    =   []                                                  #_c,s,d
     '---program---'
     for c in Ci:
         '---initialize scenario---'
-        MSnxi_c.append(list(map(list,input_dict["MSnxi"])))
-        MSi_c.append(list(map(list,input_dict["MSi"])))
-        teams_avalible_c.append(list(map(list,input_dict["K"])))
-        bed_occ_c=list(map(list,bed_occ))
-        #bed_occ_c=copy.deepcopy(bed_occ)
+        MSnxi_c.append(list(map(list,MSnxi)))
+        MSi_c.append(list(map(list,MSi)))
+        teams_avalible_c.append(list(map(list,K)))
+        bed_occ_c       =   list(map(list,bed_occ))
         for s in Si:
-            MSnxi_c =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
-            MSi_c   =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
-        if debug:
-            print('Scenario: %i'%c)
-            print('--------------------------------')
-        
+            MSnxi_c     =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+            MSi_c       =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
         '---pack fixed slots---'   
         for d in Di:
             for r in Ri:
-                s = specialty_in_slot[r][d] 
-                if s>=0:
-                    teams_avalible_c[c][s][d]-=1
-                    if ext_slot[r][d]==1:
+                s       =   specialty_in_slot[r][d] 
+                if (s >= 0):
+                    teams_avalible_c[c][s][d] -= 1 
+                    if (ext_slot[r][d] == 1):
                         '---pack ext slots---'
-                        if MSi_c[c][s]:
-                            bed_occ_c, best_pattern   =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSi_c,s,d,c)
+                        if (MSi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSi_c,s,d,c)
                             slot[r][d][c]           =   best_pattern
-                            if best_pattern >=0:
+                            if (best_pattern >= 0):
                                 Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
                                 MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
                                 MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
                     else:
                         '---pack non-ext slots---'
-                        if MSnxi_c[c][s]:
-                            bed_occ_c, best_pattern   =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSnxi_c,s,d,c)
+                        if (MSnxi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSnxi_c,s,d,c)
                             slot[r][d][c]           =   best_pattern
-                            if best_pattern >=0:
+                            if (best_pattern >= 0):
                                 Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
                                 MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
                                 MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
         '---pack flex slots---'
         for d in Di:
             for r in Ri:
-                if specialty_in_slot[r][d]==-1:
+                if (specialty_in_slot[r][d] == -1):
                     flex_pack_temp                  =   [-1 for _ in Si]
                     operated_min_temp               =   [0 for _ in Si]
                     found_legal_pattern             =   False
                     '---finding best specialty and its best pattern---'
                     for s in SRi[r]:
-                        if teams_avalible_c[c][s][d]<=0:
+                        if (teams_avalible_c[c][s][d] <= 0):
                             continue
-                        if MSnxi_c[c][s]:
+                        if (MSnxi_c[c][s]):
                             pattern, found_temp_legal_pattern = choose_best_pattern_with_legal_bed_occ_temporary(input_dict,bed_occ_c,MSnxi_c,s,d,c)
-                            if found_temp_legal_pattern:
+                            if (found_temp_legal_pattern):
                                 operated_min_temp[s]+=  Mi_dur[pattern]
                                 flex_pack_temp[s]   =   pattern
                                 found_legal_pattern =   True
-                                """if debug:
-                                    print('best legal pattern for s: %i in r: %i, d: %i, c: %i:  %i      w/ duration: %.1f'%(s,r,d,c,pattern,operated_min_temp[s]))"""
-                    if found_legal_pattern:
+                    if (found_legal_pattern):
                         '---assigning best specialty and its best pattern---'
                         best_spec                   =   operated_min_temp.index(max(operated_min_temp))
                         best_pattern                =   flex_pack_temp[best_spec]
                         slot[r][d][c]               =   best_pattern
-                        """if debug:  
-                            #print('best spec in r: %i, d: %i, c: %i is spec s: %i w/ pattern m: %i' %(r,d,c,best_spec, best_pattern))
-                            bed_occ, legal_bed_occ  =   calculate_total_bed_occupation(input_dict, bed_occ, best_pattern, d, c)      
-                            #print('A[%i]:         '%best_pattern, end="")
-                            #print(input_dict["A"][best_pattern])
-                            Q_rem2=[]
-                            for g in input_dict["Gi"]:
-                                Q_rem2.append(Q_rem[g][c])
-                            #print('Q_rem_pre[%i]: '%c, end="")
-                            #print(Q_rem2)
-                        else: """
-                        bed_occ_c, legal_bed_occ      =   calculate_total_bed_occupation2(input_dict, bed_occ_c, best_pattern, d)
+                        bed_occ_c, legal_bed_occ    =   calculate_total_bed_occupation(input_dict, bed_occ_c, best_pattern, d)
                         Q_rem                       =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
-                        """if debug: 
-                            Q_rem2=[]
-                            for g in input_dict["Gi"]:
-                                Q_rem2.append(Q_rem[g][c])
-                            #print('Q_rem_pre[%i]: '%c, end="")
-                            #print(Q_rem2)"""
                         MSnxi_c                     =   update_patterns_list(input_dict, MSnxi_c, Q_rem, best_spec, c)
                         MSi_c                       =   update_patterns_list(input_dict, MSi_c, Q_rem, best_spec, c)
-        """if debug:
-            for s in Si:
-                for m in MSnxi_c[c][s]:
-                    if not (m in MSi_c[c][s]):
-                        #print('pattern %i in MSnxi_c[%i][%i] not in MSi_c[%i][%i]'%(m,c,s,c,s))
-                        #print('MSi_c[c]:   '+str(MSi_c[c]))
-                        #print('MSnxi_c[c]: '+str(MSnxi_c[c]))
-                        Q_rem2=[]
-                        for g in input_dict["Gi"]:
-                            Q_rem2.append(Q_rem[g][c])
-                        #print('Q_rem[c]: '+str(Q_rem2))
-            for g in Gi:
-                if Q_rem[g][c] < -0.5:
-                    print('Q_rem[%i][%i] have negative value of %i'%(g,c,Q_rem[g][c]))
-            #print_bed_util_percent_heuristic(input_dict, bed_occ, c)
-            #print_assigned_pattern_heuristic(input_dict, slot,c)
-            print_assigned_minutes_heuristic(input_dict, slot,c)
-            #print_scenario_que(input_dict,Q_rem,c) """
-        #print_bed_ward_heur(input_dict,bed_occ_c)
-    #----- Calculate objective -----#
+        if (debug):
+            print('Scenario: %i'%c)
+            print('--------------------------------')
+            print_MSS_in_scenario(input_dict,result_dict,slot,c)
+            print_assigned_minutes_in_scenario(input_dict,slot,c)
+            print_bed_ward_in_scenario(input_dict,bed_occ_c)
+            print('MSi_c['+str(c)+']:     '+str(MSi_c[c]))
+            print('MSnxi_c['+str(c)+']:   '+str(MSnxi_c[c]))
+            Q_rem2=[]
+            for g in input_dict["Gi"]:
+                Q_rem2.append(Q_rem[g][c])
+            print('Q_rem['+str(c)+']:     '+str(Q_rem2))
+            obj_c = sum((Q_rem[g][c]*(L[g]+TC)) for g in Gi)
+            print('Unmet in scenario:    %.1f'%obj_c)
+            print('--------------------------------')
+            print()
+            
+    '----- Calculate objective -----'
     obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
     
-    """print("Heuristic solution:      %.1f" % obj)
-    print("MIP solution primal:     %.1f" % result_dict["obj"])
-    print("MIP solution dual:       %.1f" % result_dict["best_bound"])"""
-    
-    #result_dict["specialty_in_slot"]            =   specialty_in_slot    # blir ikke oppdatert #_r,d # scxenariobasert? som i delta
+    '----- Results -----'
     result_dict["obj"]                          =   obj                 # real
     result_dict["pattern_to_slot_assignment"]   =   slot                # _r,d,c
     result_dict["a"]                            =   Q_rem               # _g,c
-    #result_dict["bed_occupation_wdc"]           =   bed_occ             #
     
+    '----- time heuristic -----'
     heuristic_time = (time.time() - start_time)
     result_dict["heuristic_time"]           =   heuristic_time
-    print('Heuristic time: %.1f s' %heuristic_time)
+    print('Heuristic time:     %.1f s' %heuristic_time)
+    
     return result_dict
-
-def translate_heristic_results(input_dict: dict, result_dict: dict):
-    # function that updates the result dictionary back to model values such that output functions are legal
-    
-    #--- left to update --- #
-    #result_dict["delt"]    
-    #result_dict["x"]
-    #result_dict["v"]
-    #result_dict["bed_occupation"]    _wd
-    #result_dict["flexSlot"]
-    #result_dict["fixedSlot"]
-    '---parameters---'
-    input               =   input_dict
-    result              =   result_dict
-    Wi                  =   input["Wi"]
-    Si                  =   input["Si"]
-    Gi                  =   input["Gi"]
-    GWi                 =   input["GWi"]
-    Ri                  =   input["Ri"]
-    Di                  =   input["Di"]
-    Ci                  =   input["Ci"]
-    MSi                 =   input["MSi"]
-    J                   =   input["J"]
-    Pi                  =   input["Pi"]
-    P                   =   input["P"]
-    nDays               =   input["nDays"]
-    A                   =   input["A"]
-    pat_slot            =   result["pattern_to_slot_assignment"]
-    bed_occupation_wdc  =   result["bed_occupation_wdc"]
-    specialty_in_slot   =   result["specialty_in_slot"]
-    
-    '---variables---'
-    delt                =   [[[[0 for _ in Ci] for _ in Di] for _ in Ri] for _ in Si]
-    x                   =   [[[[0 for _ in Ci] for _ in Di] for _ in Ri] for _ in Gi]
-    v                   =   [[0 for _ in Di] for _ in Wi]
-    bed_occupation_wd   =   [[0 for _ in Di] for _ in Wi]
-    flex_slot           =   [[0 for _ in Di] for _ in Ri]
-    fixed_slot          =   [[0 for _ in Di] for _ in Ri]
-
-    for r in Ri:
-        for d in Di:
-            '--- fixedSlot & flexSlot ---'
-            if specialty_in_slot[r][d] < -0.5:
-                flex_slot[r][d]     =   1
-                fixed_slot[r][d]    =   0
-            else:
-                flex_slot[r][d]     =   0
-                fixed_slot[r][d]    =   1
-            '--- x & delt ---'
-            for c in Ci:
-                m       =   pat_slot[r][d][c]
-                if m > -0.5:
-                    for g in Gi:
-                        x[g][r][d][c] = A[m][g]
-                else:
-                    for g in Gi:
-                        x[g][r][d][c] = 0
-                for s in Si:
-                    if m in MSi[s]:
-                        delt[s][r][d][c] = 1
-                    else:
-                        delt[s][r][d][c] = 0
-    '--- v & bed_occupation ---'
-    for w in Wi:
-        for d in range(J[w]-1):
-            v[w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * x[g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
-        for d in Di:
-            bed_occupation_wd[w][d] = sum(Pi[c]*bed_occupation_wdc[w][d][c] for c in Ci)
-            
-    '--- results ---'
-    result["delt"]              =   delt
-    result["x"]                 =   x
-    result["v"]                 =   v
-    result["bed_occupation"]    =   bed_occupation_wd
-    result["fixedSlot"]         =   fixed_slot
-    result["flexSlot"]          =   flex_slot
-    
-    return result
-        
