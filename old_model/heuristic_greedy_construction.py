@@ -246,7 +246,7 @@ def translate_heristic_results(input_dict: dict, result_dict: dict):
                     else:
                         delt[s][r][d][c] = 0
     '--- v & bed_occupation ---'     
-    #denne er ikke testet enda!
+    """#denne er ikke testet enda!
     for w in Wi:
         for d in Di:
             for c in Ci:
@@ -260,16 +260,16 @@ def translate_heristic_results(input_dict: dict, result_dict: dict):
         for d in range(J[w]-1):
             v[w][d] = sum(Pi[c] * sum(P[w][g][d+nDays-dd] * x[g][r][dd][c] for g in GWi[w] for r in Ri for dd in range(d+nDays+1-J[w],nDays)) for c in Ci) 
         for d in Di:
-            bed_occupation_wd[w][d] = sum(Pi[c]*bed_occupation_wdc[w][d][c] for c in Ci)
+            bed_occupation_wd[w][d] = sum(Pi[c]*bed_occupation_wdc[w][d][c] for c in Ci)"""
             
     '--- results ---'
     result["delt"]              =   delt
     result["x"]                 =   x
     result["v"]                 =   v
-    result["bed_occupation"]    =   bed_occupation_wd
+    """result["bed_occupation"]    =   bed_occupation_wd"""
     result["fixedSlot"]         =   fixed_slot
     result["flexSlot"]          =   flex_slot
-    result["bed_occupation_wdc"]=   bed_occupation_wdc # ikke testet enda!!
+    """result["bed_occupation_wdc"]=   bed_occupation_wdc # ikke testet enda!!"""
     return result
 
 #----- help functions -----#
@@ -433,6 +433,82 @@ def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: 
         
     return best_pattern_temp, legal_bed_occ
 
+def choose_best_pattern_specialty_room_temporary(input: dict,bed_occ_c: list, flex_rooms_remaining: list, MSnxi_c: list, Mi_dur: list, teams_avalible_c: list, day: int, scenario: int):
+                SRi     =   input["SRi"]
+                Si      =   input["Si"]
+                c = scenario
+                d = day
+                best_room = -1
+                best_spec = -1
+                best_pattern = -1
+                best_dur = -1
+                
+                for r in flex_rooms_remaining: 
+                    flex_pack_temp                  =   [-1 for _ in Si]
+                    operated_min_temp               =   [0 for _ in Si]
+                    found_legal_pattern             =   False
+                    '---finding best specialty and its best pattern in this room---'
+                    for s in SRi[r]:
+                        if (teams_avalible_c[c][s][d] <= 0):
+                            continue
+                        if (MSnxi_c[c][s]):
+                            pattern, found_temp_legal_pattern = choose_best_pattern_with_legal_bed_occ_temporary(input,bed_occ_c,MSnxi_c,s,d,c)
+                            if (found_temp_legal_pattern):
+                                operated_min_temp[s]+=  Mi_dur[pattern]
+                                flex_pack_temp[s]   =   pattern
+                                found_legal_pattern =   True
+                    if (found_legal_pattern):
+                        best_spec_temp          =   operated_min_temp.index(max(operated_min_temp))
+                        best_pattern_temp       =   flex_pack_temp[best_spec]
+                        best_dur_temp           =   Mi_dur[best_pattern_temp]
+                        if best_dur_temp > best_dur:
+                            best_room               =   r
+                            best_spec               =   best_spec_temp
+                            best_pattern            =   best_pattern_temp
+                            best_dur                =   best_dur_temp
+                        
+                return best_pattern, best_spec, best_room
+            
+def choose_best_pattern_specialty_room_temporary2(input: dict,bed_occ_c: list, flex_rooms_remaining: list, MSnxi_c: list, Mi_dur: list, teams_avalible_c: list, scenario: int):
+                SRi     =   input["SRi"]
+                Si      =   input["Si"]
+                Di =   input["Di"]
+                c = scenario
+                
+                best_day = -1
+                best_room = -1
+                best_spec = -1
+                best_pattern = -1
+                best_dur = -1
+                
+                for d in Di:
+                    for r in flex_rooms_remaining[d]: 
+                        flex_pack_temp                  =   [-1 for _ in Si]
+                        operated_min_temp               =   [0 for _ in Si]
+                        found_legal_pattern             =   False
+                        '---finding best specialty and its best pattern in this room---'
+                        for s in SRi[r]:
+                            if (teams_avalible_c[c][s][d] <= 0):
+                                continue
+                            if (MSnxi_c[c][s]):
+                                pattern, found_temp_legal_pattern = choose_best_pattern_with_legal_bed_occ_temporary(input,bed_occ_c,MSnxi_c,s,d,c)
+                                if (found_temp_legal_pattern):
+                                    operated_min_temp[s]+=  Mi_dur[pattern]
+                                    flex_pack_temp[s]   =   pattern
+                                    found_legal_pattern =   True
+                        if (found_legal_pattern):
+                            best_spec_temp          =   operated_min_temp.index(max(operated_min_temp))
+                            best_pattern_temp       =   flex_pack_temp[best_spec]
+                            best_dur_temp           =   Mi_dur[best_pattern_temp]
+                            if best_dur_temp > best_dur:
+                                best_room               =   r
+                                best_spec               =   best_spec_temp
+                                best_pattern            =   best_pattern_temp
+                                best_dur                =   best_dur_temp
+                                best_day                =   d
+                            
+                return best_pattern, best_spec, best_room, best_day
+                    
 #----- Heuristic -----#
 def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug=False):
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
@@ -501,7 +577,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
         '---pack flex slots---'
         for d in Di:
             for r in Ri:
-                if (specialty_in_slot[r][d] == -1):
+                if (specialty_in_slot[r][d] <0):
                     flex_pack_temp                  =   [-1 for _ in Si]
                     operated_min_temp               =   [0 for _ in Si]
                     found_legal_pattern             =   False
@@ -541,6 +617,227 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
             print('Unmet in scenario:    %.1f'%obj_c)
             print('--------------------------------')
             print()
+            
+    '----- Calculate objective -----'
+    obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
+    
+    '----- Results -----'
+    result_dict["obj"]                          =   obj                 # real
+    result_dict["pattern_to_slot_assignment"]   =   slot                # _r,d,c
+    result_dict["a"]                            =   Q_rem               # _g,c
+    
+    '----- time heuristic -----'
+    heuristic_time = (time.time() - start_time)
+    result_dict["heuristic_time"]           =   heuristic_time
+    #print('Heuristic time:     %.1f s' %heuristic_time)
+    
+    return result_dict
+
+def run_greedy_construction_heuristic_smart_flex(input_dict: dict, result_dict: dict, debug=False):
+    #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
+    #fixed slots are. filled first and then flexible slots scenario by scenario
+    #it is possible to print each choice of flexible packing and scenario assignment for debugging
+    '---sets---'
+    Si                  =   input_dict["Si"]
+    SRi                 =   input_dict["SRi"]
+    Gi                  =   input_dict["Gi"] 
+    Ri                  =   input_dict["Ri"]
+    Di                  =   input_dict["Di"]
+    Ci                  =   input_dict["Ci"]
+    MSnxi               =   input_dict["MSnxi"]
+    MSi                 =   input_dict["MSi"]
+    '---parameters---'
+    Pi                  =   input_dict["Pi"]
+    Q                   =   input_dict["Q"]
+    L                   =   input_dict["L"]
+    TC                  =   input_dict["TC"]
+    K                   =   input_dict["K"]
+    ext_slot            =   result_dict["extSlot"]
+    specialty_in_slot   =   result_dict["specialty_in_slot"]
+    Mi_dur              =   input_dict["Mi_dur"]  
+    start_time          =   time.time()
+    '---variables---'              
+    slot                =   [[[-10 for _ in Ci] for _ in Di] for _ in Ri]       #_r,d,c
+    bed_occ             =   initiate_total_bed_occupation(input_dict)           #_w,d
+    Q_rem               =   list(map(list,Q))                                   #_g,c
+    MSnxi_c             =   []                                                  #_c,s,m
+    MSi_c               =   []                                                  #_c,s,m
+    teams_avalible_c    =   []                                                  #_c,s,d
+    '---program---'
+    for c in Ci:
+        '---initialize scenario---'
+        MSnxi_c.append(list(map(list,MSnxi)))
+        MSi_c.append(list(map(list,MSi)))
+        teams_avalible_c.append(list(map(list,K)))
+        bed_occ_c       =   list(map(list,bed_occ))
+        for s in Si:
+            MSnxi_c     =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+            MSi_c       =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+        '---pack fixed slots---'   
+        for d in Di:
+            for r in Ri:
+                s       =   specialty_in_slot[r][d] 
+                if (s >= 0):
+                    teams_avalible_c[c][s][d] -= 1 
+                    if (ext_slot[r][d] == 1):
+                        '---pack ext slots---'
+                        if (MSi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSi_c,s,d,c)
+                            slot[r][d][c]           =   best_pattern
+                            if (best_pattern >= 0):
+                                Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+                                MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                    else:
+                        '---pack non-ext slots---'
+                        if (MSnxi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSnxi_c,s,d,c)
+                            slot[r][d][c]           =   best_pattern
+                            if (best_pattern >= 0):
+                                Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                                MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+        '---pack flex slots---'
+        for d in Di:
+            flex_rooms_remaining = [r for r in Ri if specialty_in_slot[r][d] == -1]
+            while (flex_rooms_remaining):
+                best_pattern, best_spec, best_room  = choose_best_pattern_specialty_room_temporary(input_dict,bed_occ_c, flex_rooms_remaining, MSnxi_c, Mi_dur, teams_avalible_c, d, c)
+                if (best_pattern >= 0):
+                    flex_rooms_remaining.remove(best_room)
+                    bed_occ_c, legal_bed_occ            =   calculate_total_bed_occupation(input_dict, bed_occ_c, best_pattern, d)
+                    Q_rem                               =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
+                    MSnxi_c                             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, best_spec, c)
+                    MSi_c                               =   update_patterns_list(input_dict, MSi_c, Q_rem, best_spec, c)
+                    slot[best_room][d][c]               =   best_pattern
+                else:
+                    flex_rooms_remaining.clear()
+        if (debug):
+            print('Scenario: %i'%c)
+            print('--------------------------------')
+            print_MSS_in_scenario(input_dict,result_dict,slot,c)
+            print_assigned_minutes_in_scenario(input_dict,slot,c)
+            print_bed_ward_in_scenario(input_dict,bed_occ_c)
+            print('MSi_c['+str(c)+']:     '+str(MSi_c[c]))
+            print('MSnxi_c['+str(c)+']:   '+str(MSnxi_c[c]))
+            Q_rem2=[]
+            for g in input_dict["Gi"]:
+                Q_rem2.append(Q_rem[g][c])
+            print('Q_rem['+str(c)+']:     '+str(Q_rem2))
+            print('L['+str(c)+']:         '+str(L))
+            obj_c = sum((Q_rem[g][c]*(L[g]+TC)) for g in Gi)
+            print('Unmet in scenario:    %.1f'%obj_c)
+            print('--------------------------------')
+            print()
+            
+    '----- Calculate objective -----'
+    obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            
+    
+    '----- Results -----'
+    result_dict["obj"]                          =   obj                 # real
+    result_dict["pattern_to_slot_assignment"]   =   slot                # _r,d,c
+    result_dict["a"]                            =   Q_rem               # _g,c
+    
+    '----- time heuristic -----'
+    heuristic_time = (time.time() - start_time)
+    result_dict["heuristic_time"]           =   heuristic_time
+    print('Heuristic time:     %.1f s' %heuristic_time)
+    
+    return result_dict
+
+def run_greedy_construction_heuristic_smarter_flex(input_dict: dict, result_dict: dict, debug=False):
+    #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
+    #fixed slots are. filled first and then flexible slots scenario by scenario
+    #it is possible to print each choice of flexible packing and scenario assignment for debugging
+    '---sets---'
+    Si                  =   input_dict["Si"]
+    SRi                 =   input_dict["SRi"]
+    Gi                  =   input_dict["Gi"] 
+    Ri                  =   input_dict["Ri"]
+    Di                  =   input_dict["Di"]
+    Ci                  =   input_dict["Ci"]
+    MSnxi               =   input_dict["MSnxi"]
+    MSi                 =   input_dict["MSi"]
+    '---parameters---'
+    Pi                  =   input_dict["Pi"]
+    Q                   =   input_dict["Q"]
+    L                   =   input_dict["L"]
+    TC                  =   input_dict["TC"]
+    K                   =   input_dict["K"]
+    ext_slot            =   result_dict["extSlot"]
+    specialty_in_slot   =   result_dict["specialty_in_slot"]
+    Mi_dur              =   input_dict["Mi_dur"]  
+    start_time          =   time.time()
+    '---variables---'              
+    slot                =   [[[-10 for _ in Ci] for _ in Di] for _ in Ri]       #_r,d,c
+    bed_occ             =   initiate_total_bed_occupation(input_dict)           #_w,d
+    Q_rem               =   list(map(list,Q))                                   #_g,c
+    MSnxi_c             =   []                                                  #_c,s,m
+    MSi_c               =   []                                                  #_c,s,m
+    teams_avalible_c    =   []                                                  #_c,s,d
+    '---program---'
+    for c in Ci:
+        '---initialize scenario---'
+        MSnxi_c.append(list(map(list,MSnxi)))
+        MSi_c.append(list(map(list,MSi)))
+        teams_avalible_c.append(list(map(list,K)))
+        bed_occ_c       =   list(map(list,bed_occ))
+        for s in Si:
+            MSnxi_c     =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+            MSi_c       =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+        '---pack fixed slots---'   
+        for d in Di:
+            for r in Ri:
+                s       =   specialty_in_slot[r][d] 
+                if (s >= 0):
+                    teams_avalible_c[c][s][d] -= 1 
+                    if (ext_slot[r][d] == 1):
+                        '---pack ext slots---'
+                        if (MSi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSi_c,s,d,c)
+                            slot[r][d][c]           =   best_pattern
+                            if (best_pattern >= 0):
+                                Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+                                MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                    else:
+                        '---pack non-ext slots---'
+                        if (MSnxi_c[c][s]):
+                            bed_occ_c, best_pattern =   choose_best_pattern_with_legal_bed_occ(input_dict,bed_occ_c,MSnxi_c,s,d,c)
+                            slot[r][d][c]           =   best_pattern
+                            if (best_pattern >= 0):
+                                Q_rem               =   update_remaining_que(input_dict,best_pattern, Q_rem,s,c)
+                                MSnxi_c             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, s, c)
+                                MSi_c               =   update_patterns_list(input_dict, MSi_c, Q_rem, s, c)
+        '---pack flex slots---'
+        flex_rooms_remaining = [[r for r in Ri if specialty_in_slot[r][d] == -1] for d in Di]
+        while (flex_rooms_remaining):
+            best_pattern, best_spec, best_room, best_day  = choose_best_pattern_specialty_room_temporary2(input_dict,bed_occ_c, flex_rooms_remaining, MSnxi_c, Mi_dur, teams_avalible_c, c)
+            if (best_pattern >= 0):
+                flex_rooms_remaining[best_day].remove(best_room)
+                bed_occ_c, legal_bed_occ            =   calculate_total_bed_occupation(input_dict, bed_occ_c, best_pattern, best_day)
+                Q_rem                               =   update_remaining_que(input_dict,best_pattern, Q_rem,best_spec,c)
+                MSnxi_c                             =   update_patterns_list(input_dict, MSnxi_c, Q_rem, best_spec, c)
+                MSi_c                               =   update_patterns_list(input_dict, MSi_c, Q_rem, best_spec, c)
+                slot[best_room][d][c]               =   best_pattern
+            else:
+                flex_rooms_remaining.clear()
+    if (debug):
+        print('Scenario: %i'%c)
+        print('--------------------------------')
+        print_MSS_in_scenario(input_dict,result_dict,slot,c)
+        print_assigned_minutes_in_scenario(input_dict,slot,c)
+        print_bed_ward_in_scenario(input_dict,bed_occ_c)
+        print('MSi_c['+str(c)+']:     '+str(MSi_c[c]))
+        print('MSnxi_c['+str(c)+']:   '+str(MSnxi_c[c]))
+        Q_rem2=[]
+        for g in input_dict["Gi"]:
+            Q_rem2.append(Q_rem[g][c])
+        print('Q_rem['+str(c)+']:     '+str(Q_rem2))
+        print('L['+str(c)+']:         '+str(L))
+        obj_c = sum((Q_rem[g][c]*(L[g]+TC)) for g in Gi)
+        print('Unmet in scenario:    %.1f'%obj_c)
+        print('--------------------------------')
+        print()
             
     '----- Calculate objective -----'
     obj = sum(Pi[c]*(Q_rem[g][c]*(L[g]+TC)) for c in Ci for g in Gi)            

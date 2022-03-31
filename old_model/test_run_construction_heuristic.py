@@ -45,10 +45,22 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
     #print_MSS(input_h, results_h)
     #results_m=run_model_mip_fixed(input_m,results_m,10)
     #print(input["MSi"])
+    results_h_smart = copy.deepcopy(results_h)
+    results_h_smarter = copy.deepcopy(results_h)
+    results_h_smart=run_greedy_construction_heuristic_smart_flex(input_h,results_h_smart,debug=True)
+    results_h_smarter=run_greedy_construction_heuristic_smarter_flex(input_h,results_h_smarter,debug=True)
     results_h=run_greedy_construction_heuristic(input_h,results_h,debug=True) 
     print(results_m["obj"])
     print(results_m["best_bound"])
     print(results_h["obj"])
+    print(results_h_smart["obj"])
+    print(results_h_smarter["obj"])
+    
+    """for c in input_h["Ci"]:
+        for d in input_h["Di"]:
+            for r in input["Ri"]:
+                if results_h["pattern_to_slot_assignment"][r][d][c]   !=   results_h_smart["pattern_to_slot_assignment"][r][d][c]:                # _r,d,c
+                    print('r: %i, d: %i, c: %i'%(r,d,c))"""
     #results_h=translate_heristic_results(input,results_h)
     #print_expected_que(input,results_h)
     #results = translate_heristic_results(input,results)
@@ -57,4 +69,4 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
     #print_expected_que(input, results)
     #print(results_h["obj"])
 
-main(9,0.2,3,1)
+main(9,0.3,10,2)
