@@ -16,7 +16,8 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
 
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [10,10,10]
+    level_iters = [100,100,100]
+    level_swaps = ["fixed", "ext", "flex"]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
     """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
@@ -47,16 +48,16 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
-        
+        swap_type = level_swaps[level-1]
         #----- Looping through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "fixed" 
+            #swap_type = "flex" 
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = False)
             
@@ -84,9 +85,9 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
                 best_sol = copy.deepcopy(results)
                 write_to_excel_model(excel_file,input,best_sol)
-                best_sol = translate_heristic_results(input, best_sol)
+                """best_sol = translate_heristic_results(input, best_sol)
                 best_sol = categorize_slots(input, best_sol)
-                print_MSS(input, best_sol)
+                print_MSS(input, best_sol)"""
             else:
                 # ----- Copying the desicion variable values to result dictionary -----
                 write_to_excel_model(excel_file,input,results)

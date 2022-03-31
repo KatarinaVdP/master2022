@@ -70,7 +70,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     
     #----- If initial model run is not found, run as usual -----   
     else:
-        print("Did not find a pkl-file")
         #----- Find EVS as initial MSS ----  
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING MIP-MODEL TO FIND EVS")
