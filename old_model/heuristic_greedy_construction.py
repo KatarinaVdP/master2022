@@ -4,7 +4,7 @@ from model_mip import *
 import time
 
 #----- print functions for debugging -----#
-def print_assigned_pattern_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+def print_assigned_pattern_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list, scenario: int):
     print("Expected number of planned operation minutes per slot")
     print("-----------------------------------------------")
     for i in range(1,input_dict["I"]+1):
@@ -39,7 +39,7 @@ def print_assigned_pattern_in_scenario(input_dict: dict , assigned_pattern_matri
         print()
         print()
 
-def print_assigned_minutes_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+def print_assigned_minutes_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list, scenario: int):
     print("Expected number of planned operation minutes per slot")
     print("-----------------------------------------------")
     for i in range(1,input_dict["I"]+1):
@@ -76,7 +76,7 @@ def print_assigned_minutes_in_scenario(input_dict: dict , assigned_pattern_matri
             print("-----",end="")
         print()
 
-def print_MSS_in_scenario(input_dict: dict,result_dict: dict, assigned_pattern_matrix_rdc: list[list[list]], scenario: int):
+def print_MSS_in_scenario(input_dict: dict,result_dict: dict, assigned_pattern_matrix_rdc: list, scenario: int):
         
     print("Planning period in ccenario %i: "%scenario)
     print("-----------------------------")
@@ -100,13 +100,15 @@ def print_MSS_in_scenario(input_dict: dict,result_dict: dict, assigned_pattern_m
                 if result_dict["flexSlot"][r][d] == 1:
                     m=assigned_pattern_matrix_rdc[r][d][scenario]
                     printed=False
+                    slotLabel = ''
                     for s in input_dict["SRi"][r]:
                         if m>=0:
                             if (m in input_dict["MSi"][s]):
-                                print("{0:<5}".format(input_dict["S"][s]), end="") 
+                                slotLabel = input_dict["S"][s]+"!"
+                                print("{0:<5}".format(slotLabel), end="") 
                                 printed=True
                     if printed==False:
-                        print("{0:<5}".format("0"), end="")
+                        print("{0:<5}".format("0!"), end="")
 
                 elif result_dict["fixedSlot"][r][d] == 1:
                     for s in input_dict["Si"]:
@@ -124,7 +126,7 @@ def print_MSS_in_scenario(input_dict: dict,result_dict: dict, assigned_pattern_m
             print("-----",end="")
         print()
 
-def print_bed_ward_in_scenario(input_dict: dict ,bed_occupation_wd: list[list]):
+def print_bed_ward_in_scenario(input_dict: dict ,bed_occupation_wd: list):
     print("Expected bed ward utilization")
     print("-----------------------------")
     for i in range(1,input_dict["I"]+1):
@@ -155,7 +157,7 @@ def print_bed_ward_in_scenario(input_dict: dict ,bed_occupation_wd: list[list]):
         print()
 
 #----- translate results functions -----#
-def calculate_total_bed_occupation_wdc(input_dict: dict, current_bed_occ_wdc: list[list[list]],pattern_index: int ,current_day: int, scenario_index: int):
+def calculate_total_bed_occupation_wdc(input_dict: dict, current_bed_occ_wdc: list,pattern_index: int ,current_day: int, scenario_index: int):
     #calculate bed occupation in all ward after assigning pattern pattern_index on day current_day in scenario scenario_index
     #returns a boolean indicating if the bed ward capacity is broken or not. in the broken case, the calculations is not complete
     '---parameters---'
@@ -271,7 +273,7 @@ def translate_heristic_results(input_dict: dict, result_dict: dict):
     return result
 
 #----- help functions -----#
-def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_gc: list[list],specialty_index: int, scenario_index:int):
+def update_patterns_list(input_dict: dict, MSi_c: list, remaining_demand_gc: list,specialty_index: int, scenario_index:int):
     #Removes patterns from subset M^S_c(c,s) if there are no remaining demand in some of the groups it containes
     #returns updated subset
     '---parameters---'
@@ -291,7 +293,7 @@ def update_patterns_list(input_dict: dict, MSi_c: list[list], remaining_demand_g
                     
     return MSi_c 
 
-def update_remaining_que(input_dict: dict, pattern_index: int, remaining_demand_gc: list[list], specialty_index:int, scenario_index:int):
+def update_remaining_que(input_dict: dict, pattern_index: int, remaining_demand_gc: list, specialty_index:int, scenario_index:int):
     #updates the remaining unoperated groups after the pattern pattern_index have been assigned 
     #to spesialty specialty_index in scenario scenario_index
     '---parameters---'
@@ -325,7 +327,7 @@ def initiate_total_bed_occupation(input_dict: dict):
             initial_bed_occ[w][d] = Y[w][d]
     return initial_bed_occ
 
-def calculate_total_bed_occupation(input_dict: dict, current_bed_occ_wd: list[list],pattern_index: int ,current_day: int):
+def calculate_total_bed_occupation(input_dict: dict, current_bed_occ_wd: list,pattern_index: int ,current_day: int):
     #calculate bed occupation in all ward after assigning pattern pattern_index on day current_day in scenario scenario_index
     #returns a boolean indicating if the bed ward capacity is broken or not. in the broken case, the calculations is not complete
     '---parameters---'
@@ -349,7 +351,7 @@ def calculate_total_bed_occupation(input_dict: dict, current_bed_occ_wd: list[li
                 return bed_occ, legal_bed_occ 
     return bed_occ, legal_bed_occ
 
-def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list[list], MS_index_sorted_csm:list[list[list]], specialty_index: int, day_index: int, scenario_index: int):
+def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list, MS_index_sorted_csm:list, specialty_index: int, day_index: int, scenario_index: int):
     # choose the best pattern gready from the set of pattern's indicies M^S_(c,s,m) sorted afted priority w/ m=0 as top riority
     # if there is a leagal pattern according to bed ward capacity in the set M^S_(c,s,m) for specialty s in scenario c 
     # the new bed occupation matrix is updated and the best pattern's index is returned
@@ -390,7 +392,7 @@ def choose_best_pattern_with_legal_bed_occ(input_dict: dict, bed_occ: list[list]
                 
     return bed_occ, choosen_pattern
 
-def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: list[list], MS_index_sorted_csm:list[list[list]], specialty_index: int, day_index: int, scenario_index: int):
+def choose_best_pattern_with_legal_bed_occ_temporary(input_dict: dict, bed_occ: list, MS_index_sorted_csm:list, specialty_index: int, day_index: int, scenario_index: int):
     # choose the best pattern gready from the set of pattern's indicies M^S_(c,s,m) sorted afted priority w/ m=0 as top riority
     # if there is a leagal pattern according to bed ward capacity in the set M^S_(c,s,m) for specialty s in scenario c 
     # a boolean indicating if a legal pattern was found is also returned
@@ -534,6 +536,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
             for g in input_dict["Gi"]:
                 Q_rem2.append(Q_rem[g][c])
             print('Q_rem['+str(c)+']:     '+str(Q_rem2))
+            print('L['+str(c)+']:         '+str(L))
             obj_c = sum((Q_rem[g][c]*(L[g]+TC)) for g in Gi)
             print('Unmet in scenario:    %.1f'%obj_c)
             print('--------------------------------')
