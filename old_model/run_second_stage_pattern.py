@@ -1,10 +1,10 @@
-from model_mip import *
 import pickle
+import os.path
 from typing import IO
+from model_mip import *
 from functions_input import *
 from functions_output import *
 from heuristic_second_stage_pattern import *
-import os.path
 
 
 def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
@@ -17,12 +17,9 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     #---- Increasing the capacity of bed wards to normal level
     """input = change_ward_capacity(input, "MC", 60, 49)
     input = change_ward_capacity(input, "IC", 11, 6)"""
-    
-    #---- Adjusting the number of ORs available
-    """input = change_number_of_rooms_available(input, 7,7,7,7,7)"""
 
-    #----- OBS! Funksjonen under vil gjøre det trangt på wards uavhengig av om
-    #----- change_ward_capacity har blitt brukt til å relaksere
+    #----- OBS! Dersom number_of_groups ikke er 9 eller 25 så vil funksjonen under vil gjøre det
+    #----- trangt på wards uavhengig av om change_ward_capacity har blitt brukt til å relaksere
     input           =   edit_input_to_number_of_groups(input, number_of_groups)
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)
@@ -37,27 +34,34 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         number_of_groups_saved  =   input_saved["number_of_groups"]
         seed_saved              =   input_saved["seed"]
         flexibility_saved       =   input_saved["F"]
-        if os.path.exists('model.mps') and nScenarios == nScenarios_saved and number_of_groups == number_of_groups_saved and seed == seed_saved and flexibility == flexibility_saved:
-            model_run_exists = True   
+
+        if nScenarios == nScenarios_saved and number_of_groups == number_of_groups_saved and seed == seed_saved and flexibility == flexibility_saved:
+            model_run_exists = True
     if model_run_exists:     
         input = saved_values["input"]
         results = saved_values["results"]
-        results = categorize_slots(input, results)
-        print_MSS(input, results)
+        print("------------------------------------------------------------------------------------------------------------------")
+        print("PICKLED RESULTS OF EVS (DETERMINISTIC)")
+        print("------------------------------------------------------------------------------------------------------------------")
         print_solution_performance(input, results)
+        print_MSS(input, results)
         
         write_new_run_header_to_excel(excel_file,input,sheet_number=0)
         write_to_excel_model(excel_file,input,results)
-        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
-        #----- Begin Heuristic ---- 
+        print('\n' * 5)
+
         print("------------------------------------------------------------------------------------------------------------------")
-        print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
+        print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS - USING PICKLED RESULTS")
         print("------------------------------------------------------------------------------------------------------------------")
+        print()
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
+        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
         results = heuristic_second_stage_pattern(excel_file, input, results) # --- swap is called inside 
-        print_solution_performance(input, results)
+        results = translate_heristic_results(input,results)
         results =   categorize_slots(input, results)
+        
+        print_solution_performance(input, results)
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
@@ -66,46 +70,36 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     
     #----- If initial model run is not found, run as usual -----   
     else:
+        print("Did not find a pkl-file")
         #----- Find EVS as initial MSS ----  
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING MIP-MODEL TO FIND EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
-        print_solution_performance(input, results)
         if results["status"]==0:
             print('No solutions found in given runtime')
             return
-        print('\n' * 5)
-        
-        #----- Creating model and fixed first-stage solution to EVS  ----   
-        print("------------------------------------------------------------------------------------------------------------------")
-        print("RUNNING FIXED FIRST-STAGE TO EVALUATE EVS PERFORMANCE")
-        print("------------------------------------------------------------------------------------------------------------------") 
-        input           = generate_scenarios(input, nScenarios, seed)
-        results         = run_model_mip_fixed(input,results,time_limit, print_optimizer=False) # --- 'model.mps' and 'warmstart.mst' are created
         results         = categorize_slots(input, results)
         print_solution_performance(input, results)
-        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
-        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
-        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
-        
-        print()
-        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
-        print('\n' * 5)
+        print_MSS(input, results)
+    
         #--- Saving solution in pickle ---
+        input           = generate_scenarios(input, nScenarios, seed)
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
         with open("model_solution.pkl","wb") as f:
             pickle.dump(saved_values,f)
+        print('\n' * 5)
         
         #----- Begin Heuristic ----  
         print("------------------------------------------------------------------------------------------------------------------")
-        print("INITIATING HEURISTIC SEARCH FROM EVS")
+        print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        results = heuristic_second_stage_pattern(excel_file, input, results) # --- swap is called inside 
-        print_solution_performance(input, results)
+        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
+        results = heuristic_second_stage_pattern(excel_file, input, results)
+        results = translate_heristic_results(input,results)
         results =   categorize_slots(input, results)
         
         print_MSS(input, results)
