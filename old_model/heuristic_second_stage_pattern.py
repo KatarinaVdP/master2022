@@ -11,16 +11,16 @@ import pickle
 
 def heuristic_second_stage_pattern(excel_file, input_dict, results):
     input=input_dict
-
+    start_time = time.time()
     best_sol = copy.deepcopy(results)
 
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [10,10,10]
+    level_iters = [100,100,100]
+    level_swaps = ["fixed", "ext", "flex"]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
-    
+    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
@@ -30,26 +30,16 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             swap_type = "flex"
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
             
-    results = run_greedy_construction_heuristic(input, results)
-    
-    best_sol = copy.deepcopy(results)
-    write_to_excel_model(excel_file,input,best_sol)
-    best_sol = categorize_slots(input, best_sol)
-    print()
-    print_MSS(input, best_sol)
-    
-    print()
-    print_heuristic_iteration_header(False, False)
-
     if swap_ever_found:
         action = "MOVE"
     else:
-        action = "NO MOVE"
-
-    print_heuristic_iteration(best_sol["obj"], results["obj"], action)
+        action = "NO MOVE" """
+    action = "N/A"       
+    results = run_greedy_construction_heuristic(input, results)
+    best_sol = copy.deepcopy(results)
+    print("Performance of initial solution:  %d" % best_sol["obj"])
+    write_to_excel_model(excel_file,input,best_sol)
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
-        
-    print("\n\nHeuristic starts now.\n\n")
     
     print_heuristic_iteration_header(True, False)
     
@@ -58,18 +48,18 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
-        
+        swap_type = level_swaps[level-1]
         #----- Looping through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "fixed" 
+            #swap_type = "flex" 
             if swap_type == "ext":
-                swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
             elif swap_type == "fixed":
-                swap_found, getting_slot, giving_slot = swap_fixed_smart(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
-                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_GN_GO(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = False)
             
             #----- Changing variable bound to evaluate candidate -----
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
@@ -95,8 +85,9 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
                 best_sol = copy.deepcopy(results)
                 write_to_excel_model(excel_file,input,best_sol)
+                """best_sol = translate_heristic_results(input, best_sol)
                 best_sol = categorize_slots(input, best_sol)
-                print_MSS(input, best_sol)
+                print_MSS(input, best_sol)"""
             else:
                 # ----- Copying the desicion variable values to result dictionary -----
                 write_to_excel_model(excel_file,input,results)
@@ -104,11 +95,12 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
                 results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = True)
             
             # ----- Printing iteration to console -----
-            print_heuristic_iteration(best_sol["obj"], results["obj"], action, global_iter, level, levels, iter, level_iters)
+            current_time = (time.time()-start_time)
+            print_heuristic_iteration(best_sol["obj"], results["obj"], action, current_time, global_iter, level, levels, iter, level_iters)
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
-        
+    best_sol["runtime"] = time.time() - start_time  
     return best_sol
 
 def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot,swap_type, extended, swap_back = False):
@@ -131,12 +123,15 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
                 r=getting_slot["r"][i]
                 d=getting_slot["d"][i]
                 results[var_name][s][r][d] = getting_val
-                results["specialty_in_slot"][r][d] = s
+                if not swap_back:
+                    results["specialty_in_slot"][r][d] = s
             for i in range(giving_slot["size"]):
                 s=giving_slot["s"][i]
                 r=giving_slot["r"][i]
                 d=giving_slot["d"][i]
                 results[var_name][s][r][d] = giving_val
+                if swap_back:
+                    results["specialty_in_slot"][r][d] = s
         else:
             print("Swap not found")
     elif swap_type == "ext":
@@ -146,13 +141,13 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
                 r=getting_slot["r"][i]
                 d=getting_slot["d"][i]
                 results[var_name][s][r][d] = getting_val
-                results["extSlot"][r][d] = 1
+                results["extSlot"][r][d] = getting_val
             for i in range(giving_slot["size"]):
                 s=giving_slot["s"][i]
                 r=giving_slot["r"][i]
                 d=giving_slot["d"][i]
                 results[var_name][s][r][d] = giving_val
-                results["extSlot"][r][d] = 0
+                results["extSlot"][r][d] = giving_val
         else:
             print("Swap not found")
     elif swap_type == "flex":
@@ -164,19 +159,23 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
                 r=getting_slot["r"][i]
                 d=getting_slot["d"][i]
                 results[var_name_1][s][r][d] = getting_val
-                results["specialty_in_slot"][r][d] = s
+                if not swap_back:
+                    results["specialty_in_slot"][r][d] = s
                 if extended:
                     results[var_name_2][s][r][d] = getting_val
-                    results["extSlot"][r][d] = 1
+                    results["extSlot"][r][d] = getting_val
             for i in range(giving_slot["size"]):
                 s=giving_slot["s"][i]
                 r=giving_slot["r"][i]
                 d=giving_slot["d"][i]
                 results[var_name_1][s][r][d] = giving_val
-                results["specialty_in_slot"][r][d] = -1
+                if not swap_back:
+                    results["specialty_in_slot"][r][d] = -1
+                else:
+                    results["specialty_in_slot"][r][d] = s
                 if extended:
                     results[var_name_2][s][r][d] = giving_val
-                    results["extSlot"][r][d] = 0
+                    results["extSlot"][r][d] = giving_val
         else:
             print("Swap not found")
     else:

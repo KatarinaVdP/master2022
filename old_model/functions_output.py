@@ -33,7 +33,7 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     flex_slot           =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
     ext_slot            =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
     unass_slot          =   [[0 for _ in range(nDays)] for _ in range(nRooms)]
-    specialty_in_slot   =   [[-2 for _ in range(nDays)] for _ in range(nRooms)]
+    specialty_in_slot   =   [[-1 for _ in range(nDays)] for _ in range(nRooms)]
     '---program---'
     for r in Ri:
         for d in Di:
@@ -49,7 +49,7 @@ def categorize_slots(input_dict: dict, output_dict: dict):
             if (sum(x[g][r][d][c] for g in Gi for c in Ci)<0.5) and (fixed_slot[r][d]<0.5):
                 unass_slot[r][d]=1
             '---flexible slots---'
-            if (fixed_slot[r][d]<0.5) and (unass_slot[r][d]<0.5):
+            if (fixed_slot[r][d]<0.5):
                 flex_slot[r][d] = 1
                 specialty_in_slot[r][d] = -1         
     '---results---'
