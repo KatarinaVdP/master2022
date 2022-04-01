@@ -6,10 +6,11 @@ dette gjør at ci ikke kan si hvilet rom de har stengt... ødelegger og for prin
 2 
 konstruksjonsheuristikken kan ikke ta høyde for antall stengte rom per dag.
 3 
-patternsmodell kjører ikke lengere
-4
 Patternsgenerering og konstruksjonsheuristikk fungerer ikke for redusert antall spesialiteter
 5.
-test_run_construction_heuristic_vs_fixed_model ikke ferdig
-6.
-konstuksjonsheuristikk er ulovlig... tar ikke hensyn til antall teams per dag
+test_run_construction_heuristic_vs_fixed_model ikke ferdignew-
+7.
+test bed_occupation_wdc i translate_results. og legg til silsvarende i save_results_pre
+8.
+forbedre pakking av fixed slots: ta mest profitable rom den dagen først.
+gjort men hvorfor pakker den litt dårligere... er det mulig??
