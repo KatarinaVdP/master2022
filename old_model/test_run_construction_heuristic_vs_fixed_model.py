@@ -242,11 +242,11 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     
 number_of_groups            =   9
 nScenarios                  =   100
-flexibilities               =   [0,0.05]
-seeds                       =   [1,2]
+flexibilities               =   [0.3]
+seeds                       =   [1,2,3,4,5,6,7,8,9,10]
 time_to_mip                 =   10
 nScenarios_initial_sol      =   3
-max_time_fixed_mip          =   10
+max_time_fixed_mip          =   60
 file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/test_heuristic.xlsx'
 
@@ -261,7 +261,7 @@ for flex in flexibilities:
         input                   =   generate_scenarios(input, nScenarios, seed)
         results_heuristic       =   copy.deepcopy(results)
         results_mip             =   copy.deepcopy(results)
-        results_heuristic       =   run_greedy_construction_heuristic(input, results_heuristic,debug=True)
+        results_heuristic       =   run_greedy_construction_heuristic_smart_flex(input, results_heuristic,debug=False)
         results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
         write_to_excel(excel_file_name,results_mip,results_heuristic,flex,nScenarios,seed,max_time_fixed_mip)
         print_heuristic_vs_fixed(results_mip,results_heuristic, flex, nScenarios,seed,max_time_fixed_mip)
