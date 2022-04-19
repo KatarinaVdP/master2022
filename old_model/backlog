@@ -7,10 +7,14 @@ dette gjør at ci ikke kan si hvilet rom de har stengt... ødelegger og for prin
 konstruksjonsheuristikken kan ikke ta høyde for antall stengte rom per dag.
 3 
 Patternsgenerering og konstruksjonsheuristikk fungerer ikke for redusert antall spesialiteter
-5.
-test_run_construction_heuristic_vs_fixed_model ikke ferdignew-
-7.
+4.
 test bed_occupation_wdc i translate_results. og legg til silsvarende i save_results_pre
+5.
+bruke numpy arrays i initiate_bed_occupation_wdc og calculate_bed_occupation for å gjøre raskere
+6.
+legge kommentarer på de forskjellige greedy construction heuristic smart smarter.... osv
+7.
+fjerne alle deepcopyes i functions_heuristic, se hvordan gjort i heuristic_greedy_construction ved å bruke enten map-funksjon eller en "oneliner"
 8.
-forbedre pakking av fixed slots: ta mest profitable rom den dagen først.
-gjort men hvorfor pakker den litt dårligere... er det mulig??
+kommentere alle funksjoner i toppen - hva funksjonen gjør
+

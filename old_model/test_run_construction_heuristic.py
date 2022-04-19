@@ -14,10 +14,6 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
             saved_values        =   pickle.load(f)
         input                   =   saved_values["input"]
         results                 =   saved_values["results"]
-        input_h = copy.deepcopy(input)
-        input_m = copy.deepcopy(input)
-        results_h = copy.deepcopy(results)
-        results_m = copy.deepcopy(results)
         print_MSS(input,results)
     except FileNotFoundError:
         file_name               =   choose_correct_input_file(number_of_groups)
@@ -27,44 +23,49 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
         results                 =   categorize_slots(input,results)
         
         print_MSS(input,results)
-        #print_expected_bed_util_percent(input, results)
-        #print_expected_que(input, results)
         #--- Saving solution in pickle --- #
         input                   =   generate_scenarios(input, nScenarios, seed)
         saved_values            =   {}
         saved_values["input"]   =   input
         saved_values["results"] =   results
-        input_h = copy.deepcopy(input)
-        input_m = copy.deepcopy(input)
-        results_h = copy.deepcopy(results)
-        results_m = copy.deepcopy(results)
         with open("solution_saved1.pkl","wb") as f:
             pickle.dump(saved_values,f)
 
-    #print_MSS(input_m, results_m)
-    #print_MSS(input_h, results_h)
-    #results_m=run_model_mip_fixed(input_m,results_m,10)
-    #print(input["MSi"])
-    input_h = generate_scenarios(input,nScenarios, seed)
-    input_h_smart = generate_scenarios(input,nScenarios, seed)
-    results_h_smart = copy.deepcopy(results_h)
-    results_h_smarter = copy.deepcopy(results_h)
-    results_h_smart=run_greedy_construction_heuristic_smart_fix(input_h,results_h_smart,debug=False)
-    #results_h_smarter=run_greedy_construction_heuristic_smarter_flex(input_h,results_h_smarter,debug=False)
-    results_h=run_greedy_construction_heuristic(input_h,results_h,debug=False) 
-    print(results_m["obj"])
-    print(results_m["best_bound"])
-    print(results_h["obj"])
-    print(results_h["heuristic_time"])
-    print(results_h_smart["obj"])
-    print(results_h_smart["heuristic_time"])
-    #print(results_h_smarter["obj"])
+
+    input_h                             = generate_scenarios(input,nScenarios, seed)
     
-    """for c in input_h["Ci"]:
-        for d in input_h["Di"]:
-            for r in input["Ri"]:
-                if results_h["pattern_to_slot_assignment"][r][d][c]   !=   results_h_smart["pattern_to_slot_assignment"][r][d][c]:                # _r,d,c
-                    print('r: %i, d: %i, c: %i'%(r,d,c))"""
+    results_m                           =   copy.deepcopy(results)
+    results_h                           =   copy.deepcopy(results)
+    results_h_smart_flex                =   copy.deepcopy(results)
+    results_h_smarter_flex              =   copy.deepcopy(results)
+    results_h_smart_fix                 =   copy.deepcopy(results)
+    results_h_smart_fix_smart_flex      =   copy.deepcopy(results)
+    results_h_smart_fix_smarter_flex    =   copy.deepcopy(results)
+    results_h_smarter_fix               =   copy.deepcopy(results)
+    results_h_smarter_fix_smart_flex    =   copy.deepcopy(results)
+    results_h_smarter_fix_smarter_flex  =   copy.deepcopy(results)
+
+    results_h                           =   run_greedy_construction_heuristic(input_h,results_h)
+    results_h_smart_flex                =   run_greedy_construction_heuristic_smart_flex(input_h,results_h_smart_flex)
+    results_h_smarter_flex              =   run_greedy_construction_heuristic(input_h,results_h_smarter_flex)
+    results_h_smart_fix                 =   run_greedy_construction_heuristic_smart_fix(input_h,results_h_smart_fix)
+    results_h_smart_fix_smart_flex      =   run_greedy_construction_heuristic_smart_fix_smart_flex(input_h,results_h_smart_fix_smart_flex)
+    results_h_smart_fix_smarter_flex    =   run_greedy_construction_heuristic_smart_fix_smarter_flex(input_h,results_h_smart_fix_smarter_flex)
+    results_h_smarter_fix               =   run_greedy_construction_heuristic_smarter_fix(input_h,results_h_smarter_fix)
+    results_h_smarter_fix_smart_flex    =   run_greedy_construction_heuristic_smarter_fix_smart_flex(input_h,results_h_smarter_fix_smart_flex)
+    results_h_smarter_fix_smarter_flex  =   run_greedy_construction_heuristic_smarter_fix_smarter_flex(input_h,results_h_smarter_fix_smarter_flex)
+    
+    print("best bound MIP:                  " + "{0:<10}".format("{:.1f}".format(results_m["obj"])) )
+    print("heur:                            " + "{0:<10}".format("{:.1f}".format(results_h["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h["heuristic_time"])))
+    print("heur_smart_flex:                 " + "{0:<10}".format("{:.1f}".format(results_h_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_flex["heuristic_time"])))
+    print("heur_smarter_flex:               " + "{0:<10}".format("{:.1f}".format(results_h_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_flex["heuristic_time"])))
+    print("heur_smart_fix:                  " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix["heuristic_time"])))
+    print("heur_smart_fix_smart_flex:       " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix_smart_flex["heuristic_time"])))
+    print("heur_smart_fix_smarter_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix_smarter_flex["heuristic_time"])))
+    print("heur_smarter_fix:                " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix["heuristic_time"])))
+    print("heur_smarter_fix_smart_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smart_flex["heuristic_time"])))
+    print("heur_smarter_fix_smarter_flex:   " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smarter_flex["heuristic_time"])))
+    
     #results_h=translate_heristic_results(input,results_h)
     #print_expected_que(input,results_h)
     #results = translate_heristic_results(input,results)
@@ -73,4 +74,4 @@ def main(number_of_groups: int,flexibility: float, nScenarios: int, seed: int):
     #print_expected_que(input, results)
     #print(results_h["obj"])
 
-main(9,0.3,100,2)
+main(9,0,30,10)

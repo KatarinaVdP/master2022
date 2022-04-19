@@ -239,18 +239,53 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     new_row.append(results_heuristic["heuristic_time"])
     ws.append(new_row)
     wb.save(excel_file_name)  
-    
+
+def write_to_excel_all(excel_file_name: str, flex: int, nScenarios: int, seed: int,max_time_fixed_mip: int, results_mip: dict, results_to_print: list):
+    #filename = "myfile.xlsx"
+
+    try:
+        wb = load_workbook(excel_file_name)
+        ws = wb.worksheets[0]# select first worksheet
+    except FileNotFoundError:
+        wb  = Workbook()
+        ws = wb.create_sheet("Heur_vs_mip",0)
+        wb.save(excel_file_name)
+        ws = wb.worksheets[0]
+        header_row=[]
+        header_row.append("flex")
+        header_row.append("nScenarios")
+        header_row.append("seed")
+        header_row.append("max_time_fixed_mip")
+        header_row.append("primal")
+        header_row.append("dual")
+        header_row.append("MIPGap")
+        header_row.append("heuristic")
+        header_row.append("time")
+        ws.append(header_row)
+        wb.save(excel_file_name) 
+    new_row = []  
+    new_row.append(flex)
+    new_row.append(nScenarios)
+    new_row.append(seed)
+    new_row.append(max_time_fixed_mip)
+    new_row.append(results_mip["obj"])
+    new_row.append(results_mip["best_bound"])
+    new_row.append(results_mip["MIPGap"])
+    for i in range(len(results_to_print)):
+        new_row.append(results_to_print[i])
+    ws.append(new_row)
+    wb.save(excel_file_name)      
+
 number_of_groups            =   9
-nScenarios                  =   100
-flexibilities               =   [0]
+nScenarios                  =   60
+flexibilities               =   [0.1,0.20,0.4]
 seeds                       =   [1,2,3,4,5,6,7,8,9,10]
 time_to_mip                 =   10
 nScenarios_initial_sol      =   3
 max_time_fixed_mip          =   60
 file_name                   =   choose_correct_input_file(number_of_groups)
-excel_file_name1             =   'input_output/test_heuristic1.xlsx'
-excel_file_name0             =   'input_output/test_heuristic0.xlsx'
-
+#excel_file_name             =   'input_output/test_heuristic.xlsx'
+excel_file_name             =   'input_output/test_heuristic_advanced.xlsx'
 for flex in flexibilities:
     for seed in seeds:
         input                   =   read_input(file_name)
@@ -260,15 +295,55 @@ for flex in flexibilities:
         print_MSS(input, results) 
 
         input                   =   generate_scenarios(input, nScenarios, seed)
-        results_heuristic1       =   copy.deepcopy(results)
-        results_heuristic0       =   copy.deepcopy(results)
-        results_mip             =   copy.deepcopy(results)
-        results_heuristic1       =   run_greedy_construction_heuristic_smart_fix(input, results_heuristic1,debug=False)
-        results_heuristic0       =   run_greedy_construction_heuristic(input, results_heuristic0,debug=False)
-        results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
         
-        write_to_excel(excel_file_name1,results_mip,results_heuristic1,flex,nScenarios,seed,max_time_fixed_mip)
-        print_heuristic_vs_fixed(results_mip,results_heuristic1, flex, nScenarios,seed,max_time_fixed_mip)
+        results_m                           =   copy.deepcopy(results)   
+        results_h                           =   copy.deepcopy(results)
+        results_h_smart_flex                =   copy.deepcopy(results)
+        results_h_smarter_flex              =   copy.deepcopy(results)
+        results_h_smart_fix                 =   copy.deepcopy(results)
+        results_h_smart_fix_smart_flex      =   copy.deepcopy(results)
+        results_h_smart_fix_smarter_flex    =   copy.deepcopy(results)
+        results_h_smarter_fix               =   copy.deepcopy(results)
+        results_h_smarter_fix_smart_flex    =   copy.deepcopy(results)
+        results_h_smarter_fix_smarter_flex  =   copy.deepcopy(results)
         
-        write_to_excel(excel_file_name0,results_mip,results_heuristic0,flex,nScenarios,seed,max_time_fixed_mip)
-        print_heuristic_vs_fixed(results_mip,results_heuristic0, flex, nScenarios,seed,max_time_fixed_mip)        
+        results_m                           =   run_model_mip_fixed2(input,results_m,max_time_fixed_mip)
+        results_h                           =   run_greedy_construction_heuristic(input,results_h)
+        results_h_smart_flex                =   run_greedy_construction_heuristic_smart_flex(input,results_h_smart_flex)
+        results_h_smarter_flex              =   run_greedy_construction_heuristic(input,results_h_smarter_flex)
+        results_h_smart_fix                 =   run_greedy_construction_heuristic_smart_fix(input,results_h_smart_fix)
+        results_h_smart_fix_smart_flex      =   run_greedy_construction_heuristic_smart_fix_smart_flex(input,results_h_smart_fix_smart_flex)
+        results_h_smart_fix_smarter_flex    =   run_greedy_construction_heuristic_smart_fix_smarter_flex(input,results_h_smart_fix_smarter_flex)
+        results_h_smarter_fix               =   run_greedy_construction_heuristic_smarter_fix(input,results_h_smarter_fix)
+        results_h_smarter_fix_smart_flex    =   run_greedy_construction_heuristic_smarter_fix_smart_flex(input,results_h_smarter_fix_smart_flex)
+        results_h_smarter_fix_smarter_flex  =   run_greedy_construction_heuristic_smarter_fix_smarter_flex(input,results_h_smarter_fix_smarter_flex)
+    
+        print(seed)
+        print("best bound fixed MIP:            " + "{0:<10}".format("{:.1f}".format(results_m["obj"])) )
+        print("heur:                            " + "{0:<10}".format("{:.1f}".format(results_h["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h["heuristic_time"])))
+        print("heur_smart_flex:                 " + "{0:<10}".format("{:.1f}".format(results_h_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_flex["heuristic_time"])))
+        print("heur_smarter_flex:               " + "{0:<10}".format("{:.1f}".format(results_h_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_flex["heuristic_time"])))
+        print("heur_smart_fix:                  " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix["heuristic_time"])))
+        print("heur_smart_fix_smart_flex:       " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix_smart_flex["heuristic_time"])))
+        print("heur_smart_fix_smarter_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix_smarter_flex["heuristic_time"])))
+        print("heur_smarter_fix:                " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix["heuristic_time"])))
+        print("heur_smarter_fix_smart_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smart_flex["heuristic_time"])))
+        print("heur_smarter_fix_smarter_flex:   " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smarter_flex["heuristic_time"])))
+        
+        #results_heuristic       =   run_greedy_construction_heuristic_smart_flex(input, results_heuristic,debug=False)
+        #results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
+        
+        results_to_print = [
+            results_h["obj"],                           results_h["heuristic_time"],
+            results_h_smart_flex["obj"],                results_h_smart_flex["heuristic_time"],
+            results_h_smarter_flex["obj"],              results_h_smarter_flex["heuristic_time"],
+            results_h_smart_fix["obj"],                 results_h_smart_fix["heuristic_time"],
+            results_h_smart_fix_smart_flex["obj"],      results_h_smart_fix_smart_flex["heuristic_time"],
+            results_h_smart_fix_smarter_flex["obj"],    results_h_smart_fix_smarter_flex["heuristic_time"],
+            results_h_smarter_fix["obj"],               results_h_smarter_fix["heuristic_time"],
+            results_h_smarter_fix_smart_flex["obj"],    results_h_smarter_fix_smart_flex["heuristic_time"],
+            results_h_smarter_fix_smarter_flex["obj"],  results_h_smarter_fix_smarter_flex["heuristic_time"],
+        ]
+        write_to_excel_all(excel_file_name, flex, nScenarios, seed,max_time_fixed_mip, results_m, results_to_print)
+        #print_heuristic_vs_fixed(results_mip,results_heuristic, flex, nScenarios,seed,max_time_fixed_mip)
+        
