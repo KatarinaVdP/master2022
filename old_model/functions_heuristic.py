@@ -18,11 +18,11 @@ def swap_fixed(input, results, print_swap = False):
     giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
+    specialties = list(map(list, [input["Si"]]))[0]
     rand.shuffle(specialties)
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms[s])
     
@@ -88,9 +88,9 @@ def swap_fixed_smart(input, results, print_swap = False):
     giving_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in input["Si"]:
         rand.shuffle(rooms[s])
     
@@ -119,7 +119,7 @@ def swap_fixed_smart(input, results, print_swap = False):
                 break
             
             # Excluding specialties who have not been assigned an un-extended room on the given day
-            modified_relative_queues = copy.deepcopy(relative_queues)
+            modified_relative_queues = list(map(list, [relative_queues]))[0]
             for s in input["Si"]:
                 if sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == 0 or sum(results["gamm"][s][r][d] for r in rooms[max_specialty]) == sum(results["lamb"][s][r][d] for r in rooms[max_specialty]):
                     modified_relative_queues[s] = 2
@@ -170,16 +170,16 @@ def swap_extension(input, results, print_swap = False):
     new_regular_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
+    specialties = list(map(list, [input["Si"]]))[0]
     rand.shuffle(specialties)
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days)
-    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days2 = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days2)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms[s])
-    rooms2 = copy.deepcopy(input["RSi"])
+    rooms2 = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms2[s])
     
@@ -236,16 +236,16 @@ def swap_fixed_with_flexible(input, results, print_swap = False):
     new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
+    specialties = list(map(list, [input["Si"]]))[0]
     rand.shuffle(specialties)
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days)
-    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days2 = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days2)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms[s])
-    rooms2 = copy.deepcopy(input["RSi"])
+    rooms2 = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms2[s])
     
@@ -311,13 +311,13 @@ def swap_fixed_with_flexible_GN_GO(input, results, print_swap = False):
     new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
+    specialties = list(map(list, [input["Si"]]))[0]
     rand.shuffle(specialties)
-    days = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days)
-    days2 = copy.deepcopy(input["Di"][0:days_in_cycle])
+    days2 = list(map(list, [input["Di"][0:days_in_cycle]]))[0]
     rand.shuffle(days2)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms[s])
         
@@ -403,9 +403,9 @@ def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap = False):
     new_flexible_slot = {"s":[], "r":[], "d":[], "size":int(0)}
     
     # Shuffling lists in order to pick a random slot
-    specialties = copy.deepcopy(input["Si"])
+    specialties = list(map(list, [input["Si"]]))[0]
     rand.shuffle(specialties)
-    rooms = copy.deepcopy(input["RSi"])
+    rooms = list(map(list, [input["RSi"]]))[0]
     for s in specialties:
         rand.shuffle(rooms[s])
         
