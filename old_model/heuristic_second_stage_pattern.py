@@ -12,7 +12,8 @@ import pickle
 def heuristic_second_stage_pattern(excel_file, input_dict, results):
     input=input_dict
     start_time = time.time()
-    best_sol = copy.deepcopy(results)
+    # The following line must be there when line 24-37 is not commented out
+    """best_sol = copy.deepcopy(results)"""
 
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
