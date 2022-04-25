@@ -347,7 +347,7 @@ def change_demand(input, scaling_factor, print_minutes = False):
         print("Old minutes:  "+"{:.0f}".format(old_minutes))
         print("New minutes:  "+"{:.0f}".format(new_minutes))
         print()
-    return input["T"]
+    return input
 
 #--- input functions spesific for greedy construction heuristic ---#
 def sort_list_by_another(list_to_sort: list,list_to_sort_by: list, decending=True):
