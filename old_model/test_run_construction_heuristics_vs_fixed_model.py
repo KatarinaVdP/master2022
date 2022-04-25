@@ -277,6 +277,8 @@ def write_to_excel_all(excel_file_name: str, flex: int, nScenarios: int, seed: i
     wb.save(excel_file_name)      
 print('initializing...')
 number_of_groups            =   9
+MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IC_cap                      =   [11,6]          #[weekday,weekend]      
 nScenarios                  =   10
 flexibilities               =   [0,0.05,0.1,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1]
 num_sols_to_investigate     =   30   
@@ -288,7 +290,9 @@ max_time_fixed_mip          =   120
 file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/test_heuristics_'+ str(number_of_groups) + '_groups_10_scen.xlsx'
 for flex in flexibilities:
-    input                   =   read_input(file_name)
+    input                   =   read_input(file_name)                 
+    input                   =   change_ward_capacity(input, "MC", MC_cap[0],  MC_cap[1])
+    input                   =   change_ward_capacity(input, "IC", IC_cap[0],  IC_cap[1])
     if number_of_groups ==   25:
         change_demand(input, 1.35, print_minutes = False)
     for seed in seeds:
