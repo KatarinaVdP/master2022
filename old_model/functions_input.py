@@ -336,7 +336,6 @@ def change_number_of_rooms_available(input: dict, mon: int, tue: int, wed: int, 
     return input
 
 def change_demand(input, scaling_factor, print_minutes = False):
-    print('Demand before and after increase:')
     old_minutes = 0
     new_minutes = 0
     for g in input["Gi"]:
@@ -344,6 +343,7 @@ def change_demand(input, scaling_factor, print_minutes = False):
         input["T"][g] = int(round(input["T"][g]*scaling_factor))
         new_minutes += input["T"][g]*input["L"][g]
     if print_minutes:
+        print('Demand before and after increase:')
         print("Old minutes:  "+"{:.0f}".format(old_minutes))
         print("New minutes:  "+"{:.0f}".format(new_minutes))
         print()
