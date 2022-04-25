@@ -40,51 +40,64 @@ def write_to_excel(excel_file_name: str, results_heuristic: dict, flex: int, nSc
 
 number_of_groups            =   25
 nScenarios_initial_sol      =   1
-time_to_mip                 =   20
+time_to_mip                 =   30
 mip_seeds                   =   [i for i in range(100,131)]
 file_name                   =   choose_correct_input_file(number_of_groups)
-excel_file_name             =   'input_output/stability_test.xlsx'
+excel_file_name             =   'input_output/stability_test_matrix_25groups_extra.xlsx'
 
 flexibilities               =   [0]
-num_sols_to_investigate     =   5
-#nScens                      =   [10,20]
-#seeds                       =   [i for i in range(1,3)]
-nScens                      =   [10,20,30,40,50,60,70,80,90,100,
+num_sols_to_investigate     =   1
+"""nScens                      =   [10,20,30,40,50,60,70,80,90,100,
                                 110,120,130,140,150,160,170,180,190,200, 
-                                210,220,230,240,250,260,270,280,290,300]
+                                210,220,230,240,250,260,270,280,290,300,
+                                310,320,330,340,350,360,370,380,390,400,
+                                410,420,430,440,450,460,470,480,490,500]"""
+"""nScens                      =   [10,20,30,40,50,60,70,80,90,100,
+                                110,120,130,140,150,160,170,180,190,200, 
+                                210,220,230,240,250,260,270,280,290,300]"""
+"""nScens                      =   [500]"""
+nScens                      =   [510,520,530,540,550,560,570,580,590,600, 
+                                610,620,630,640,650,660,670,680,690,700]
 seeds                       =   [i for i in range(1,31)]
+"""flexibilities               =   [0]
+num_sols_to_investigate     =   2
+nScens                      =   [10,20]
+seeds                       =   [i for i in range(1,31)]"""
 book = Workbook()
 sheet = book.active
 current_row_outlay=2
 col_index = 0
-alphabeth= ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K','L','M', 'N', 'O', 'P', 'Q','R', 'S','T','U','V','W','X','Y','Z']
+alphabeth= ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K','L','M', 'N', 'O', 'P', 'Q','R', 'S','T','U','V','W','X','Y','Z',
+            'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK','AL','AM', 'AN', 'AO', 'AP', 'AQ','AR', 'AS','AT','AU','AV','AW','AX','AY','AZ',
+            'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK','BL','BM', 'BN', 'BO', 'BP', 'BQ','BR', 'BS','BT','BU','BV','BW','BX','BY','BZ']
 input                   =   read_input(file_name)
 for flex in flexibilities:
     for iter in range(num_sols_to_investigate):
-        input                   =   generate_scenarios(input, nScenarios_initial_sol, mip_seeds[iter])
-        results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
-        results                 =   categorize_slots(input,results)
-        #print_MSS(input, results) 
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
         pkl_name = 'first_stage_solution_'+ str(iter) + '_.pkl' 
-        with open(pkl_name,"wb") as f:
-            pickle.dump(saved_values,f)
+        try:
+            with open(pkl_name,"rb") as f:
+                saved_values        =   pickle.load(f)
+                input               =   saved_values["input"]
+                results             =   saved_values["results"]
+        except FileNotFoundError:
+            input                   =   generate_scenarios(input, nScenarios_initial_sol, mip_seeds[iter])
+            results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
+            results                 =   categorize_slots(input,results)
+            saved_values            =   {}
+            saved_values["input"]   =   input
+            saved_values["results"] =   results
+            with open(pkl_name,"wb") as f:
+                pickle.dump(saved_values,f)
         for n in  nScens:
             print("iter: %i  scen: %i "%(iter,n))
             col_index+=1 
             for seed in seeds:     
-                """with open(pkl_name,"wb") as f:
-                    pickle.dump(saved_values,f)
-                input                   =   saved_values["input"]
-                results                 =   saved_values["results"]"""
                 results_i               =   copy.deepcopy(results)
                 input                   =   generate_scenarios(input, n, seed) 
-                results_i               =   run_greedy_construction_heuristic(input, results_i,debug=False)
+                results_i               =   run_greedy_construction_heuristic_smart_fix(input, results_i,debug=False)
                 cell = alphabeth[col_index]+str(current_row_outlay + seed)
                 sheet[cell] = results_i["obj"]
                 #write_to_excel(excel_file_name,results_i,flex,n,seed)
         col_index=0
         current_row_outlay+= len(seeds) + 5
-book.save("stability_test_matrix.xlsx")            
+book.save(excel_file_name)            
