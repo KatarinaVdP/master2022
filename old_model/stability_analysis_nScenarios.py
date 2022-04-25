@@ -46,7 +46,7 @@ file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/stability_test_matrix_25groups_extra.xlsx'
 
 flexibilities               =   [0]
-num_sols_to_investigate     =   1
+num_sols_to_investigate     =   30
 """nScens                      =   [10,20,30,40,50,60,70,80,90,100,
                                 110,120,130,140,150,160,170,180,190,200, 
                                 210,220,230,240,250,260,270,280,290,300,
@@ -56,8 +56,7 @@ num_sols_to_investigate     =   1
                                 110,120,130,140,150,160,170,180,190,200, 
                                 210,220,230,240,250,260,270,280,290,300]"""
 """nScens                      =   [500]"""
-nScens                      =   [510,520,530,540,550,560,570,580,590,600, 
-                                610,620,630,640,650,660,670,680,690,700]
+nScens                      =   [510,520,530,540,550,560,570,580,590,600]
 seeds                       =   [i for i in range(1,31)]
 """flexibilities               =   [0]
 num_sols_to_investigate     =   2

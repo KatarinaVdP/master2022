@@ -242,8 +242,8 @@ def write_to_excel(excel_file_name: str, results_mip: dict, results_heuristic: d
     
 number_of_groups            =   9
 nScenarios                  =   100
-flexibilities               =   [0]
-seeds                       =   [1,2,3,4,5,6,7,8,9,10]
+flexibilities               =   [0,0.05,0.1,0.15,0.20,0.25,0.30,0.35,0.40]
+seeds                       =   [i for i in range(1,31)]
 time_to_mip                 =   10
 nScenarios_initial_sol      =   3
 max_time_fixed_mip          =   60
