@@ -1,6 +1,5 @@
 from functions_input import *
 from functions_output import *
-#from model_cutting_stock import *
 from model_mip import *
 from heuristic_greedy_construction import *
 import pickle

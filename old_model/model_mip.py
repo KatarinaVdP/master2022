@@ -1,4 +1,3 @@
-from scipy.stats import poisson
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
@@ -6,6 +5,57 @@ from gurobipy import quicksum
 import numpy as np
 from functions_output import *
 
+def save_results(m, input_dict, result_dict): 
+    # ----- Copying the desicion variable values to result dictionary -----
+    result_dict["gamm"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
+    result_dict["lamb"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
+    result_dict["delt"] = [[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
+    result_dict["x"]    = [[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nGroups"])]
+    result_dict["a"]    = [[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nGroups"])]
+    result_dict["v"]    = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    
+    for s in input_dict["Si"]:
+        for r in input_dict["Ri"]:
+            for d in input_dict["Di"]:
+                name = (f"gamma[{s},{r},{d}]")
+                var= m.getVarByName(name)    
+                result_dict["gamm"][s][r][d] = var.X
+                name = (f"lambda[{s},{r},{d}]")
+                var= m.getVarByName(name) 
+                result_dict["lamb"][s][r][d] = var.X
+                
+                for c in input_dict["Ci"]:
+                    name = (f"delta[{s},{r},{d},{c}]")
+                    var= m.getVarByName(name)  
+                    result_dict["delt"][s][r][d][c] = var.X        
+    for g in input_dict["Gi"]:
+        for r in input_dict["Ri"]:
+            for d in input_dict["Di"]:    
+                for c in input_dict["Ci"]:
+                    name = (f"x[{g},{r},{d},{c}]")
+                    var= m.getVarByName(name)
+                    result_dict["x"][g][r][d][c] = var.X
+    for g in input_dict["Gi"]:
+        for c in input_dict["Ci"]:
+            name = (f"a[{g},{c}]")
+            var= m.getVarByName(name)
+            result_dict["a"][g][c] = var.X
+                
+    for w in input_dict["Wi"]:
+        for d in range(input_dict["J"][w]-1):
+            result_dict["v"][w][d] = sum(input_dict["Pi"][c] * sum(input_dict["P"][w][g][d+input_dict["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(d+input_dict["nDays"]+1-input_dict["J"][w],input_dict["nDays"])) for c in input_dict["Ci"]) 
+    
+    result_dict["bed_occupation_wdc"]   =   [[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    result_dict["bed_occupation"]       =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
+    for w in input_dict["Wi"]:
+        for d in input_dict["Di"]:
+            for c in input_dict["Ci"]:
+                result_dict["bed_occupation_wdc"][w][d][c]  =   sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
+    for w in input_dict["Wi"]:
+            for d in input_dict["Di"]:
+                result_dict["bed_occupation"][w][d]         =   sum(result_dict["bed_occupation_wdc"][w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
+    
+    return result_dict
 
 def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
     #----- Sets ----- #  

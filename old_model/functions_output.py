@@ -62,61 +62,6 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     
     return output_dict    
 
-def save_results(m, input_dict, result_dict):
-    #input = copy.deepcopy(input_dict)
-    #result_dict = copy.deepcopy(result_dict2)
-    
-    # ----- Copying the desicion variable values to result dictionary -----
-    result_dict["gamm"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
-    result_dict["lamb"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
-    result_dict["delt"] = [[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
-    result_dict["x"]    = [[[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nGroups"])]
-    result_dict["a"]    = [[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nGroups"])]
-    result_dict["v"]    = [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-    
-    for s in input_dict["Si"]:
-        for r in input_dict["Ri"]:
-            for d in input_dict["Di"]:
-                name = (f"gamma[{s},{r},{d}]")
-                var= m.getVarByName(name)    
-                result_dict["gamm"][s][r][d] = var.X
-                name = (f"lambda[{s},{r},{d}]")
-                var= m.getVarByName(name) 
-                result_dict["lamb"][s][r][d] = var.X
-                
-                for c in input_dict["Ci"]:
-                    name = (f"delta[{s},{r},{d},{c}]")
-                    var= m.getVarByName(name)  
-                    result_dict["delt"][s][r][d][c] = var.X        
-    for g in input_dict["Gi"]:
-        for r in input_dict["Ri"]:
-            for d in input_dict["Di"]:    
-                for c in input_dict["Ci"]:
-                    name = (f"x[{g},{r},{d},{c}]")
-                    var= m.getVarByName(name)
-                    result_dict["x"][g][r][d][c] = var.X
-    for g in input_dict["Gi"]:
-        for c in input_dict["Ci"]:
-            name = (f"a[{g},{c}]")
-            var= m.getVarByName(name)
-            result_dict["a"][g][c] = var.X
-                
-    for w in input_dict["Wi"]:
-        for d in range(input_dict["J"][w]-1):
-            result_dict["v"][w][d] = sum(input_dict["Pi"][c] * sum(input_dict["P"][w][g][d+input_dict["nDays"]-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(d+input_dict["nDays"]+1-input_dict["J"][w],input_dict["nDays"])) for c in input_dict["Ci"]) 
-    
-    result_dict["bed_occupation_wdc"]   =   [[[0 for _ in range(input_dict["nScenarios"])] for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-    result_dict["bed_occupation"]       =   [[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nWards"])]
-    for w in input_dict["Wi"]:
-        for d in input_dict["Di"]:
-            for c in input_dict["Ci"]:
-                result_dict["bed_occupation_wdc"][w][d][c]  =   sum(input_dict["P"][w][g][d-dd] * result_dict["x"][g][r][dd][c] for g in input_dict["GWi"][w] for r in input_dict["Ri"] for dd in range(max(0,d+1-input_dict["J"][w]),d+1)) + input_dict["Y"][w][d]
-    for w in input_dict["Wi"]:
-            for d in input_dict["Di"]:
-                result_dict["bed_occupation"][w][d]         =   sum(result_dict["bed_occupation_wdc"][w][d][c]*input_dict["Pi"][c] for c in input_dict["Ci"])
-    
-    return result_dict
-
 def save_results_pre(m):
     statuses=[0,"LOADED","OPTIMAL","INFEASIBLE","INF_OR_UNBD","UNBOUNDED","CUTOFF", "ITERATION_LIMIT",
     "NODE_LIMIT", "TIME_LIMIT", "SOLUTION_LIMIT","INTERUPTED","NUMERIC","SUBOPTIMAL", "USES_OBJ_LIMIT","WORK_LIMIT"]
@@ -154,7 +99,7 @@ def write_to_excel_model(file_name,input_dict,output_dict):
         initiate_excel_book(file_name,input_dict)
         ws = wb.worksheets[0]
 
-    new_row.append(input_dict["number_of_groups"])
+    new_row.append(input_dict["nGroups"])
     new_row.append(input_dict["nScenarios"])
     new_row.append(input_dict["F"])
     new_row.append(input_dict["seed"])
