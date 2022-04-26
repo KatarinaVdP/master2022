@@ -2,31 +2,9 @@ from functions_input import *
 from functions_output import *
 from model_mip import *
 from heuristic_greedy_construction import *
-import pickle
 from openpyxl import Workbook
 from openpyxl import load_workbook
-from datetime import datetime
-import copy
-import os.path
 
-
-def print_heuristic_vs_fixed(results_mip: dict, results_heuristic: dict, flex: int, nScenarios: int, seed: int,max_time_fixed_mip: int):
-    
-    mip_str_p = "mip_p: "+ str("{:.1f}".format(results_mip["obj"]))
-    mip_str_d = "mip_d: "+ str("{:.1f}".format(results_mip["best_bound"]))
-    heur_str =  "heur: "  + str("{:.1f}".format(results_heuristic["obj"]))
-    preformance_str = "diff: " + str("{:.2f}".format((results_mip["obj"]-results_heuristic["obj"])/results_mip["obj"])) 
-    
-
-    print("{0:<15}".format(flex), end="")
-    print("{0:<15}".format(nScenarios), end="")
-    print("{0:<15}".format(seed), end="")
-    print("{0:<15}".format("mip_time: " + str(max_time_fixed_mip)), end="")
-    print("{0:<15}".format(mip_str_p), end="")
-    print("{0:<15}".format(mip_str_d),end="")
-    print("{0:<15}".format(heur_str),end="")
-    print("{0:<15}".format(preformance_str),end="")
-    print() 
 
 def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: int, nScenarios: int, seed: int, bed_cap_factor: float):
     try:
@@ -60,7 +38,7 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
     ws.append(new_row)
     wb.save(excel_file_name)  
 
-num_groups                  =   [ 9, 25]
+num_groups                  =   [9, 25]
 num_scenarios               =   [10,50,100,200]
 bed_caps                    =   [1, 0.5]
 flexibilities               =   [0.1]
