@@ -276,17 +276,20 @@ def write_to_excel_all(excel_file_name: str, flex: int, nScenarios: int, seed: i
     ws.append(new_row)
     wb.save(excel_file_name)      
 print('initializing...')
-number_of_groups            =   9
+number_of_groups            =   25
 MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IC_cap                      =   [11,6]          #[weekday,weekend]      
-nScenarios                  =   10
-flexibilities               =   [0,0.05,0.1,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1]
-num_sols_to_investigate     =   30   
+IC_cap                      =   [11,6] #[weekday,weekend]      
+"""MC_cap                      =   [30,24.5]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IC_cap                      =   [5.5,3] """
+nScenarios                  =   500
+"""flexibilities               =   [0,0.05,0.1,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1]"""
+flexibilities               =   [0.15,0]
+num_sols_to_investigate     =   3   
 seeds                       =   [i for i in range(1,num_sols_to_investigate+1)]
 
 time_to_mip                 =   30
 nScenarios_initial_sol      =   3
-max_time_fixed_mip          =   120
+max_time_fixed_mip          =   300
 file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/test_heuristics_'+ str(number_of_groups) + '_groups_10_scen.xlsx'
 for flex in flexibilities:
@@ -300,7 +303,7 @@ for flex in flexibilities:
         input                   =   generate_scenarios(input, nScenarios_initial_sol, seed)
         results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
         results                 =   categorize_slots(input,results)
-        #print_MSS(input, results) 
+        print_MSS(input, results) 
 
         input                   =   generate_scenarios(input, nScenarios, seed)
         
@@ -315,7 +318,7 @@ for flex in flexibilities:
         results_h_smarter_fix_smart_flex    =   copy.deepcopy(results)
         results_h_smarter_fix_smarter_flex  =   copy.deepcopy(results)
         
-        results_m                           =   run_model_mip_fixed2(input,results_m,max_time_fixed_mip,print_optimizer = False)
+        results_m                           =   run_model_mip_fixed2(input,results_m,max_time_fixed_mip,print_optimizer = True)
         results_h                           =   run_greedy_construction_heuristic(input,results_h)
         results_h_smart_flex                =   run_greedy_construction_heuristic_smart_flex(input,results_h_smart_flex)
         results_h_smarter_flex              =   run_greedy_construction_heuristic(input,results_h_smarter_flex)
