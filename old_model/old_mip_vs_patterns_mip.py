@@ -41,7 +41,7 @@ bed_caps                    =   [1]
 flexibilities               =   [0.1]
 
 time_to_mip                 =   1200
-seeds                       =   [i for i in range(1,11)]
+seeds                       =   [i for i in range(1,16)]
 excel_file_name             =   'input_output/old_mip_vs_patterns.xlsx'
 
 for ng in num_groups:
@@ -59,7 +59,6 @@ for ng in num_groups:
                     results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
                     write_to_excel_old_mip_vs_patterns_mip(excel_file_name, results,flex,ns,seed,cap)
                     print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
-        
 
 
 input_file_name =   choose_correct_input_file(9)

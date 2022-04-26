@@ -7,10 +7,10 @@ from heuristic_second_stage_mip import *
 import os.path
 
 
-def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
+def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
     print("\n\n")
     
-    input_file_name =   choose_correct_input_file(number_of_groups)
+    input_file_name =   choose_correct_input_file(nGroups)
     excel_file      =   "input_output/" + "results.xlsx"
     input           =   read_input(input_file_name)
     
@@ -19,11 +19,8 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
     input = change_ward_capacity(input, "IC", 11, 6)
     
     #---- Increasing demand for 25 surgery groups
-    input["T"] = change_demand(input, 1.34, print_minutes = True)
+    input = change_demand(input, 1.35, print_minutes = False)
 
-    #----- OBS! Funksjonen under vil gi gjøre det trangt på wards uavhengig av om
-    #----- change_ward_capacity har blitt brukt til å relaksere
-    input           =   edit_input_to_number_of_groups(input, number_of_groups)
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)
     initiate_excel_book(excel_file,input)
@@ -34,10 +31,10 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
             saved_values    = pickle.load(f)
         input_saved             =   saved_values["input"]
         nScenarios_saved        =   input_saved["nScenarios"]
-        number_of_groups_saved  =   input_saved["number_of_groups"]
+        nGroups_saved           =   input_saved["nGroups"]
         seed_saved              =   input_saved["seed"]
         flexibility_saved       =   input_saved["F"]
-        if os.path.exists('model.mps') and nScenarios == nScenarios_saved and number_of_groups == number_of_groups_saved and seed == seed_saved and flexibility == flexibility_saved:
+        if os.path.exists('model.mps') and nScenarios == nScenarios_saved and nGroups == nGroups_saved and seed == seed_saved and flexibility == flexibility_saved:
             model_run_exists = True   
     if model_run_exists:     
         input = saved_values["input"]
@@ -116,6 +113,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.1, 25, 50, 1, 300)
+main(0.1, 9, 100, 1, 100)
 
     
