@@ -5,8 +5,8 @@ from model_cutting_stock import *
 from model_mip import *
 
 
-nGroups     =   9
-nScenarios  = 100
+nGroups     = 9
+nScenarios  = 50
 seed        = 1
 flex        = 0.10
 time_limit  = 1200
@@ -21,4 +21,3 @@ results, input  =   run_model_mip(input, flex, time_limit, expected_value_soluti
 results         =   categorize_slots(input, results)
 print_MSS(input, results)
 
-print(results["x"])
