@@ -27,39 +27,9 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
     swap_types = ['fix', 'ext', 'flex']
     
-    #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    m, result_dict, best_sol = run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_file, best_sol, start_time)
     
-    swap_ever_found = False
-    days_in_cycle = int(input["nDays"]/input["I"])
-    for d in range(days_in_cycle):
-        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = True)
-        if swap_found:
-            swap_ever_found = True
-            swap_type = "flex"
-            m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended)
-            
-    m.read(warm_start_file_name)
-    m.optimize()
-    result_dict = save_results_pre(m)
-    m.write('warmstart.mst')
-
-    best_sol = save_results(m, input, result_dict)
-    write_to_excel_model(excel_file,input,best_sol)
-    best_sol = categorize_slots(input, best_sol)
-    print()
-    print_MSS(input, best_sol)
-    
-    print_heuristic_iteration_header(False)
-
-    if swap_ever_found:
-        action = "MOVE"
-    else:
-        action = "NO MOVE"
-    print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, current_gap = result_dict["MIPGap"])
-    write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, 0, 0, 0, result_dict["MIPGap"])
-        
-    print("\n\nHeuristic starts now.\n\n")"""
+    print("\n\nHeuristic starts now.\n\n")
     
     print_heuristic_iteration_header()
     
@@ -168,6 +138,41 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
             global_iter += 1 
         
     return best_sol
+
+def run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_file, best_sol, start_time):
+     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
+    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    
+    swap_ever_found = False
+    days_in_cycle = int(input["nDays"]/input["I"])
+    for d in range(days_in_cycle):
+        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input, best_sol, print_swap = True)
+        if swap_found:
+            swap_ever_found = True
+            swap_type = "flex"
+            m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended)
+            
+    m.read(warm_start_file_name)
+    m.optimize()
+    result_dict = save_results_pre(m)
+    m.write('warmstart.mst')
+
+    best_sol = save_results(m, input, result_dict)
+    write_to_excel_model(excel_file,input,best_sol)
+    best_sol = categorize_slots(input, best_sol)
+    print()
+    print_MSS(input, best_sol)
+    
+    print_heuristic_iteration_header(False)
+
+    if swap_ever_found:
+        action = "MOVE"
+    else:
+        action = "NO MOVE"
+    print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, "flex", time.time()-start_time, current_gap = result_dict["MIPGap"])
+    write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, 0, 0, 0, result_dict["MIPGap"])
+    
+    return m, result_dict, best_sol
 
 def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
