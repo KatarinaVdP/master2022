@@ -53,8 +53,6 @@ for cap in bed_caps:
         input                   =   read_input(input_file_name)
         input                   =   change_ward_capacity(input, "MC", 60*cap,  49*cap)
         input                   =   change_ward_capacity(input, "IC", 11*cap,  7*cap)
-        if ng ==   25:
-            change_demand(input, 1.35, print_minutes = False)
         for ns in num_scenarios:
             input               =   generate_scenarios(input, ns, seed)
             for flex in flexibilities:

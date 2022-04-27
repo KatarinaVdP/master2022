@@ -295,8 +295,6 @@ for flex in flexibilities:
     input                   =   read_input(file_name)                 
     input                   =   change_ward_capacity(input, "MC", MC_cap[0],  MC_cap[1])
     input                   =   change_ward_capacity(input, "IC", IC_cap[0],  IC_cap[1])
-    if number_of_groups ==   25:
-        change_demand(input, 1.35, print_minutes = False)
     for seed in seeds:
         
         #--- either running from model files, or running from scratch ---

@@ -52,10 +52,6 @@ IC_cap                      =   [11,6]          #[weekday,weekend]              
 input                       =   change_ward_capacity(input, "MC", MC_cap[0],  MC_cap[1])
 input                       =   change_ward_capacity(input, "IC", IC_cap[0],  IC_cap[1])
 
-demand_factor = 1
-if number_of_groups == 25:
-    demand_factor = 1.35
-    input                   =   change_demand(input, demand_factor, print_minutes = False)
 '---loops---'
 flexibilities               =   [0]
 num_sols_to_investigate     =   30                                                           #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
