@@ -12,6 +12,7 @@ def categorize_slots(input_dict: dict, output_dict: dict):
     #extSlot            = 1 if slot is extended, 0 otherwize   (adds a possibly extra layer to if slot is fixed)
     #specialty_in_slot  = the index of the specialty assigned to the slot if fixed and -1 of the slot is flexible
     '---parameters---'
+    "asdasdasd"
     N                   =   input_dict["N"]
     nDays               =   input_dict["nDays"]
     nRooms              =   input_dict["nRooms"]
