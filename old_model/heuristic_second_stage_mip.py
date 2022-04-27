@@ -74,13 +74,12 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
             
             extended = False
             swap_type = np.random.choice(swap_types, p = level_probs[level-1])
-            #swap_type = "fixed" 
             if swap_type == "ext":
-                swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
-            elif swap_type == "fixed":
+                swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
+            elif swap_type == "fix":
                 swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
-                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_GN_GO(input_dict, best_sol, print_swap = True)
+                swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = False)
             
             #----- Changing variable bound to evaluate candidate -----
             m = change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended)
@@ -163,7 +162,7 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], action, current_time, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
+            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], swap_type, action, current_time, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, global_iter, level, iter, result_dict["MIPGap"])
             iter += 1
             global_iter += 1 
@@ -173,7 +172,7 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
 def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lambda"
-    elif swap_type == "fixed":
+    elif swap_type == "fix":
         var_name = "gamma"
     
     if swap_back:
