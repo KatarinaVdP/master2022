@@ -19,7 +19,7 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
     input = change_ward_capacity(input, "IC", 11, 6)
     
     #---- Increasing demand for 25 surgery groups
-    input = change_demand(input, 1.35, print_minutes = False)
+    #input = change_demand(input, 1.35, print_minutes = False)
 
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)

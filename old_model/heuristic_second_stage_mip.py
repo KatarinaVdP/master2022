@@ -22,8 +22,10 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
 
     run_new_warmstart = False
     global_iter = 1
-    levels = list(range(1, 5)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [25,25,25,25]
+    levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
+    level_iters = [25,25,25]
+    level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
+    swap_types = ['fix', 'ext', 'flex']
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
     """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
@@ -71,7 +73,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
         while iter <= level_iters[level-1]:
             
             extended = False
-            swap_type = "fixed" 
+            swap_type = np.random.choice(swap_types, p = level_probs[level-1])
+            #swap_type = "fixed" 
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = True)
             elif swap_type == "fixed":
