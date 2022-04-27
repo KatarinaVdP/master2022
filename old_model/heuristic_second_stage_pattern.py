@@ -13,7 +13,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     input=input_dict
     start_time = time.time()
     # The following line must be there when line 24-37 is not commented out
-    """best_sol = copy.deepcopy(results)"""
+    best_sol = copy.deepcopy(results)
 
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
@@ -21,7 +21,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     level_swaps = ["fixed", "ext", "flex"]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
@@ -31,16 +31,30 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             swap_type = "flex"
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
             
+            print("swap_found:")
+            print(swap_found)
+            print("getting_slot:")
+            print(getting_slot)
+            print("giving_slot:")
+            print(giving_slot)
+            print("extended:")
+            print(extended)
+            
     if swap_ever_found:
         action = "MOVE"
     else:
-        action = "NO MOVE" """
-    action = "N/A"       
-    results = run_greedy_construction_heuristic(input, results)
+        action = "NO MOVE" 
+        
+    #results = run_greedy_construction_heuristic(input, results)
+    
+    #action = "N/A"     
+    #results = run_greedy_construction_heuristic(input, results)
+    #results =   categorize_slots(input, results)
     best_sol = copy.deepcopy(results)
     print("Performance of initial solution:  %d" % best_sol["obj"])
     write_to_excel_model(excel_file,input,best_sol)
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
+    print_MSS(input, results)
     
     print_heuristic_iteration_header(True, False)
     
@@ -97,14 +111,14 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], results["obj"], action, current_time, global_iter, level, levels, iter, level_iters)
+            print_heuristic_iteration(best_sol["obj"], results["obj"], "?", action, current_time, global_iter, level, levels, iter, level_iters)
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
     best_sol["runtime"] = time.time() - start_time  
     return best_sol
 
-def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot,swap_type, extended, swap_back = False):
+def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
     if swap_type == "ext":
         var_name = "lamb"
     elif swap_type == "fixed":
