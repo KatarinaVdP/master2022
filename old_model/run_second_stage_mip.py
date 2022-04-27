@@ -15,8 +15,9 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
     input           =   read_input(input_file_name)
     
     #---- Increasing the capacity of bed wards to normal level
-    input = change_ward_capacity(input, "MC", 60, 49)
-    input = change_ward_capacity(input, "IC", 11, 6)
+    scaling_factor = 0.5
+    input = change_ward_capacity(input, "MC", 60*scaling_factor, 49*scaling_factor)
+    input = change_ward_capacity(input, "IC", 11*scaling_factor, 6*scaling_factor)
 
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)
@@ -110,6 +111,6 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.1, 9, 100, 1, 100)
+main(0.1, 9, 250, 1, 600)
 
     
