@@ -22,7 +22,7 @@ saving_str = "_A"
 results_file ="patient_groups"+saving_str+".xls"
 
 # Number of clusters per speciality
-k_clusters = {"GN": 2, "GØ": 2, "UR": 2, "KA": 1, "EN": 2}
+k_clusters = {"GN": 1, "GØ": 1, "UR": 1, "KA": 1, "EN": 1}
 
 #-----------------------------------------------------------------------------------
 
