@@ -6,6 +6,7 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 
 
+
 def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: int, nScenarios: int, seed: int, bed_cap_factor: float):
     try:
         wb = load_workbook(excel_file_name)
