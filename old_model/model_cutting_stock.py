@@ -156,7 +156,7 @@ def run_model_cutting_stock(input_dict, flexibility, time_limit,print_optimizer=
         for s in Si),
         name = "Con_LongDaysCap",
     )
-    print('Creating model (1/3)')
+    print('Creating model (1/3)', end="")
     m.addConstrs(
         (quicksum(gamm[s,r,d]+delt[s,r,d,c] for s in Si)<= 1 
         for r in Ri for d in Di for c in Ci),
@@ -192,7 +192,7 @@ def run_model_cutting_stock(input_dict, flexibility, time_limit,print_optimizer=
         for r in Ri for d in Di for c in Ci),
         name= "Con_OnlyAssignIfNecessary",
     )
-    print('Creating model (2/3)')
+    print(' (2/3)', end="")
     m.addConstrs(
         (quicksum(Psum[m][w][d-dd] * pat[m,r,dd,c] for m in Mi for r in Ri for dd in range(max(0,d+1-J[w]),d+1)) <= B[w][d] - Y[w][d] 
         for w in Wi for d in Di for c in Ci),
@@ -210,7 +210,7 @@ def run_model_cutting_stock(input_dict, flexibility, time_limit,print_optimizer=
             for r in RSi[s] for d in range(0,int(nDays-nDays/I))),
         name = "Con_RollingExtendedSlotCycles" + str(s),
         )
-    print('Creating model (3/3)')
+    print(' (3/3)')
     m.optimize()
     result_dict = save_results_pre(m)
 

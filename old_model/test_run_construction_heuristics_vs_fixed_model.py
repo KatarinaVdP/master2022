@@ -277,35 +277,56 @@ def write_to_excel_all(excel_file_name: str, flex: int, nScenarios: int, seed: i
 print('initializing...')
 number_of_groups            =   25
 MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IC_cap                      =   [11,6] #[weekday,weekend]      
+IC_cap                      =   [11,6]          #[weekday,weekend]      
 """MC_cap                      =   [30,24.5]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IC_cap                      =   [5.5,3] """
-nScenarios                  =   500
-"""flexibilities               =   [0,0.05,0.1,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1]"""
+nScenarios                  =   10
+"""flexibilities               =   [0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00]"""
 flexibilities               =   [0.15,0]
 num_sols_to_investigate     =   3   
 seeds                       =   [i for i in range(1,num_sols_to_investigate+1)]
 
-time_to_mip                 =   30
+time_to_mip                 =   30 #30
 nScenarios_initial_sol      =   3
-max_time_fixed_mip          =   300
+max_time_fixed_mip          =   300 #300
 file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/test_heuristics_'+ str(number_of_groups) + '_groups_10_scen.xlsx'
 for flex in flexibilities:
     input                   =   read_input(file_name)                 
     input                   =   change_ward_capacity(input, "MC", MC_cap[0],  MC_cap[1])
     input                   =   change_ward_capacity(input, "IC", IC_cap[0],  IC_cap[1])
-    if number_of_groups ==   25:
-        change_demand(input, 1.35, print_minutes = False)
     for seed in seeds:
         
-        input                   =   generate_scenarios(input, nScenarios_initial_sol, seed)
-        results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
-        results                 =   categorize_slots(input,results)
-        print_MSS(input, results) 
-
-        input                   =   generate_scenarios(input, nScenarios, seed)
+        #--- either running from model files, or running from scratch ---
+        pkl_name_soultion = 'input_output/heuristic_vs_fixed/first_stage_solution' + '_flex_' + str(flex) +'_seed_'+ str(seed) + '_sec_'+ str(time_to_mip)+'_.pkl' 
+        pkl_name_results_m = 'input_output/heuristic_vs_fixed/results_m' + '_flex_' + str(flex) +'_seed_'+ str(seed) + '_sec_'+ str(max_time_fixed_mip)+'_.pkl' 
+        try:
+            with open(pkl_name_soultion,"rb") as f1:
+                saved_values        =   pickle.load(f1)
+                print('Reading first stage solution from pkl')
+                input               =   saved_values["input"]
+                results             =   saved_values["results"]
+            with open(pkl_name_results_m,"rb") as f2:
+                results_m           =   pickle.load(f2)
+                print('Reading old model_mip_fixed results')
+        except FileNotFoundError:
+            print('Grenerating new first stage solution and running model_mip_fixed')
+            input                   =   generate_scenarios(input, nScenarios_initial_sol, seed)
+            results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = False)
+            results                 =   categorize_slots(input,results)
+            input                   =   generate_scenarios(input, nScenarios, seed)
+            saved_values            =   {}
+            saved_values["input"]   =   input
+            saved_values["results"] =   results
+            with open(pkl_name_soultion,"wb") as f1:
+                pickle.dump(saved_values,f1)
+            results_m                           =   copy.deepcopy(results)
+            results_m                           =   run_model_mip_fixed2(input,results_m,max_time_fixed_mip,print_optimizer = False)
+            with open(pkl_name_results_m,"wb") as f2:
+                pickle.dump(results_m ,f2)   
         
+        #--- run heuristics ---
+        print_MSS(input, results) 
         results_m                           =   copy.deepcopy(results)   
         results_h                           =   copy.deepcopy(results)
         results_h_smart_flex                =   copy.deepcopy(results)
@@ -316,11 +337,11 @@ for flex in flexibilities:
         results_h_smarter_fix               =   copy.deepcopy(results)
         results_h_smarter_fix_smart_flex    =   copy.deepcopy(results)
         results_h_smarter_fix_smarter_flex  =   copy.deepcopy(results)
-        
-        results_m                           =   run_model_mip_fixed2(input,results_m,max_time_fixed_mip,print_optimizer = True)
+    
+
         results_h                           =   run_greedy_construction_heuristic(input,results_h)
         results_h_smart_flex                =   run_greedy_construction_heuristic_smart_flex(input,results_h_smart_flex)
-        results_h_smarter_flex              =   run_greedy_construction_heuristic(input,results_h_smarter_flex)
+        results_h_smarter_flex              =   run_greedy_construction_heuristic_smarter_flex(input,results_h_smarter_flex)
         results_h_smart_fix                 =   run_greedy_construction_heuristic_smart_fix(input,results_h_smart_fix)
         results_h_smart_fix_smart_flex      =   run_greedy_construction_heuristic_smart_fix_smart_flex(input,results_h_smart_fix_smart_flex)
         results_h_smart_fix_smarter_flex    =   run_greedy_construction_heuristic_smart_fix_smarter_flex(input,results_h_smart_fix_smarter_flex)
@@ -329,7 +350,7 @@ for flex in flexibilities:
         results_h_smarter_fix_smarter_flex  =   run_greedy_construction_heuristic_smarter_fix_smarter_flex(input,results_h_smarter_fix_smarter_flex)
     
         print("flex: %.2f  seed: %i  MIPgap: %.3f "%(flex,seed, results_m["MIPGap"]))
-        """print("best bound fixed MIP:            " + "{0:<10}".format("{:.1f}".format(results_m["obj"])) )
+        print("best bound fixed MIP:            " + "{0:<10}".format("{:.1f}".format(results_m["obj"])) )
         print("heur:                            " + "{0:<10}".format("{:.1f}".format(results_h["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h["heuristic_time"])))
         print("heur_smart_flex:                 " + "{0:<10}".format("{:.1f}".format(results_h_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_flex["heuristic_time"])))
         print("heur_smarter_flex:               " + "{0:<10}".format("{:.1f}".format(results_h_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_flex["heuristic_time"])))
@@ -338,10 +359,7 @@ for flex in flexibilities:
         print("heur_smart_fix_smarter_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smart_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smart_fix_smarter_flex["heuristic_time"])))
         print("heur_smarter_fix:                " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix["heuristic_time"])))
         print("heur_smarter_fix_smart_flex:     " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smart_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smart_flex["heuristic_time"])))
-        print("heur_smarter_fix_smarter_flex:   " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smarter_flex["heuristic_time"])))"""
-        
-        #results_heuristic       =   run_greedy_construction_heuristic_smart_flex(input, results_heuristic,debug=False)
-        #results_mip   =   run_model_mip_fixed2(input,results_mip,max_time_fixed_mip)
+        print("heur_smarter_fix_smarter_flex:   " + "{0:<10}".format("{:.1f}".format(results_h_smarter_fix_smarter_flex["obj"])) + "time: " + "{0:<5}".format("{:.2f}".format(results_h_smarter_fix_smarter_flex["heuristic_time"])))
         
         results_to_print = [
             results_h["obj"],                           results_h["heuristic_time"],
@@ -355,5 +373,5 @@ for flex in flexibilities:
             results_h_smarter_fix_smarter_flex["obj"],  results_h_smarter_fix_smarter_flex["heuristic_time"],
         ]
         write_to_excel_all(excel_file_name, flex, nScenarios, seed,max_time_fixed_mip, results_m, results_to_print)
-        #print_heuristic_vs_fixed(results_mip,results_heuristic, flex, nScenarios,seed,max_time_fixed_mip)
+
         

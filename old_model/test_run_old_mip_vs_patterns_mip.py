@@ -47,8 +47,6 @@ excel_file_name             =   'input_output/old_mip_vs_patterns.xlsx'
 for ng in num_groups:
     input_file_name         =   choose_correct_input_file(ng)
     input                   =   read_input(input_file_name)
-    if ng ==   25:
-        change_demand(input, 1.35, print_minutes = False)
     for ns in num_scenarios:
         for seed in seeds:
             input               =   generate_scenarios(input, ns, seed)
