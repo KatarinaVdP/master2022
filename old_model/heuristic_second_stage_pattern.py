@@ -18,7 +18,8 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
     level_iters = [100,100,100]
-    level_swaps = ["fixed", "ext", "flex"]
+    level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
+    swap_types = ["fix", "ext", "flex"]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
     print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
@@ -67,15 +68,14 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
-        swap_type = level_swaps[level-1]
         #----- Looping through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
             extended = False
-            #swap_type = "flex" 
+            swap_type = np.random.choice(swap_types, p = level_probs[level-1])
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
-            elif swap_type == "fixed":
+            elif swap_type == "fix":
                 swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = False)
@@ -115,7 +115,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], results["obj"], "?", action, current_time, global_iter, level, levels, iter, level_iters)
+            print_heuristic_iteration(best_sol["obj"], results["obj"], swap_type, action, current_time, global_iter, level, levels, iter, level_iters)
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
@@ -126,7 +126,7 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
     
     if swap_type == "ext":
         var_name = "lamb"
-    elif swap_type == "fixed":
+    elif swap_type == "fix":
         var_name = "gamm"
     
     if swap_back:
@@ -136,7 +136,7 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
         getting_val = 1
         giving_val = 0
     
-    if swap_type == "fixed":
+    if swap_type == "fix":
         if swap_found:
             for i in range(getting_slot["size"]):
                 s=getting_slot["s"][i]
