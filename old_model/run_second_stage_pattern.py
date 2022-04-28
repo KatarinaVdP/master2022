@@ -99,7 +99,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
         results = heuristic_second_stage_pattern(excel_file, input, results)
         results = translate_heristic_results(input,results)
-        results =   categorize_slots(input, results)
+        results = categorize_slots(input, results)
         
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)

@@ -13,15 +13,16 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     input=input_dict
     start_time = time.time()
     # The following line must be there when line 24-37 is not commented out
-    """best_sol = copy.deepcopy(results)"""
+    best_sol = copy.deepcopy(results)
 
     global_iter = 1
     levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
     level_iters = [100,100,100]
-    level_swaps = ["fixed", "ext", "flex"]
+    level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
+    swap_types = ["fix", "ext", "flex"]
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
-    """print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
+    print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
@@ -30,54 +31,56 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             swap_ever_found = True
             swap_type = "flex"
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
+            results = run_greedy_construction_heuristic(input, results)
+            results = translate_heristic_results(input,results)
+            results = categorize_slots(input, results)
             
     if swap_ever_found:
         action = "MOVE"
     else:
-        action = "NO MOVE" """
-    action = "N/A"       
-    results = run_greedy_construction_heuristic(input, results)
+        action = "NO MOVE" 
+        
     best_sol = copy.deepcopy(results)
-    print("Performance of initial solution:  %d" % best_sol["obj"])
+    print("\nPerformance of initial solution:  %d" % best_sol["obj"])
     write_to_excel_model(excel_file,input,best_sol)
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
-    
+    print()
+    print_MSS(input, results)
+    print()
     print_heuristic_iteration_header(True, False)
     
     #----- Looping through temperature levels ----- 
-    temperature = 1
+    temperature = 100
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
-        swap_type = level_swaps[level-1]
         #----- Looping through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
             extended = False
-            #swap_type = "flex" 
+            swap_type = np.random.choice(swap_types, p = level_probs[level-1])
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
-            elif swap_type == "fixed":
+            elif swap_type == "fix":
                 swap_found, getting_slot, giving_slot = swap_fixed(input_dict, best_sol, print_swap = False)
             elif swap_type == "flex":
                 swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible(input_dict, best_sol, print_swap = False)
             
             #----- Changing variable bound to evaluate candidate -----
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
-            
             results = run_greedy_construction_heuristic(input, results)
             
             #----- Storing entire solution if a new best solution is found -----
-            """pick_worse_obj = rand.random()
+            pick_worse_obj = rand.random()
             delta = results["obj"] - best_sol["obj"]
             try:
                 exponential = math.exp(-delta/temperature)
             except:
                 exponential = 0
             if delta == 0:
-                exponential = 0"""
+                exponential = 0
                 
-            if results["obj"] < best_sol["obj"]: #or pick_worse_obj < exponential:
+            if results["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                 
                 if results["obj"] < best_sol["obj"]:
                     action = "MOVE"
@@ -86,9 +89,6 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
                 best_sol = copy.deepcopy(results)
                 write_to_excel_model(excel_file,input,best_sol)
-                """best_sol = translate_heristic_results(input, best_sol)
-                best_sol = categorize_slots(input, best_sol)
-                print_MSS(input, best_sol)"""
             else:
                 # ----- Copying the desicion variable values to result dictionary -----
                 write_to_excel_model(excel_file,input,results)
@@ -97,17 +97,18 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], results["obj"], action, current_time, global_iter, level, levels, iter, level_iters)
+            print_heuristic_iteration(best_sol["obj"], results["obj"], swap_type, action, current_time, global_iter, level, levels, iter, level_iters)
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
     best_sol["runtime"] = time.time() - start_time  
     return best_sol
 
-def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot,swap_type, extended, swap_back = False):
+def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
+    
     if swap_type == "ext":
         var_name = "lamb"
-    elif swap_type == "fixed":
+    elif swap_type == "fix":
         var_name = "gamm"
     
     if swap_back:
@@ -117,7 +118,7 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
         getting_val = 1
         giving_val = 0
     
-    if swap_type == "fixed":
+    if swap_type == "fix":
         if swap_found:
             for i in range(getting_slot["size"]):
                 s=getting_slot["s"][i]
