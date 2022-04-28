@@ -30,6 +30,10 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             swap_ever_found = True
             swap_type = "flex"
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
+            results = run_greedy_construction_heuristic(input, results)
+            results = translate_heristic_results(input,results)
+            results = categorize_slots(input, results)
+            print_MSS(input, results)
             
             print("swap_found:")
             print(swap_found)
@@ -119,6 +123,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     return best_sol
 
 def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
+    
     if swap_type == "ext":
         var_name = "lamb"
     elif swap_type == "fixed":
