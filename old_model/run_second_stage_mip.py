@@ -15,7 +15,7 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
     input           =   read_input(input_file_name)
     
     #---- Increasing the capacity of bed wards to normal level
-    scaling_factor = 0.5
+    scaling_factor = 1
     input = change_ward_capacity(input, "MC", 60*scaling_factor, 49*scaling_factor)
     input = change_ward_capacity(input, "IC", 11*scaling_factor, 6*scaling_factor)
 

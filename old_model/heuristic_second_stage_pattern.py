@@ -1,18 +1,14 @@
 import random as rand
-import gurobipy as gp
 from gurobipy import GRB
 from model_mip import *
 from functions_input import *
 from functions_output import *
-import os.path
 from functions_heuristic import *
 from heuristic_greedy_construction import *
-import pickle
 
 def heuristic_second_stage_pattern(excel_file, input_dict, results):
     input=input_dict
     start_time = time.time()
-    # The following line must be there when line 24-37 is not commented out
     best_sol = copy.deepcopy(results)
 
     global_iter = 1
@@ -26,7 +22,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
-        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = True)
+        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = False)
         if swap_found:
             swap_ever_found = True
             swap_type = "flex"
@@ -44,9 +40,9 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     print("\nPerformance of initial solution:  %d" % best_sol["obj"])
     write_to_excel_model(excel_file,input,best_sol)
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
-    print()
+    '''print()
     print_MSS(input, results)
-    print()
+    print()'''
     print_heuristic_iteration_header(True, False)
     
     #----- Looping through temperature levels ----- 
@@ -80,9 +76,9 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             if delta == 0:
                 exponential = 0
                 
-            if results["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
+            if results["obj"]+0.1 < best_sol["obj"] or pick_worse_obj < exponential:
                 
-                if results["obj"] < best_sol["obj"]:
+                if results["obj"]+0.1 < best_sol["obj"]:
                     action = "MOVE"
                 else:
                     action = "MOVE*"
