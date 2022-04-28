@@ -34,37 +34,23 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             results = run_greedy_construction_heuristic(input, results)
             results = translate_heristic_results(input,results)
             results = categorize_slots(input, results)
-            print_MSS(input, results)
-            
-            print("swap_found:")
-            print(swap_found)
-            print("getting_slot:")
-            print(getting_slot)
-            print("giving_slot:")
-            print(giving_slot)
-            print("extended:")
-            print(extended)
             
     if swap_ever_found:
         action = "MOVE"
     else:
         action = "NO MOVE" 
         
-    #results = run_greedy_construction_heuristic(input, results)
-    
-    #action = "N/A"     
-    #results = run_greedy_construction_heuristic(input, results)
-    #results =   categorize_slots(input, results)
     best_sol = copy.deepcopy(results)
-    print("Performance of initial solution:  %d" % best_sol["obj"])
+    print("\nPerformance of initial solution:  %d" % best_sol["obj"])
     write_to_excel_model(excel_file,input,best_sol)
     write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
+    print()
     print_MSS(input, results)
-    
+    print()
     print_heuristic_iteration_header(True, False)
     
     #----- Looping through temperature levels ----- 
-    temperature = 1
+    temperature = 100
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
@@ -82,20 +68,19 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
             #----- Changing variable bound to evaluate candidate -----
             results = change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended)
-            
             results = run_greedy_construction_heuristic(input, results)
             
             #----- Storing entire solution if a new best solution is found -----
-            """pick_worse_obj = rand.random()
+            pick_worse_obj = rand.random()
             delta = results["obj"] - best_sol["obj"]
             try:
                 exponential = math.exp(-delta/temperature)
             except:
                 exponential = 0
             if delta == 0:
-                exponential = 0"""
+                exponential = 0
                 
-            if results["obj"] < best_sol["obj"]: #or pick_worse_obj < exponential:
+            if results["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
                 
                 if results["obj"] < best_sol["obj"]:
                     action = "MOVE"
@@ -104,9 +89,6 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
                 best_sol = copy.deepcopy(results)
                 write_to_excel_model(excel_file,input,best_sol)
-                """best_sol = translate_heristic_results(input, best_sol)
-                best_sol = categorize_slots(input, best_sol)
-                print_MSS(input, best_sol)"""
             else:
                 # ----- Copying the desicion variable values to result dictionary -----
                 write_to_excel_model(excel_file,input,results)
