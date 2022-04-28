@@ -276,18 +276,18 @@ def write_to_excel_all(excel_file_name: str, flex: int, nScenarios: int, seed: i
     wb.save(excel_file_name)      
 print('initializing...')
 number_of_groups            =   25
-MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IC_cap                      =   [11,6]          #[weekday,weekend]      
-"""MC_cap                      =   [30,24.5]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IC_cap                      =   [5.5,3] """
+"""MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IC_cap                      =   [11,6]"""          #[weekday,weekend]      
+MC_cap                      =   [30,24.5]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IC_cap                      =   [5.5,3]
 nScenarios                  =   10
 """flexibilities               =   [0.00,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00]"""
-flexibilities               =   [0.15,0]
-num_sols_to_investigate     =   3   
+flexibilities               =   [0.15]
+num_sols_to_investigate     =   30  
 seeds                       =   [i for i in range(1,num_sols_to_investigate+1)]
 
 time_to_mip                 =   30 #30
-nScenarios_initial_sol      =   3
+nScenarios_initial_sol      =   3 #3
 max_time_fixed_mip          =   300 #300
 file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/test_heuristics_'+ str(number_of_groups) + '_groups_10_scen.xlsx'
@@ -327,7 +327,6 @@ for flex in flexibilities:
         
         #--- run heuristics ---
         print_MSS(input, results) 
-        results_m                           =   copy.deepcopy(results)   
         results_h                           =   copy.deepcopy(results)
         results_h_smart_flex                =   copy.deepcopy(results)
         results_h_smarter_flex              =   copy.deepcopy(results)
