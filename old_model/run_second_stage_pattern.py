@@ -7,7 +7,7 @@ from functions_output import *
 from heuristic_second_stage_pattern import *
 
 
-def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
+def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True):
     print("\n\n")
     
     input_file_name =   choose_correct_input_file(number_of_groups)
@@ -57,7 +57,7 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print()
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
-        results = heuristic_second_stage_pattern(excel_file, input, results) # --- swap is called inside 
+        results = heuristic_second_stage_pattern(excel_file, input, results, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
         results = translate_heristic_results(input,results)
         results =   categorize_slots(input, results)
         
@@ -97,13 +97,18 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
-        results = heuristic_second_stage_pattern(excel_file, input, results)
+        results = heuristic_second_stage_pattern(excel_file, input, results, temperature, alpha, iter_max, end_temperature)
         results = translate_heristic_results(input,results)
         results = categorize_slots(input, results)
         
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.2, 9, 50, 1, 60)
+start_temperature = 100
+alpha = 0.5
+iter_max = 25
+end_temperature = 0.1
+
+main(0.2, 9, 250, 1, 60, start_temperature, alpha, iter_max, end_temperature)
 
     

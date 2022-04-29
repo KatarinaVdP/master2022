@@ -6,16 +6,13 @@ from functions_output import *
 from functions_heuristic import *
 from heuristic_greedy_construction import *
 
-def heuristic_second_stage_pattern(excel_file, input_dict, results):
+def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temperature, alpha, iter_max, end_temperature):
     input=input_dict
     start_time = time.time()
     best_sol = copy.deepcopy(results)
-
     global_iter = 1
-    levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [100,100,100]
-    level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
     swap_types = ["fix", "ext", "flex"]
+    levels = math.ceil(np.log(end_temperature)/np.log(alpha))
     
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
     print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
@@ -46,15 +43,15 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
     print_heuristic_iteration_header(True, False)
     
     #----- Looping through temperature levels ----- 
-    temperature = 100
-    for level in levels:
+    level = 1
+    temperature = copy.deepcopy(start_temperature)
+    while temperature >= end_temperature * start_temperature:
         iter = 1
-        temperature = update_temperature(temperature)
         #----- Looping through iterations at temperature level -----
-        while iter <= level_iters[level-1]:
+        while iter <= iter_max:
             
             extended = False
-            swap_type = np.random.choice(swap_types, p = level_probs[level-1])
+            swap_type = np.random.choice(swap_types)
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
             elif swap_type == "fix":
@@ -93,10 +90,14 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results):
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], results["obj"], swap_type, action, current_time, global_iter, level, levels, iter, level_iters)
+            print_heuristic_iteration(best_sol["obj"], results["obj"], swap_type, action, current_time, global_iter, level, levels, iter, iter_max)
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
+            
+        level += 1    
+        temperature = update_temperature(temperature, alpha)
+        
     best_sol["runtime"] = time.time() - start_time  
     return best_sol
 
