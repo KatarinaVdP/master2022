@@ -104,6 +104,6 @@ def main(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, 
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.3, 9, 50, 1, 60)
+main(0.2, 9, 50, 1, 60)
 
     

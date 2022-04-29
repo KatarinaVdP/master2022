@@ -34,11 +34,10 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     print_heuristic_iteration_header()
     
     #----- Looping through temperature levels ----- 
-    temperature = 1
+    temperature = 100
     for level in levels:
         iter = 1
         temperature = update_temperature(temperature)
-        
         #----- Looping through through iterations at temperature level -----
         while iter <= level_iters[level-1]:
             
@@ -108,9 +107,9 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
                 except:
                     exponential = 0
                     
-                if result_dict["obj"] < best_sol["obj"] or pick_worse_obj < exponential:
+                if result_dict["obj"]+0.1 < best_sol["obj"] or pick_worse_obj < exponential:
                     
-                    if result_dict["obj"] < best_sol["obj"]:
+                    if result_dict["obj"]+0.1 < best_sol["obj"]:
                         action = "MOVE"
                     else:
                         action = "MOVE*"
