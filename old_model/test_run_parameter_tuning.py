@@ -74,10 +74,10 @@ def write_to_excel_parameter_tuning(excel_file_name: str, num_runs: int, initial
     
 
 num_groups                  =   9
-num_scenarios               =   2
+num_scenarios               =   250
 flex                        =   0.1
 seed                        =   1
-time_limit_EVS_and_fixed    =   10
+time_limit_EVS_and_fixed    =   60
 
 excel_file_name             =   'input_output/parameter_tuning_heuristic_pattern.xlsx'
 
