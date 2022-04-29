@@ -8,7 +8,7 @@ from functions_input import *
 from functions_output import *
 from functions_heuristic import *
 
-def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, print_optimizer = False):
+def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, start_temperature, alpha, iter_max, end_temperature, print_optimizer = False):
     input=input_dict
     start_time = time.time()
     best_sol = last_output
@@ -22,10 +22,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
 
     run_new_warmstart = False
     global_iter = 1
-    levels = list(range(1, 4)) #levels blir følgende: levels = [1,2,3]
-    level_iters = [25,25,25]
-    level_probs = [[0.5, 0.25, 0.25],[0.25, 0.5, 0.25],[0.25, 0.25, 0.5]]
     swap_types = ['fix', 'ext', 'flex']
+    levels = math.ceil(np.log(end_temperature)/np.log(alpha))
     
     m, result_dict, best_sol = run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_file, best_sol, start_time)
     
@@ -34,15 +32,14 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     print_heuristic_iteration_header()
     
     #----- Looping through temperature levels ----- 
-    temperature = 100
-    for level in levels:
+    level = 1
+    temperature = copy.deepcopy(start_temperature)
+    while temperature >= (end_temperature * start_temperature):
         iter = 1
-        temperature = update_temperature(temperature)
         #----- Looping through through iterations at temperature level -----
-        while iter <= level_iters[level-1]:
-            
+        while iter <= iter_max:
             extended = False
-            swap_type = np.random.choice(swap_types, p = level_probs[level-1])
+            swap_type = np.random.choice(swap_types)
             if swap_type == "ext":
                 swap_found, getting_slot, giving_slot = swap_extension(input_dict, best_sol, print_swap = False)
             elif swap_type == "fix":
@@ -131,10 +128,13 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
             
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
-            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], swap_type, action, current_time, global_iter, level, levels, iter, level_iters, result_dict["MIPGap"])
+            print_heuristic_iteration(best_sol["obj"], result_dict["obj"], swap_type, action, current_time, global_iter, level, levels, iter, iter_max, result_dict["MIPGap"])
             write_to_excel_heuristic(excel_file, input, best_sol["obj"], result_dict["obj"], action, global_iter, level, iter, result_dict["MIPGap"])
             iter += 1
             global_iter += 1 
+        
+        level += 1    
+        temperature = update_temperature(temperature, alpha)
         
     return best_sol
 

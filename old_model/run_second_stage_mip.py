@@ -7,7 +7,7 @@ from heuristic_second_stage_mip import *
 import os.path
 
 
-def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, new_input=True):
+def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True):
     print("\n\n")
     
     input_file_name =   choose_correct_input_file(nGroups)
@@ -50,8 +50,7 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
         print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
-        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         print_MSS(input, results)
@@ -103,14 +102,20 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        obj_estimation_time = 30
-        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time) # --- swap is called inside 
+        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
         
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-main(0.1, 9, 250, 1, 600)
+
+start_temperature = 100
+alpha = 0.5
+iter_max = 25
+end_temperature = 0.1
+obj_estimation_time = 30
+
+main(0.1, 9, 250, 1, 600, start_temperature, alpha, iter_max, end_temperature, obj_estimation_time)
 
     

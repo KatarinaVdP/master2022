@@ -465,10 +465,10 @@ def print_heuristic_iteration_header(mip = True, gap = True):
     print("{0:<15}".format("Time"),end="")
     print()
 
-def print_heuristic_iteration(best_sol, current_sol, swap_type, action, time, global_iter = 0, level = 0, levels = [0], iter = 0, level_iters = [0], current_gap = -1):
+def print_heuristic_iteration(best_sol, current_sol, swap_type, action, time, global_iter = 0, level = 0, levels = 0, iter = 0, level_iters = 0, current_gap = -1):
     if global_iter != 0:
-        level_str = str(level)+"/"+str(len(levels))
-        iter_str = str(iter)+"/"+str(level_iters[level-1])
+        level_str = str(level)+"/"+str(levels)
+        iter_str = str(iter)+"/"+str(level_iters)
         print("{0:<15}".format(global_iter), end="")
         print("{0:<15}".format(level_str), end="")
         print("{0:<15}".format(iter_str),end="")

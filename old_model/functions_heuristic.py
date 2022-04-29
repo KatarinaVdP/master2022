@@ -6,8 +6,8 @@ from model_mip import *
 from functions_input import *
 from functions_output import *
 
-def update_temperature(temperature):
-    temperature = temperature/2
+def update_temperature(temperature, alpha):
+    temperature = temperature * alpha
     return temperature
 
 def swap_fixed(input, results, print_swap = False):
