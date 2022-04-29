@@ -34,6 +34,7 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     #----- Looping through temperature levels ----- 
     level = 1
     temperature = copy.deepcopy(start_temperature)
+    global_best_sol = copy.deepcopy(best_sol)
     while temperature >= (end_temperature * start_temperature):
         iter = 1
         #----- Looping through through iterations at temperature level -----
@@ -105,6 +106,10 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
                     exponential = 0
                     
                 if result_dict["obj"]+0.1 < best_sol["obj"] or pick_worse_obj < exponential:
+
+                    if result_dict["obj"] < global_best_sol["obj"]: 
+                        global_best_sol = copy.deepcopy(result_dict)
+                        global_best_sol["runtime"] = time.time() - start_time
                     
                     if result_dict["obj"]+0.1 < best_sol["obj"]:
                         action = "MOVE"
@@ -135,8 +140,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
         
         level += 1    
         temperature = update_temperature(temperature, alpha)
-        
-    return best_sol
+        best_sol["runtime"] = time.time() - start_time  
+    return best_sol, global_best_sol
 
 def run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_file, best_sol, start_time):
      #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----

@@ -46,6 +46,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
     level = 1
     temperature = copy.deepcopy(start_temperature)
     global_best_sol = copy.deepcopy(best_sol)
+    
     while temperature >= end_temperature * start_temperature:
         iter = 1
         #----- Looping through iterations at temperature level -----
@@ -78,6 +79,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
                 
                 if results["obj"] < global_best_sol["obj"]: 
                     global_best_sol = copy.deepcopy(results)
+                    global_best_sol["runtime"] = time.time() - start_time  
                 
                 if results["obj"]+0.1 < best_sol["obj"]:
                     action = "MOVE"

@@ -7,8 +7,10 @@ from heuristic_second_stage_mip import *
 import os.path
 
 
-def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True):
+def run_second_stage_mip(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True):
     print("\n\n")
+    run_or_create_fast_start = False
+    obj_estimation_time = time_limit
     
     input_file_name =   choose_correct_input_file(nGroups)
     excel_file      =   "input_output/" + "results.xlsx"
@@ -19,46 +21,47 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
     input = change_ward_capacity(input, "MC", 60*scaling_factor, 49*scaling_factor)
     input = change_ward_capacity(input, "IC", 11*scaling_factor, 6*scaling_factor)
 
-    if not os.path.exists(excel_file):
-        initiate_excel_book(excel_file,input)
-    initiate_excel_book(excel_file,input)
+    """if not os.path.exists(excel_file):
+        initiate_excel_book(excel_file,input)"""
     #----- Try to load initial model run from earlier ----  
-    model_run_exists = False
-    if os.path.exists("model_solution.pkl"):
-        with open("model_solution.pkl","rb") as f:
-            saved_values    = pickle.load(f)
-        input_saved             =   saved_values["input"]
-        nScenarios_saved        =   input_saved["nScenarios"]
-        nGroups_saved           =   input_saved["nGroups"]
-        seed_saved              =   input_saved["seed"]
-        flexibility_saved       =   input_saved["F"]
-        if os.path.exists('model.mps') and nScenarios == nScenarios_saved and nGroups == nGroups_saved and seed == seed_saved and flexibility == flexibility_saved:
-            model_run_exists = True   
-    if model_run_exists:     
-        input = saved_values["input"]
-        results = saved_values["results"]
-        results = categorize_slots(input, results)
-        print_MSS(input, results)
-        print_solution_performance(input, results)
-         
-        write_new_run_header_to_excel(excel_file,input,sheet_number=0)
-        write_to_excel_model(excel_file,input,results)
-        write_new_run_header_to_excel(excel_file,input,sheet_number=2)
-        write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
-        #----- Begin Heuristic ---- 
-        print("------------------------------------------------------------------------------------------------------------------")
-        print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
-        print("------------------------------------------------------------------------------------------------------------------")
-        write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
-        print_solution_performance(input, results)
-        results =   categorize_slots(input, results)
-        print_MSS(input, results)
-        write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
+    if run_or_create_fast_start:
+        model_run_exists = False
+        if os.path.exists("model_solution.pkl"):
+            with open("model_solution.pkl","rb") as f:
+                saved_values    = pickle.load(f)
+            input_saved             =   saved_values["input"]
+            nScenarios_saved        =   input_saved["nScenarios"]
+            nGroups_saved           =   input_saved["nGroups"]
+            seed_saved              =   input_saved["seed"]
+            flexibility_saved       =   input_saved["F"]
+            if os.path.exists('model.mps') and nScenarios == nScenarios_saved and nGroups == nGroups_saved and seed == seed_saved and flexibility == flexibility_saved:
+                model_run_exists = True   
+        if model_run_exists:     
+            input = saved_values["input"]
+            results = saved_values["results"]
+            results = categorize_slots(input, results)
+            print_MSS(input, results)
+            print_solution_performance(input, results)
+            
+            write_new_run_header_to_excel(excel_file,input,sheet_number=0)
+            write_to_excel_model(excel_file,input,results)
+            write_new_run_header_to_excel(excel_file,input,sheet_number=2)
+            write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
+            #----- Begin Heuristic ---- 
+            print("------------------------------------------------------------------------------------------------------------------")
+            print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
+            print("------------------------------------------------------------------------------------------------------------------")
+            write_new_run_header_to_excel(excel_file,input,sheet_number=1)
+            results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
+            print_solution_performance(input, results)
+            results =   categorize_slots(input, results)
 
+            print("\nGlobally best found solution:")
+            print(global_best_sol["obj"])
 
+            print_MSS(input, results)
+            write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
 
-    
     #----- If initial model run is not found, run as usual -----   
     else:
         #----- Find EVS as initial MSS ----  
@@ -75,7 +78,7 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
             return
         print('\n' * 5)
         
-        #----- Creating model and fixed first-stage solution to EVS  ----   
+        #----- Creating model and fixed first-stage solution to EVS  ---- 
         print("------------------------------------------------------------------------------------------------------------------")
         print("RUNNING FIXED FIRST-STAGE TO EVALUATE EVS PERFORMANCE")
         print("------------------------------------------------------------------------------------------------------------------") 
@@ -90,32 +93,40 @@ def main(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limi
         print()
         write_to_excel_MSS(excel_file,input,results,initial_MSS=True)
         print('\n' * 5)
+        
         #--- Saving solution in pickle ---
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
-        with open("model_solution.pkl","wb") as f:
-            pickle.dump(saved_values,f)
+        if run_or_create_fast_start:
+            saved_values            =   {}
+            saved_values["input"]   =   input
+            saved_values["results"] =   results
+            with open("model_solution.pkl","wb") as f:
+                pickle.dump(saved_values,f)
         
         #----- Begin Heuristic ----  
         print("------------------------------------------------------------------------------------------------------------------")
         print("INITIATING HEURISTIC SEARCH FROM EVS")
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        results = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
+        results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
         print_solution_performance(input, results)
         results =   categorize_slots(input, results)
+
+        print("\nGlobally best found solution:")
+        print(global_best_sol["obj"])
         
         print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
+        
+    return results, global_best_sol
 
 
-start_temperature = 100
+"""start_temperature = 1
 alpha = 0.5
-iter_max = 25
+iter_max = 3
 end_temperature = 0.1
 obj_estimation_time = 30
 
-main(0.1, 9, 250, 1, 600, start_temperature, alpha, iter_max, end_temperature, obj_estimation_time)
+results = run_second_stage_mip(0.1, 9, 3, 1, 600, start_temperature, alpha, iter_max, end_temperature, obj_estimation_time)
 
+print(results["obj"])"""
     
