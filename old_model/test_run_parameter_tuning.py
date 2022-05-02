@@ -1,8 +1,7 @@
 from functions_input import *
 from functions_output import *
 from model_cutting_stock import *
-from run_second_stage_pattern import *
-from run_second_stage_mip import *
+from heuristic_second_stage_pattern import *
 from model_mip import *
 import random
 
@@ -82,10 +81,10 @@ time_limit_EVS_and_fixed    =   60
 excel_file_name             =   'input_output/parameter_tuning_heuristic_pattern.xlsx'
 
 num_runs                    =   30
-initial_temp                =   [5,10,100]
-alpha                       =   [0.5, 0.75]
-i_max                       =   [25,50]
-end_temp                    =   [0.1,0.01,0.001]
+initial_temp                =   [20]
+alpha                       =   [0.5]
+i_max                       =   [4]
+end_temp                    =   [0.1]
 
 for temp0 in initial_temp:
     for alph in alpha:
@@ -97,8 +96,8 @@ for temp0 in initial_temp:
                 time_best_objectives    =   []
                 for run in range(num_runs):
                     #obj, time_obj, best_obj, time_best_obj = test_run(temp0,alph,i,temp1)
-                    end_results, global_best_results = run_second_stage_pattern(flex, num_groups, num_scenarios, seed,time_limit_EVS_and_fixed, temp0, alph, i, temp1)
-                    #end_results, global_best_results = run_second_stage_mip(flex, num_groups, num_scenarios, seed, time_limit_EVS_and_fixed, temp0, alph, i, temp1)
+                    end_results, global_best_results = run_second_stage_pattern_param_tuning(flex, num_groups, num_scenarios, seed,time_limit_EVS_and_fixed, temp0, alph, i, temp1)
+                    #end_results, global_best_results = run_second_stage_mip_param_tuning(flex, num_groups, num_scenarios, seed, time_limit_EVS_and_fixed, temp0, alph, i, temp1)
                     objectives.append(end_results["obj"])
                     time_objectives.append(end_results["runtime"])
                     best_objectives.append(global_best_results["obj"])
