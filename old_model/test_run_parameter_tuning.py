@@ -81,9 +81,9 @@ time_limit_EVS_and_fixed    =   60
 excel_file_name             =   'input_output/parameter_tuning_heuristic_pattern.xlsx'
 
 num_runs                    =   30
-initial_temp                =   [20]
+initial_temp                =   [10]
 alpha                       =   [0.5]
-i_max                       =   [4]
+i_max                       =   [25]
 end_temp                    =   [0.1]
 
 for temp0 in initial_temp:
@@ -96,6 +96,7 @@ for temp0 in initial_temp:
                 time_best_objectives    =   []
                 for run in range(num_runs):
                     #obj, time_obj, best_obj, time_best_obj = test_run(temp0,alph,i,temp1)
+                    print("run nr: %i"%run)
                     end_results, global_best_results = run_second_stage_pattern_param_tuning(flex, num_groups, num_scenarios, seed,time_limit_EVS_and_fixed, temp0, alph, i, temp1)
                     #end_results, global_best_results = run_second_stage_mip_param_tuning(flex, num_groups, num_scenarios, seed, time_limit_EVS_and_fixed, temp0, alph, i, temp1)
                     objectives.append(end_results["obj"])
