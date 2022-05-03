@@ -146,23 +146,15 @@ def read_input(file_name: str):
     input_dict["Mi_dur"]                        =   construct_dur_to_Mi(input_dict,input_dict["Mi"])
     input_dict["MSnxi"], MSnxi_dur              =   sort_MS_after_duration(input_dict,input_dict["MSnxi"], MSnxi_dur)
     input_dict["MSi"], MSi_dur                  =   sort_MS_after_duration(input_dict,input_dict["MSi"], MSi_dur)
-    
-    """print("MSi")
-    for s in input_dict["Si"]:
-        for m in input_dict["MSi"][s]:
-            print(input_dict["Mi_dur"][m])
-    print("MSnxi")
-    for s in input_dict["Si"]:
-        for m in input_dict["MSnxi"][s]:
-            print(input_dict["Mi_dur"][m])"""
         
-
     return input_dict
 
-def choose_correct_input_file(number_of_groups):
-    if number_of_groups in [4, 5, 9]:
+def choose_correct_input_file(number_of_groups: int):
+    if number_of_groups==5:
+        num_max_groups= "_5groups"
+    elif number_of_groups==9:
         num_max_groups= "_9groups"
-    elif number_of_groups in [12, 13, 25]:
+    elif number_of_groups==25:
         num_max_groups= "_25groups"
     else:
         print("Invalid number of groups")    
@@ -227,10 +219,8 @@ def edit_input_to_number_of_groups(input, number_of_groups):
         input["Ri"]=Ri
         Gi  = [g for g in range(number_of_groups-1,input["nGroups"])]
         input["Gi"]=Gi
-        print(Gi)
         GWi = [[g for g in range(number_of_groups-1,input["nGroups"])] for _ in range(input["nWards"])]
         input["GWi"]=GWi
-        print(GWi)
         for d in range(input["nDays"]):
             if input["N"][d]>0:
                 input["N"][d]=4  
