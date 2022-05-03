@@ -49,6 +49,24 @@ excel_file_name             =   'input_output/problem_size.xlsx'
 
 for cap in bed_caps:
     for ng in num_groups:
+        if ng == 5:
+            bed_scale       = 1
+            demand_scale    = 1
+            cap_scale       = 1
+            input = change_demand(input,demand_scale)
+        elif ng == 9:
+            bed_scale       = 1
+            demand_scale    = 1
+            cap_scale       = 1
+            input = change_demand(input,demand_scale)
+        elif ng == 25:
+            bed_scale       = 1
+            demand_scale    = 1
+            cap_scale       = 1
+            input = change_demand(input,demand_scale)
+        else:
+            print('No scaling factors exists')
+            break
         input_file_name         =   choose_correct_input_file(ng)
         input                   =   read_input(input_file_name)
         input                   =   change_ward_capacity(input, "MC", 60*cap,  49*cap)
