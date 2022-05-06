@@ -47,10 +47,6 @@ file_name                   =   choose_correct_input_file(number_of_groups)
 excel_file_name             =   'input_output/stability_test_matrix_'+ str(number_of_groups) + '_groups_new.xlsx'
 '---input parameter tuning---'
 input                       =   read_input(file_name)
-MC_cap                      =   [60,49]         #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IC_cap                      =   [11,6]          #[weekday,weekend]                          #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-input                       =   change_ward_capacity(input, "MC", MC_cap[0],  MC_cap[1])
-input                       =   change_ward_capacity(input, "IC", IC_cap[0],  IC_cap[1])
 
 '---loops---'
 flexibilities               =   [0]
@@ -76,9 +72,7 @@ alphabeth   =   ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K','L','M', 
                 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK','AL','AM', 'AN', 'AO', 'AP', 'AQ','AR', 'AS','AT','AU','AV','AW','AX','AY','AZ',
                 'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK','BL','BM', 'BN', 'BO', 'BP', 'BQ','BR', 'BS','BT','BU','BV','BW','BX','BY','BZ',
                 'CA', 'CB', 'CC', 'CD', 'CE', 'CF', 'CG', 'CH', 'CI', 'CJ', 'CK','CL','CM', 'CN', 'CO', 'CP', 'CQ','CR', 'CS','CT','CU','CV','CW','CX','CY','CZ']
-info                        =   'MC_cap:' + str(MC_cap[0]) +'/'+  str(MC_cap[1]) + ' IC_cap:' + str(IC_cap[0]) +'/'+  str(IC_cap[1]) + ' seeds_solutions:' + str(mip_seeds[0]) + '-' +str(mip_seeds[len(mip_seeds)-1]) + ' demand_factor:' + str(demand_factor)
-cell                        =   'A1'
-sheet[cell]                 =   info
+
 for flex in flexibilities:
     for iter in range(num_sols_to_investigate):
         pkl_name = 'first_stage_solution_'+ str(mip_seeds[iter]) + '_.pkl' 
@@ -104,7 +98,7 @@ for flex in flexibilities:
             for seed in seeds:     
                 results_i           =   copy.deepcopy(results)
                 input               =   generate_scenarios(input, n, seed) 
-                results_i           =   run_greedy_construction_heuristic_smart_fix(input, results_i,debug=False)
+                results_i           =   run_greedy_construction_heuristic(input, results_i,debug=False)
                 cell                =   alphabeth[col_index]+str(current_row_outlay + seed)
                 sheet[cell]         =   results_i["obj"]
         col_index                   =   0
