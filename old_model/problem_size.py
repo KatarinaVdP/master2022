@@ -38,14 +38,14 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
     ws.append(new_row)
     wb.save(excel_file_name)  
 
-num_groups                  =   [5,9,25]
-num_scenarios               =   [3,10,30,50,100]
-bed_caps                    =   [1.0, 0.6, 0.4]
-flexibilities               =   [0.1]
+num_groups                  =   [9]
+num_scenarios               =   [10]
+bed_caps                    =   [1.0]
+flexibilities               =   [0,0.05,0.1]
 
-time_to_mip                 =   3600
-seed                        =   1
-excel_file_name             =   'input_output/problem_size1.xlsx'
+time_to_mip                 =   20
+seeds                       =   [1,2,3,4,5]
+excel_file_name             =   'input_output/flexibility_complexity.xlsx'
 
 for cap in bed_caps:
     for ng in num_groups:
@@ -63,10 +63,11 @@ for cap in bed_caps:
         else:
             print('No scaling factors exists')
             break
-        for ns in num_scenarios:
-            input               =   generate_scenarios(input, ns, seed)
-            for flex in flexibilities:
-                results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
-                write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap)
-                print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
+        for seed in seeds:
+            for ns in num_scenarios:
+                input               =   generate_scenarios(input, ns, seed)
+                for flex in flexibilities:
+                    results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
+                    write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap)
+                    print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
             
