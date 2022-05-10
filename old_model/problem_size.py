@@ -39,13 +39,13 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
     wb.save(excel_file_name)  
 
 num_groups                  =   [9]
-num_scenarios               =   [10]
-bed_caps                    =   [1.0]
-flexibilities               =   [0,0.05,0.1]
+num_scenarios               =   [50]
+bed_caps                    =   [0.6]
+flexibilities               =   [0.1]
 
-time_to_mip                 =   20
+time_to_mip                 =   3600
 seeds                       =   [1,2,3,4,5]
-excel_file_name             =   'input_output/flexibility_complexity.xlsx'
+excel_file_name             =   'input_output/bed_ward_complexity06.xlsx'
 
 for cap in bed_caps:
     for ng in num_groups:
