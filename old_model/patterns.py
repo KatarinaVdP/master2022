@@ -84,10 +84,11 @@ def patterns_per_specialty(input):
         for i in range(len(patterns)):
             for duration, numbers in patterns[i].items():
                 for s, specialty2 in combinations_per_group(input).items():
-                    for j in range(len(specialty2)):
-                        for duration2 in specialty2[j]:
-                            if specialty == s and i == j and duration == (duration2 - cleaning_time):
-                                patterns[i][duration] += 1  
+                    if specialty == s:
+                        for j in range(len(specialty2)):
+                            for duration2 in specialty2[j]:
+                                if i == j and duration == (duration2 - cleaning_time):
+                                    patterns[i][duration] += 1  
                                 
     return patterns_per_specialty
                                 
@@ -134,10 +135,11 @@ def patterns_per_specialty_extended(input):
         for i in range(len(patterns)):
             for duration, numbers in patterns[i].items():
                 for s, specialty2 in combinations_per_group_extended(input).items():
-                    for j in range(len(specialty2)):
-                        for duration2 in specialty2[j]:
-                            if specialty == s and i == j and duration == duration2 - cleaning_time:
-                                patterns[i][duration] += 1      
+                    if specialty == s:
+                        for j in range(len(specialty2)):
+                            for duration2 in specialty2[j]:
+                                if i == j and duration == duration2 - cleaning_time:
+                                    patterns[i][duration] += 1      
     
     return patterns_per_specialty_extended                          
 
