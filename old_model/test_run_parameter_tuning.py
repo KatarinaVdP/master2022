@@ -75,16 +75,17 @@ def write_to_excel_parameter_tuning(excel_file_name: str, num_runs: int, initial
 num_groups                  =   9
 num_scenarios               =   250
 flex                        =   0.1
-seed                        =   1
+seed                        =   2
 time_limit_EVS_and_fixed    =   60
 
-excel_file_name             =   'input_output/parameter_tuning_heuristic_pattern.xlsx'
 
-num_runs                    =   30
-initial_temp                =   [1]
-alpha                       =   [0.5,0.75]
-i_max                       =   [25,50]
-end_temp                    =   [0.1,0.01]
+#excel_file_name             =   'input_output/parameter_tuning_heuristic_pattern.xlsx'
+
+num_runs                    =   1
+initial_temp                =   [1000]
+alpha                       =   [0.9]
+i_max                       =   [50]
+end_temp                    =   [0.01]
 
 for temp0 in initial_temp:
     for alph in alpha:
@@ -103,5 +104,13 @@ for temp0 in initial_temp:
                     time_objectives.append(end_results["runtime"])
                     best_objectives.append(global_best_results["obj"])
                     time_best_objectives.append(global_best_results["runtime"])
-                write_to_excel_parameter_tuning(excel_file_name,        num_runs, temp0, alph, i, temp1,       objectives, time_objectives, best_objectives, time_best_objectives)
+                    
+                    
+                    #test-fixed-model
+                    input_file_name             =   choose_correct_input_file(num_groups)
+                    input                       =   read_input(input_file_name)
+                    input["F"]                  =   flex
+                    input                       =   generate_scenarios(input,num_scenarios,seed)
+                    global_best_results         = run_model_mip_fixed(input,global_best_results,1000,print_optimizer = True)
+                #write_to_excel_parameter_tuning(excel_file_name,        num_runs, temp0, alph, i, temp1,       objectives, time_objectives, best_objectives, time_best_objectives)
                     

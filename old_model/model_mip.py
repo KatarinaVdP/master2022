@@ -131,6 +131,8 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
             for d in Di:
                 gamm[s,r,d].lb=0
                 gamm[s,r,d].ub=0
+                """lamb[s,r,d].lb=0
+                lamb[s,r,d].ub=0    look at this later!"""
                 for c in Ci:
                     delt[s,r,d,c].lb=0
                     delt[s,r,d,c].ub=0  
@@ -227,7 +229,7 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
 
     return result_dict, input_dict
 
-def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False): 
+def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False, create_model_and_warmstart_file=True): 
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -373,7 +375,8 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
         print('Did not find any feasible initial solution in read_model_fixed()')
         return
     else:
-        m.write('model.mps')
-        m.write('warmstart.mst')               
+        if create_model_and_warmstart_file:
+            m.write('model.mps')
+            m.write('warmstart.mst')               
         result_dict =  save_results(m, input_dict, result_dict)
     return result_dict

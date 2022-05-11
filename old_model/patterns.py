@@ -151,14 +151,16 @@ def patterns_extended(input):
     list_pattern_extended   =   0
     start_group_extended    =   0
     for patterns in patterns_per_specialty_extended(input).values():
+        for pattern in patterns:
+            group = start_group_extended
+            for number in pattern.values():
+                list_patterns_extended[list_pattern_extended][group] = number
+                group += 1
+            list_pattern_extended += 1
         if len(patterns) > 0:
-            for pattern in patterns:
-                group = start_group_extended
-                for number in pattern.values():
-                    list_patterns_extended[list_pattern_extended][group] = number
-                    group += 1
-                list_pattern_extended += 1
             start_group_extended += len(patterns[0])
+        else:
+            start_group_extended += 1
         
     return list_patterns_extended
 
