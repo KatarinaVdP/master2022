@@ -283,45 +283,26 @@ def run_second_stage_pattern_param_tuning(flexibility: float, number_of_groups: 
     input_file_name =   choose_correct_input_file(number_of_groups)
     input           =   read_input(input_file_name)
 
-    #----- Try to load initial model run from earlier ----  
-    if os.path.exists("model_solution.pkl"):
-        with open("model_solution.pkl","rb") as f:
-            saved_values    = pickle.load(f)
-        input_saved             =   saved_values["input"]
-        nScenarios_saved        =   input_saved["nScenarios"]
-        number_of_groups_saved  =   input_saved["nGroups"]
-        seed_saved              =   input_saved["seed"]
-        flexibility_saved       =   input_saved["F"]
-        if nScenarios == nScenarios_saved and number_of_groups == number_of_groups_saved and seed == seed_saved and flexibility == flexibility_saved:
-            model_run_exists = True
-            
-        if model_run_exists:     
-            input = saved_values["input"]
-            results = saved_values["results"]
-            print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS - USING PICKLED RESULTS")
-            results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
-
     #----- If initial model run is not found, run as usual -----   
-    else:
-        #----- Find EVS as initial MSS ----  
-        print("RUNNING MIP-MODEL TO FIND EVS")
-        results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
-        if results["status"]==0:
-            print('No solutions found in given runtime')
-            return
-        results         = categorize_slots(input, results)
-        input           = generate_scenarios(input, nScenarios, seed)
-        #--- Saving solution in pickle ---
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
-        with open("model_solution.pkl","wb") as f:
-            pickle.dump(saved_values,f)
-        
-        #----- Begin Heuristic ----  
-        print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS")
-        
-        results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature)
+    #----- Find EVS as initial MSS ----  
+    print("RUNNING MIP-MODEL TO FIND EVS")
+    results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
+    if results["status"]==0:
+        print('No solutions found in given runtime')
+        return
+    results         = categorize_slots(input, results)
+    input           = generate_scenarios(input, nScenarios, seed)
+    #--- Saving solution in pickle ---
+    saved_values            =   {}
+    saved_values["input"]   =   input
+    saved_values["results"] =   results
+    with open("model_solution.pkl","wb") as f:
+        pickle.dump(saved_values,f)
+    
+    #----- Begin Heuristic ----  
+    print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS")
+    
+    results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature)
     return results, global_best_sol
 
 def run_second_stage_pattern(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):

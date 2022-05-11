@@ -75,7 +75,7 @@ def write_to_excel_parameter_tuning(excel_file_name: str, num_runs: int, initial
 num_groups                  =   9
 num_scenarios               =   250
 flex                        =   0.1
-seed                        =   2
+seed                        =   3
 time_limit_EVS_and_fixed    =   60
 
 
@@ -111,6 +111,11 @@ for temp0 in initial_temp:
                     input                       =   read_input(input_file_name)
                     input["F"]                  =   flex
                     input                       =   generate_scenarios(input,num_scenarios,seed)
-                    global_best_results         = run_model_mip_fixed(input,global_best_results,1000,print_optimizer = True)
+                    print("global Best pore_fix: %.2f " %global_best_results["obj"])
+                    print("end pore_fix: %.2f " %end_results["obj"])
+                    global_best_results         =   run_model_mip_fixed(input,global_best_results,1000,print_optimizer = True,create_model_and_warmstart_file=False)
+                    end_results                 =   run_model_mip_fixed(input,end_results,1000,print_optimizer = True,create_model_and_warmstart_file=False)
+                    print("global Best post_fix: %.2f " %global_best_results["obj"])
+                    print("end post_fix: %.2f " %end_results["obj"])
                 #write_to_excel_parameter_tuning(excel_file_name,        num_runs, temp0, alph, i, temp1,       objectives, time_objectives, best_objectives, time_best_objectives)
                     
