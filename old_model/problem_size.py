@@ -1,6 +1,7 @@
 from functions_input import *
 from functions_output import *
 from model_mip import *
+from model_cutting_stock import *
 from heuristic_greedy_construction import *
 from openpyxl import Workbook
 from openpyxl import load_workbook
@@ -38,14 +39,14 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
     ws.append(new_row)
     wb.save(excel_file_name)  
 
-num_groups                  =   [9]
-num_scenarios               =   [50]
+num_groups                  =   [25,9,5]
+num_scenarios               =   [10,50,100]
 bed_caps                    =   [0.6]
-flexibilities               =   [0.1]
+flexibilities               =   [0.0,0.1]
 
 time_to_mip                 =   3600
-seeds                       =   [1,2,3,4,5]
-excel_file_name             =   'input_output/bed_ward_complexity06.xlsx'
+seeds                       =   [1]
+excel_file_name             =   'input_output/problem_size_pattern_new_06.xlsx'
 
 for cap in bed_caps:
     for ng in num_groups:
@@ -67,7 +68,8 @@ for cap in bed_caps:
             for ns in num_scenarios:
                 input               =   generate_scenarios(input, ns, seed)
                 for flex in flexibilities:
-                    results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
+                    #results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
+                    results, input          =   run_model_cutting_stock(input,flex,time_to_mip,print_optimizer = True)
                     write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap)
                     print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
             
