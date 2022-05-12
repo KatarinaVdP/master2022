@@ -6,7 +6,7 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 
 
-def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: int, nScenarios: int, seed: int, bed_cap_factor: float):
+def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: int, nScenarios: int, seed: int, bed_cap_factor: float, nGroups:int):
     try:
         wb = load_workbook(excel_file_name)
         ws = wb.worksheets[0]
@@ -16,6 +16,7 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
         wb.save(excel_file_name)
         ws = wb.worksheets[0]
         header_row=[]
+        header_row.append("nGroups")
         header_row.append("flex")
         header_row.append("nScenarios")
         header_row.append("seed")
@@ -27,6 +28,7 @@ def write_to_excel_problem_size(excel_file_name: str, results_mip: dict, flex: i
         ws.append(header_row)
         wb.save(excel_file_name) 
     new_row = []  
+    new_row.append(nGroups)
     new_row.append(flex)
     new_row.append(nScenarios)
     new_row.append(seed)
@@ -68,6 +70,6 @@ for cap in bed_caps:
                 input               =   generate_scenarios(input, ns, seed)
                 for flex in flexibilities:
                     results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
-                    write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap)
+                    write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap,ng)
                     print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
             
