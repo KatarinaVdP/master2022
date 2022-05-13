@@ -126,13 +126,13 @@ def write_to_excel_model(file_name,input_dict,output_dict):
 
 def write_to_excel_heuristic(excel_file_name,input_dict, best_sol, current_sol, action,time: float, global_iter = 0, level = 0, iter = 0, current_gap = -1, only_if_move = True):
     if global_iter > 0 and current_gap >= 0:
-        new_row = [global_iter, level, iter, best_sol, current_sol, current_gap, str(action)]
+        new_row = [global_iter, level, iter,    best_sol, current_sol, current_gap,    str(action)]
     elif global_iter > 0 and current_gap == -1:
-        new_row = [global_iter, level, iter, best_sol, current_sol, str(action)]
+        new_row = [global_iter, level, iter,    best_sol, current_sol, " ",            str(action)]
     elif global_iter == 0 and current_gap > 0:
-        new_row = [best_sol, current_sol, current_gap, str(action)]
+        new_row = [" ",         " ",    " ",    best_sol, current_sol, current_gap,    str(action)]
     else:
-        new_row = [best_sol, current_sol, str(action)]
+        new_row = [" ",         " ",    " ",    best_sol, current_sol, " ",            str(action)]
         
     try:
         wb = load_workbook(excel_file_name)

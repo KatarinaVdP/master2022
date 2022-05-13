@@ -307,7 +307,7 @@ def run_second_stage_mip_param_tuning(flexibility: float, nGroups: int, nScenari
         results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
     return results, global_best_sol
 
-def run_second_stage_mip(output_file_name:str ,flexibility: float, nGroups: int, nScenarios: int, seed: int, EVS_time: int,first_fix_time: int, obj_estimation_time: int, temperature, alpha, iter_max, end_temperature):
+def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, nGroups: int, nScenarios: int, seed: int, EVS_time: int,first_fix_time: int, obj_estimation_time: int, temperature, alpha, iter_max, end_temperature):
     print("\n")
     run_or_create_fast_start    = False
     
@@ -319,16 +319,15 @@ def run_second_stage_mip(output_file_name:str ,flexibility: float, nGroups: int,
         initiate_excel_book(excel_file,input)
     
     #---- Increasing the capacity of bed wards to normal level
-    scaling_factor  =   1
     if nGroups ==25:
-        input           =   change_ward_capacity(input, "MC",72.4*scaling_factor,56*scaling_factor)
-        input           =   change_ward_capacity(input, "IC",14.5*scaling_factor,6.1*scaling_factor) 
+        input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
+        input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
     elif nGroups ==9:
-        input           =   change_ward_capacity(input, "MC",60*scaling_factor,49*scaling_factor)
-        input           =   change_ward_capacity(input, "IC",11*scaling_factor,6*scaling_factor)  
+        input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
+        input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
     elif nGroups ==5:
-        input           =   change_ward_capacity(input, "MC",50.5*scaling_factor,42*scaling_factor)
-        input           =   change_ward_capacity(input, "IC",9.1*scaling_factor,5.6*scaling_factor)
+        input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
+        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)
 
         
     #----- Try to load initial model run from earlier ----  
@@ -415,4 +414,4 @@ def run_second_stage_mip(output_file_name:str ,flexibility: float, nGroups: int,
         print_solution_performance(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
         
-    return results, global_best_sol
+    return results, global_best_sol, input

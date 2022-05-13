@@ -163,7 +163,7 @@ def choose_correct_input_file(number_of_groups: int):
     return file_name
 
 #--- input functions overrite input dictionary according to instances to run ---#
-def edit_input_to_number_of_groups(input, number_of_groups):
+"""def edit_input_to_number_of_groups(input, number_of_groups):
     input["number_of_groups"]=number_of_groups
     if number_of_groups==4 or number_of_groups==12:
         Si  = [0,1]
@@ -259,7 +259,7 @@ def edit_input_to_number_of_groups(input, number_of_groups):
             2.7,    2.7,	2.7,    2.7,    1.5,    1.5,    1.5,
             2.7,    2.7,	2.7,    2.7,    1.5,    1.5,    1.5]
             
-    return input
+    return input"""
 
 def generate_scenarios(input_dict, nScenarios, seed):
         groups                  =   input_dict["G"]

@@ -305,20 +305,25 @@ def run_second_stage_pattern_param_tuning(flexibility: float, number_of_groups: 
     results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature)
     return results, global_best_sol
 
-def run_second_stage_pattern(output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):
+def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):
     print("\n\n")
     run_or_create_fast_start = False
     input_file_name =   choose_correct_input_file(number_of_groups)
     excel_file      =   output_file_name
     input           =   read_input(input_file_name)
-    
-    #---- Increasing the capacity of bed wards to normal level
-    """input = change_ward_capacity(input, "MC", 60, 49)
-    input = change_ward_capacity(input, "IC", 11, 6)"""
 
-    #----- OBS! Dersom number_of_groups ikke er 9 eller 25 så vil funksjonen under vil gjøre det
-    #----- trangt på wards uavhengig av om change_ward_capacity har blitt brukt til å relaksere
-    input           =   edit_input_to_number_of_groups(input, number_of_groups)
+    #---- Increasing the capacity of bed wards to normal level
+    if number_of_groups ==25:
+        input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
+        input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
+    elif number_of_groups ==9:
+        input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
+        input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
+    elif number_of_groups ==5:
+        input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
+        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)
+    
+    
     if not os.path.exists(excel_file):
         initiate_excel_book(excel_file,input)
     #----- Try to load initial model run from earlier ----  
@@ -407,6 +412,6 @@ def run_second_stage_pattern(output_file_name: str, flexibility: float, number_o
         
         #print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
-    return results, global_best_sol
+    return results, global_best_sol, input
     
 
