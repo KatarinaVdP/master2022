@@ -1,3 +1,4 @@
+from numpy import False_
 from functions_input import *
 from functions_output import *
 from model_cutting_stock import *
@@ -59,18 +60,18 @@ def write_string_to_excel_heuristic_run(excel_file_name, string, sheet_number=0)
     ws.append(string)
     wb.save(excel_file_name)
     
-second_stage_pattern        =   True
+second_stage_pattern        =   False
 
 num_groups                  =   9
-num_scenarios               =   2
+num_scenarios               =   250
 flex                        =   0.1
 seed                        =   1
 
-time_limit_EVS              =   10
-time_limit_first_fix        =   10      # only second_stage_mip
-time_limit_iteration        =   10      # only second_stage_mip
-time_limit_last_fix         =   10    # only second_stage_mpattern
-num_runs                    =   2
+time_limit_EVS              =   60
+time_limit_first_fix        =   600    # only second_stage_mip
+time_limit_iteration        =   20     # only second_stage_mip
+time_limit_last_fix         =   600    # only second_stage_mpattern
+num_runs                    =   30
 beta                        =   1.0
 
 if second_stage_pattern:
@@ -82,19 +83,15 @@ else:
 
 
 if second_stage_pattern:
-    initial_temp                =   1
-    alpha                       =   0.3
-    i_max                       =   1
-    end_temp                    =   0.1
+    initial_temp                =   1000
+    alpha                       =   0.9
+    i_max                       =   50
+    end_temp                    =   0.01
 else:
-    initial_temp                =   1
-    alpha                       =   0.3
-    i_max                       =   1
-    end_temp                    =   0.1
-    """initial_temp                =   1000
+    initial_temp                =   1000
     alpha                       =   0.9
     i_max                       =   25
-    end_temp                    =   0.01"""
+    end_temp                    =   0.01
 
 
 for run in range(num_runs):
