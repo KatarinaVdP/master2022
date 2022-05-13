@@ -124,8 +124,8 @@ def write_to_excel_model(file_name,input_dict,output_dict):
     ws.append(new_row)
     wb.save(file_name)
 
-def write_to_excel_heuristic(excel_file_name,input_dict, best_sol, current_sol, action, global_iter = 0, level = 0, iter = 0, current_gap = -1, only_if_move = False):
-    if global_iter > 0 and current_gap > 0:
+def write_to_excel_heuristic(excel_file_name,input_dict, best_sol, current_sol, action,time: float, global_iter = 0, level = 0, iter = 0, current_gap = -1, only_if_move = True):
+    if global_iter > 0 and current_gap >= 0:
         new_row = [global_iter, level, iter, best_sol, current_sol, current_gap, str(action)]
     elif global_iter > 0 and current_gap == -1:
         new_row = [global_iter, level, iter, best_sol, current_sol, str(action)]
@@ -142,7 +142,8 @@ def write_to_excel_heuristic(excel_file_name,input_dict, best_sol, current_sol, 
         wb = load_workbook(excel_file_name)
         ws = wb.worksheets[1]
     if only_if_move:
-        if action == "MOVE":
+        if action == "MOVE" or action == "MOVE*":
+            new_row.append(time)
             ws.append(new_row)
             wb.save(excel_file_name)
     else:

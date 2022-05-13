@@ -37,7 +37,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
     best_sol = copy.deepcopy(results)
     print("\nPerformance of initial solution:  %d" % best_sol["obj"])
     write_to_excel_model(excel_file,input,best_sol)
-    write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, 0, 0, 0)
+    write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, start_time - time.time(), 0, 0, 0)
     '''print()
     print_MSS(input, results)
     print()'''
@@ -98,7 +98,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
             # ----- Printing iteration to console -----
             current_time = (time.time()-start_time)
             print_heuristic_iteration(best_sol["obj"], results["obj"], swap_type, action, current_time, global_iter, level, levels, iter, iter_max)
-            write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, global_iter, level, iter, results["MIPGap"])
+            write_to_excel_heuristic(excel_file, input, best_sol["obj"], results["obj"], action, current_time, global_iter, level, iter, results["MIPGap"])
             iter += 1
             global_iter += 1 
             
@@ -305,11 +305,11 @@ def run_second_stage_pattern_param_tuning(flexibility: float, number_of_groups: 
     results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature)
     return results, global_best_sol
 
-def run_second_stage_pattern(flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):
+def run_second_stage_pattern(output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):
     print("\n\n")
     run_or_create_fast_start = False
     input_file_name =   choose_correct_input_file(number_of_groups)
-    excel_file      =   "input_output/" + "results.xlsx"
+    excel_file      =   output_file_name
     input           =   read_input(input_file_name)
     
     #---- Increasing the capacity of bed wards to normal level
@@ -378,9 +378,8 @@ def run_second_stage_pattern(flexibility: float, number_of_groups: int, nScenari
             return
         results         = categorize_slots(input, results)
         print_solution_performance(input, results)
-        print_MSS(input, results)
+        #print_MSS(input, results)
     
-        
         
         input           = generate_scenarios(input, nScenarios, seed)
         #--- Saving solution in pickle ---
@@ -390,7 +389,7 @@ def run_second_stage_pattern(flexibility: float, number_of_groups: int, nScenari
             saved_values["results"] =   results
             with open("model_solution.pkl","wb") as f:
                 pickle.dump(saved_values,f)
-        print('\n' * 5)
+        print('\n')
         
         #----- Begin Heuristic ----  
         print("------------------------------------------------------------------------------------------------------------------")
@@ -398,14 +397,15 @@ def run_second_stage_pattern(flexibility: float, number_of_groups: int, nScenari
         print("------------------------------------------------------------------------------------------------------------------")
         write_new_run_header_to_excel(excel_file,input,sheet_number=1)
         write_new_run_header_to_excel(excel_file,input,sheet_number=2)
+        
         results, global_best_sol = heuristic_second_stage_pattern(excel_file, input, results, temperature, alpha, iter_max, end_temperature)
         results = translate_heristic_results(input,results)
         results = categorize_slots(input, results)
         
-        print("\nGlobally best found solution:")
-        print(global_best_sol["obj"])
+        #print("\nGlobally best found solution:")
+        #print(global_best_sol["obj"])
         
-        print_MSS(input, results)
+        #print_MSS(input, results)
         write_to_excel_MSS(excel_file,input,results,initial_MSS=False)
     return results, global_best_sol
     

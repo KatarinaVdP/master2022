@@ -394,7 +394,7 @@ def swap_fixed_with_flexible_GN_GO(input, results, print_swap = False):
         
     return swap_done, new_fixed_slot, new_flexible_slot, extended
 
-def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap = False):
+def swap_fixed_with_flexible_UR_KA_EN(d, input, results, print_swap):
     
     swap_done = False
     extended = False
