@@ -5,13 +5,13 @@ from model_cutting_stock import *
 from model_mip import *
 
 
-nGroups         = 25
-nScenarios      = 1
+nGroups         = 9
+nScenarios      = 250
 seed            = 1
-flex            = 0
-time_limit      = 1000
+flex            = 0.1
+time_limit      = 43200
 
-scaling_factor  = 0
+scaling_factor  = 1.0
 
 input_file_name =   choose_correct_input_file(nGroups)
 input           =   read_input(input_file_name)
@@ -27,8 +27,8 @@ elif nGroups==5:
     input           =   change_ward_capacity(input, "IC",9.1*scaling_factor,5.6*scaling_factor)
 
 input           =   generate_scenarios(input, nScenarios, seed)
-#results, input  =   run_model_mip(input, flex, time_limit, expected_value_solution = False, print_optimizer = True)
-results, input  =   run_model_cutting_stock(input, flex, time_limit, print_optimizer = True)
+results, input  =   run_model_mip(input, flex, time_limit, expected_value_solution = False, print_optimizer = True)
+#results, input  =   run_model_cutting_stock(input, flex, time_limit, print_optimizer = True)
 
 results         =   categorize_slots(input, results)
 print_MSS(input, results)
@@ -37,3 +37,4 @@ print_expected_bed_util_percent(input,results)
 print_expected_que(input,results)
 #initiate_excel_book('results_bed_ward_tuning3.xlsx',input)
 #write_to_excel_model('results_bed_ward_tuning3.xlsx',input,results)
+print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f " %(nGroups,nScenarios,flex,scaling_factor, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]) )
