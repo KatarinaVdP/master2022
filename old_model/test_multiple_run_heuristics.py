@@ -62,13 +62,14 @@ def write_string_to_excel_heuristic_run(excel_file_name, string, sheet_number=0)
     wb.save(excel_file_name)
 
 second_stage_pattern        =   True
-fast_run                    =   False
+fast_run                    =   True
 
 check_end_solution          =   False
 check_best_solution         =   True
+check_beginning_solution    =   False
 
 GAP_limit                   =   True
-GAP_limit_value             =   0.1
+GAP_limit_value             =   0.01
 
 save_best_solution_as_pickle=   True
 run_best_solution           =   True
@@ -83,7 +84,7 @@ time_limit_first_fix        =   600    # only second_stage_mip
 time_limit_iteration        =   20     # only second_stage_mip
 time_limit_last_fix         =   600    # only second_stage_mpattern
 
-num_runs                    =   2
+num_runs                    =   1
 beta                        =   1.0
 
 
@@ -101,20 +102,16 @@ if second_stage_pattern:
     i_max                       =   50
     end_temp                    =   0.01
     
-    initial_temp                =   10
-    alpha                       =   0.3
-    i_max                       =   2
-    end_temp                    =   0.1
 else:
     initial_temp                =   1000
     alpha                       =   0.9
     i_max                       =   25
     end_temp                    =   0.01
     
-    initial_temp                =   10
-    alpha                       =   0.3
-    i_max                       =   2
-    end_temp                    =   0.1
+"""initial_temp                =   10
+alpha                       =   0.3
+i_max                       =   2
+end_temp                    =   0.1"""
 
 if run_best_solution:
     run = 2
@@ -136,7 +133,7 @@ else:
         print("init_temp: %.2f, alpha: %.2f,  iter: %i, end_temp: %.3f, run nr: %i" %(initial_temp, alpha, i_max, end_temp, run))
         if second_stage_pattern:
             if fast_run:
-                end_results, global_best_results, input =   run_second_stage_pattern_param_tuning(beta,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
+                end_results, global_best_results, input =   run_second_stage_pattern_param_tuning(beta,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=check_beginning_solution)
                 if check_end_solution:
                     end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
                     string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]
@@ -146,7 +143,7 @@ else:
                     string_to_write     =   ['Best_sol_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
                     print(string_to_write)
             else:                                                                
-                end_results, global_best_results, input =   run_second_stage_pattern(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
+                end_results, global_best_results, input =   run_second_stage_pattern(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=check_beginning_solution)
                 if check_end_solution:
                     end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
                     string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]

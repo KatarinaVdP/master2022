@@ -4,6 +4,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import numpy as np
 from functions_output import *
+import time
 
 def save_results(m, input_dict, result_dict): 
     # ----- Copying the desicion variable values to result dictionary -----
@@ -57,7 +58,7 @@ def save_results(m, input_dict, result_dict):
     
     return result_dict
 
-def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False):    
+def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution = False, print_optimizer = False, MIPgap_limit=True, MIPgap_value=0.01):    
     #----- Sets ----- #  
     nDays =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -112,6 +113,8 @@ def run_model_mip(input_dict, flexibility, time_limit, expected_value_solution =
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    if MIPgap_limit:
+        m.setParam("MIPGap", MIPgap_value)
     # m.setParam("MIPFocus", 3) 
     # finding feasible solutions quickly:1
     # no trouble finding good quality solutions, more attention on proving optimality: 2 
@@ -553,6 +556,7 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
     return result_dict
 
 def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False, create_model_and_warmstart_file=True,MIPgap_limit=False,MIPGap_value=0.01): 
+    start_time = time.time()
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -692,6 +696,8 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
         )
     print(' (3/3)')
 
+    end_time = start_time- time.time()
+    print('time to create fixed first stage model: %.1f seconds'%end_time)
     m.optimize()
     result_dict = save_results_pre(m)
 
