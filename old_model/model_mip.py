@@ -552,7 +552,7 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
         result_dict =  save_results(m, input_dict, result_dict)
     return result_dict
 
-def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False, create_model_and_warmstart_file=True,MIPgap_limit=False): 
+def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = False, create_model_and_warmstart_file=True,MIPgap_limit=False,MIPGap_value=0.01): 
     #----- Sets ----- #  
     nDays           =   input_dict["nDays"]
     Wi  =   input_dict["Wi"]
@@ -589,9 +589,9 @@ def run_model_mip_fixed(input_dict,output_dict, time_limit, print_optimizer = Fa
     #----- Model ----- #
     m = gp.Model("mss_mip")
     m.setParam("TimeLimit", time_limit)
+    
     if MIPgap_limit:
-        gap_limit=0.001
-        m.setParam("MIPGap", gap_limit)
+        m.setParam("MIPGap", MIPgap_limit)
     #m.setParam("MIPFocus", 3) 
     # finding feasible solutions quickly:1
     # no trouble finding good quality solutions, more attention on proving optimality: 2 

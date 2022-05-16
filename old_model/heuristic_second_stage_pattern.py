@@ -284,21 +284,24 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
         print("Invalid swap type passed to pattern_change_bound().")
     return results
 
-def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True,parameter_tuning=False):
+def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature,check_start_solution=False):
     print("\n\n")
     input_file_name =   choose_correct_input_file(number_of_groups)
     input           =   read_input(input_file_name)
 
     #---- Increasing the capacity of bed wards to normal level
-    if number_of_groups ==25:
+    """if nGroups ==25:
         input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
         input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
-    elif number_of_groups ==9:
+    elif nGroups ==9:
         input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
         input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
-    elif number_of_groups ==5:
+    elif nGroups ==5:
         input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
-        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)
+        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)"""
+    
+    input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
+    input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
 
     #----- If initial model run is not found, run as usual -----   
     #----- Find EVS as initial MSS ----  
@@ -315,20 +318,20 @@ def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, numbe
     saved_values["results"] =   results
     with open("model_solution.pkl","wb") as f:
         pickle.dump(saved_values,f)
-    
-    """print("CHECK START SOLUTION")
-    results_start           =   copy.deepcopy(results)
-    results_start           =   run_model_mip_fixed(input,results_start,600,print_optimizer = False,create_model_and_warmstart_file=False)
-    string_to_write= ['Start_sol_preformance:  obj: ' + str(results_start['obj']) + 'best bound: '+str(results_start['best_bound']) + 'MIPgap: '+str(results_start['MIPGap'])+'runtime : ' + str(results_start['runtime'])]
-    print(string_to_write)"""
-    #write_to_excel_model(output_file_name,input,global_best_results)
+    if check_start_solution:
+        print("CHECK START SOLUTION")
+        results_start           =   copy.deepcopy(results)
+        results_start           =   run_model_mip_fixed(input,results_start,1200,print_optimizer = True,create_model_and_warmstart_file=False)
+        string_to_write= ['Start_sol_preformance:  obj: ' + str(results_start['obj']) + 'best bound: '+str(results_start['best_bound']) + 'MIPgap: '+str(results_start['MIPGap'])+'runtime : ' + str(results_start['runtime'])]
+        print(string_to_write)
+        #write_to_excel_model(output_file_name,input,global_best_results)
     #----- Begin Heuristic ----  
     print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS")
     
     results, global_best_sol = heuristic_second_stage_pattern_param_tuning(input, results, temperature, alpha, iter_max, end_temperature)
     return results, global_best_sol, input
 
-def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature, new_input=True):
+def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature,check_start_solution=False):
     print("\n\n")
     run_or_create_fast_start = False
     input_file_name =   choose_correct_input_file(number_of_groups)
@@ -336,15 +339,18 @@ def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: flo
     input           =   read_input(input_file_name)
 
     #---- Increasing the capacity of bed wards to normal level
-    if number_of_groups ==25:
+    """if nGroups ==25:
         input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
         input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
-    elif number_of_groups ==9:
+    elif nGroups ==9:
         input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
         input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
-    elif number_of_groups ==5:
+    elif nGroups ==5:
         input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
-        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)
+        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)"""
+    
+    input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
+    input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
     
     
     if not os.path.exists(excel_file):
@@ -418,7 +424,13 @@ def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: flo
             with open("model_solution.pkl","wb") as f:
                 pickle.dump(saved_values,f)
         print('\n')
-        
+        if check_start_solution:
+            print("CHECK START SOLUTION")
+            results_start           =   copy.deepcopy(results)
+            results_start           =   run_model_mip_fixed(input,results_start,1200,print_optimizer = True,create_model_and_warmstart_file=False)
+            string_to_write= ['Start_sol_preformance:  obj: ' + str(results_start['obj']) + 'best bound: '+str(results_start['best_bound']) + 'MIPgap: '+str(results_start['MIPGap'])+'runtime : ' + str(results_start['runtime'])]
+            print(string_to_write)
+            write_to_excel_model(output_file_name,input,results_start )
         #----- Begin Heuristic ----  
         print("------------------------------------------------------------------------------------------------------------------")
         print("INITIATING GREEDY HEURISTIC SEARCH FROM EVS")

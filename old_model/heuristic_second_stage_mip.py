@@ -9,7 +9,7 @@ from functions_output import *
 from functions_heuristic import *
 import pickle
 
-def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, start_temperature, alpha, iter_max, end_temperature, print_optimizer = False):
+def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, start_temperature, alpha, iter_max, end_temperature, print_optimizer = False,MIPgap_limit=False,MIPgap_value=0.01):
     input                       =   input_dict
     start_time                  =   time.time()
     best_sol                    =   last_output
@@ -19,6 +19,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     if not print_optimizer:
         m.Params.LogToConsole   =   0
     m.setParam("TimeLimit", time_limit)
+    if MIPgap_limit:
+        m.setParam("MIPGap",MIPgap_value)
     m.update()
     print("\n"*3)
 
@@ -251,63 +253,7 @@ def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap
             print("Swap not found")
     return m
 
-def run_second_stage_mip_param_tuning(flexibility: float, nGroups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature):
-    print("\n\n")
-    obj_estimation_time = time_limit
-    
-    input_file_name =   choose_correct_input_file(nGroups)
-    excel_file      =   "input_output/" + "results.xlsx"
-    input           =   read_input(input_file_name)
-    
-    #----- Try to load initial model run from earlier ----  
-    model_run_exists = False
-    if os.path.exists("model_solution.pkl"):
-        with open("model_solution.pkl","rb") as f:
-            saved_values    = pickle.load(f)
-        input_saved             =   saved_values["input"]
-        nScenarios_saved        =   input_saved["nScenarios"]
-        nGroups_saved           =   input_saved["nGroups"]
-        seed_saved              =   input_saved["seed"]
-        flexibility_saved       =   input_saved["F"]
-        if os.path.exists('model.mps') and nScenarios == nScenarios_saved and nGroups == nGroups_saved and seed == seed_saved and flexibility == flexibility_saved:
-            model_run_exists = True   
-    if model_run_exists:     
-        input = saved_values["input"]
-        results = saved_values["results"]
-        results = categorize_slots(input, results)
-
-        #----- Begin Heuristic ---- 
-        print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
-        write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-        results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
-        results =   categorize_slots(input, results)
-
-    #----- If initial model run is not found, run as usual -----   
-    else:
-        #----- Find EVS as initial MSS ----  
-        print("RUNNING MIP-MODEL TO FIND EVS")
-        results, input  =   run_model_mip(input, flexibility, time_limit, expected_value_solution = True, print_optimizer = False)
-        if results["status"]==0:
-            print('No solutions found in given runtime')
-            return
-        #----- Creating model and fixed first-stage solution to EVS  ---- 
-        print("RUNNING FIXED FIRST-STAGE TO EVALUATE EVS PERFORMANCE") 
-        input           = generate_scenarios(input, nScenarios, seed)
-        results         = run_model_mip_fixed(input,results,time_limit, print_optimizer=True) # --- 'model.mps' and 'warmstart.mst' are created
-        results         = categorize_slots(input, results)
-        #--- Saving solution in pickle ---
-        saved_values            =   {}
-        saved_values["input"]   =   input
-        saved_values["results"] =   results
-        with open("model_solution.pkl","wb") as f:
-            pickle.dump(saved_values,f)
-        
-        #----- Begin Heuristic ----  
-        print("INITIATING HEURISTIC SEARCH FROM EVS")
-        results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
-    return results, global_best_sol
-
-def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, nGroups: int, nScenarios: int, seed: int, EVS_time: int,first_fix_time: int, obj_estimation_time: int, temperature, alpha, iter_max, end_temperature):
+def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, nGroups: int, nScenarios: int, seed: int, EVS_time: int,first_fix_time: int, obj_estimation_time: int, temperature, alpha, iter_max, end_temperature,MIPgap_limit=False,MIPgap_value=0.01):
     print("\n")
     run_or_create_fast_start    = False
     
@@ -319,7 +265,7 @@ def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, 
         initiate_excel_book(excel_file,input)
     
     #---- Increasing the capacity of bed wards to normal level
-    if nGroups ==25:
+    """if nGroups ==25:
         input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
         input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
     elif nGroups ==9:
@@ -327,7 +273,10 @@ def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, 
         input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
     elif nGroups ==5:
         input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
-        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)
+        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)"""
+    
+    input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
+    input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
 
         
     #----- Try to load initial model run from earlier ----  
@@ -359,7 +308,10 @@ def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, 
             print("INITIATING HEURISTIC SEARCH FROM EVS - USING EXISTING MPS-FILE")
             print("------------------------------------------------------------------------------------------------------------------")
             write_new_run_header_to_excel(excel_file,input,sheet_number=1)
-            results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature) # --- swap is called inside 
+            if MIPgap_limit:
+                results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature,MIPgap_limit=True,MIPgap_value=0.01) # --- swap is called inside 
+            else:
+                results, global_best_sol = heuristic_second_stage_mip('model.mps', 'warmstart.mst',excel_file, input, results, obj_estimation_time, temperature, alpha, iter_max, end_temperature,MIPgap_limit=False) # --- swap is called inside 
             print_solution_performance(input, results)
             results =   categorize_slots(input, results)
 
