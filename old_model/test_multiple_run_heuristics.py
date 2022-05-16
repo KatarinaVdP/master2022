@@ -7,6 +7,7 @@ from heuristic_second_stage_mip import *
 from model_mip import *
 import random
 import time
+import pickle
 
 def test_run(temp0:float,alph:float,i:int,temp1:float):
     obj             =   str(temp0)+ " " + str(alph)+ " " + str(i)+ " " + str(temp1) + " obj" + str(random. randint(0,100))
@@ -60,13 +61,17 @@ def write_string_to_excel_heuristic_run(excel_file_name, string, sheet_number=0)
     ws.append(string)
     wb.save(excel_file_name)
 
-second_stage_pattern        =   False
-
+second_stage_pattern        =   True
 fast_run                    =   False
-check_end_solution          =   True
+
+check_end_solution          =   False
 check_best_solution         =   True
+
 GAP_limit                   =   True
 GAP_limit_value             =   0.1
+
+save_best_solution_as_pickle=   True
+run_best_solution           =   True
 
 num_groups                  =   9
 num_scenarios               =   3
@@ -77,6 +82,7 @@ time_limit_EVS              =   60
 time_limit_first_fix        =   600    # only second_stage_mip
 time_limit_iteration        =   20     # only second_stage_mip
 time_limit_last_fix         =   600    # only second_stage_mpattern
+
 num_runs                    =   2
 beta                        =   1.0
 
@@ -110,42 +116,65 @@ else:
     i_max                       =   2
     end_temp                    =   0.1
 
-
-for run in range(num_runs):
-    #obj, time_obj, best_obj, time_best_obj = test_run(temp0,alph,i,temp1)
-    start_time= time.time()
-    print("init_temp: %.2f, alpha: %.2f,  iter: %i, end_temp: %.3f, run nr: %i" %(initial_temp, alpha, i_max, end_temp, run))
-    if second_stage_pattern:
-        if fast_run:
-            end_results, global_best_results, input =   run_second_stage_pattern_param_tuning(beta,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
-            if check_end_solution:
-                end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
-                string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]
-                print(string_to_write)
-            if check_best_solution:
-                global_best_results =   run_model_mip_fixed(input,global_best_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
-                string_to_write     =   ['Best_sol_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
-                print(string_to_write)
-        else:                                                                
-            end_results, global_best_results, input =   run_second_stage_pattern(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
-            if check_end_solution:
-                end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
-                string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]
-                print(string_to_write)
-                write_string_to_excel(output_file_name,input,string_to_write,sheet_number=1)
-            if check_best_solution:
-                global_best_results =   run_model_mip_fixed(input,global_best_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
-                string_to_write     =   ['Best_sol_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
-                print(string_to_write)
-                write_string_to_excel(output_file_name,input,string_to_write,sheet_number=1)
+if run_best_solution:
+    run = 2
+    solution_string = 'input_output/best_runs_heuristic/best_solution_' + str(num_groups) + '_' + str(num_scenarios) +  '_' + str(seed) + '_' + str(int(flex*10)) + '_' + str(num_groups) + '_run' + str(run)+ '.pkl'
+    if os.path.exists("model_solution.pkl"):
+        with open("model_solution.pkl","rb") as f:
+            saved_values        =   pickle.load(f)
+            input               =   saved_values["input"]
+            global_best_results =   saved_values["results"]
+            global_best_results =   run_model_mip_fixed(input,global_best_results,time_limit_last_fix,print_optimizer = True,create_model_and_warmstart_file=False)
+            string_to_write     =   ['Best_sol_FROM_PICKE_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
+            print(string_to_write)
     else:
-        end_results, global_best_results, input  =   run_second_stage_mip(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, time_limit_first_fix, time_limit_iteration, initial_temp, alpha, i_max, end_temp, MIPgap_limit=GAP_limit,MIPgap_value=GAP_limit_value)
-    
-    current_time=time.time()-start_time
-    print('Total time of this run:')
-    print(current_time)
-    
-    #---WRITING EXTRA INFO TO EXCEL ABOUT FIXING LAST SOLUTIONS  and INPUT----
-    write_to_excel_heuristic_run(excel_file_name_summary,num_runs,run, initial_temp, alpha, i_max, end_temp,       end_results["obj"], end_results["runtime"], global_best_results["obj"],global_best_results["runtime"])
-input_string= ['nGroups: ' + str(num_groups) +   '   nScenarios: ' + str(num_scenarios) + '   seed: ' + str(seed)+  '   flex: ' + str(flex) + '   beta: ' + str(beta) + '  time_limit_EVS : ' + str(time_limit_EVS) +   '   time_limit_first_fix: '+ str(time_limit_first_fix) + '   time_limit_iteration: '  +str(time_limit_iteration)+  '   time_limit_last_fix: ' + str(time_limit_last_fix)]
-write_string_to_excel_heuristic_run(excel_file_name_summary, input_string, sheet_number=0)       
+        print('no solution found')  
+else:
+    for run in range(1,num_runs+1):
+        #obj, time_obj, best_obj, time_best_obj = test_run(temp0,alph,i,temp1)
+        start_time= time.time()
+        print("init_temp: %.2f, alpha: %.2f,  iter: %i, end_temp: %.3f, run nr: %i" %(initial_temp, alpha, i_max, end_temp, run))
+        if second_stage_pattern:
+            if fast_run:
+                end_results, global_best_results, input =   run_second_stage_pattern_param_tuning(beta,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
+                if check_end_solution:
+                    end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
+                    string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]
+                    print(string_to_write)
+                if check_best_solution:
+                    global_best_results =   run_model_mip_fixed(input,global_best_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
+                    string_to_write     =   ['Best_sol_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
+                    print(string_to_write)
+            else:                                                                
+                end_results, global_best_results, input =   run_second_stage_pattern(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, initial_temp, alpha, i_max, end_temp,check_start_solution=False)
+                if check_end_solution:
+                    end_results         =   run_model_mip_fixed(input,end_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
+                    string_to_write     =   ['End_sol_preformance:  obj: ' + str(end_results['obj']) + 'best bound: '+str(end_results['best_bound']) + 'MIPgap: '+str(end_results['MIPGap'])+'runtime : ' + str(end_results['runtime'])]
+                    print(string_to_write)
+                    write_string_to_excel(output_file_name,input,string_to_write,sheet_number=1)
+                if check_best_solution:
+                    global_best_results =   run_model_mip_fixed(input,global_best_results,time_limit_last_fix,print_optimizer = False,create_model_and_warmstart_file=False)
+                    string_to_write     =   ['Best_sol_preformance:  obj: ' + str(global_best_results['obj']) + 'best bound: '+str(global_best_results['best_bound']) + 'MIPgap: '+str(global_best_results['MIPGap'])+'runtime : ' + str(global_best_results['runtime'])]
+                    print(string_to_write)
+                    write_string_to_excel(output_file_name,input,string_to_write,sheet_number=1)
+            
+            if save_best_solution_as_pickle:
+                solution_string = 'input_output/best_runs_heuristic/best_solution_' + str(num_groups) + '_' + str(num_scenarios) +  '_' + str(seed) + '_' + str(int(flex*10)) + '_' + str(num_groups) + '_run' + str(run)+ '.pkl'
+                saved_values            =   {}
+                saved_values["input"]   =   input
+                saved_values["results"] =   global_best_results
+                with open(solution_string,"wb") as f:
+                    pickle.dump(saved_values,f)
+        else:
+            end_results, global_best_results, input  =   run_second_stage_mip(beta,output_file_name,flex, num_groups, num_scenarios, seed, time_limit_EVS, time_limit_first_fix, time_limit_iteration, initial_temp, alpha, i_max, end_temp, MIPgap_limit=GAP_limit,MIPgap_value=GAP_limit_value)
+                #--- Saving solution in pickle ---
+            pickle_string = 'best_solution_run_'
+            
+        current_time=time.time()-start_time
+        print('Total time of this run:')
+        print(current_time)
+        
+        #---WRITING EXTRA INFO TO EXCEL ABOUT FIXING LAST SOLUTIONS  and INPUT----
+        write_to_excel_heuristic_run(excel_file_name_summary,num_runs,run, initial_temp, alpha, i_max, end_temp,       end_results["obj"], end_results["runtime"], global_best_results["obj"],global_best_results["runtime"])
+    input_string= ['nGroups: ' + str(num_groups) +   '   nScenarios: ' + str(num_scenarios) + '   seed: ' + str(seed)+  '   flex: ' + str(flex) + '   beta: ' + str(beta) + '  time_limit_EVS : ' + str(time_limit_EVS) +   '   time_limit_first_fix: '+ str(time_limit_first_fix) + '   time_limit_iteration: '  +str(time_limit_iteration)+  '   time_limit_last_fix: ' + str(time_limit_last_fix)]
+    write_string_to_excel_heuristic_run(excel_file_name_summary, input_string, sheet_number=0)       
