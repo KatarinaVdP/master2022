@@ -62,8 +62,8 @@ def write_string_to_excel_heuristic_run(excel_file_name, string, sheet_number=0)
     
 second_stage_pattern        =   True
 
-num_groups                  =   9
-num_scenarios               =   10
+num_groups                  =   25
+num_scenarios               =   600
 flex                        =   0.1
 seed                        =   1
 

@@ -6,7 +6,7 @@ from model_mip import *
 
 
 nGroups         = 9
-nScenarios      = 250
+nScenarios      = 250#250
 seed            = 1
 flex            = 0.1
 time_limit      = 43200
@@ -27,7 +27,9 @@ elif nGroups==5:
     input           =   change_ward_capacity(input, "IC",9.1*scaling_factor,5.6*scaling_factor)
 
 input           =   generate_scenarios(input, nScenarios, seed)
-results, input  =   run_model_mip(input, flex, time_limit, expected_value_solution = False, print_optimizer = True)
+#results, input  =   run_model_mip(input, flex, time_limit, expected_value_solution = False, print_optimizer = True)
+results, input  =   run_model_mip_fixed_manual(input, time_limit, print_optimizer = True, create_model_and_warmstart_file=True,MIPgap_limit=False)
+
 #results, input  =   run_model_cutting_stock(input, flex, time_limit, print_optimizer = True)
 
 results         =   categorize_slots(input, results)
