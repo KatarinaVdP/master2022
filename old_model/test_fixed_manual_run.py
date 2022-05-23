@@ -61,70 +61,70 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
     a       =   m.addVars(Gi, Ci, vtype=GRB.INTEGER, name="a")
     
     gamm[2,0,0].lb=1
-    gamm[2,1,0].lb=1
+    gamm[4,1,0].lb=1
     gamm[2,2,0].lb=1
-    gamm[0,3,0].lb=1
-    
+    gamm[1,3,0].lb=1
+    gamm[1,4,0].lb=1
     gamm[2,5,0].lb=1
-    gamm[1,6,0].lb=1
+    gamm[0,6,0].lb=1
     gamm[4,0,1].lb=1
     gamm[4,1,1].lb=1
     gamm[2,2,1].lb=1
     gamm[0,3,1].lb=1
-    gamm[1,4,1].lb=1
+    gamm[0,4,1].lb=1
     gamm[2,5,1].lb=1
-    
-    
-    gamm[2,1,2].lb=1
+    gamm[1,6,1].lb=1
+    gamm[4,0,2].lb=1
+    gamm[4,1,2].lb=1
     gamm[2,2,2].lb=1
     gamm[0,3,2].lb=1
-    gamm[0,4,2].lb=1
+    gamm[1,4,2].lb=1
     gamm[2,5,2].lb=1
-    gamm[1,6,2].lb=1
+    gamm[0,6,2].lb=1
     gamm[4,0,3].lb=1
-    gamm[4,1,3].lb=1
+    gamm[2,1,3].lb=1
     gamm[2,2,3].lb=1
     gamm[0,3,3].lb=1
-    gamm[1,4,3].lb=1
+    gamm[0,4,3].lb=1
     gamm[2,5,3].lb=1
     gamm[1,6,3].lb=1
-    gamm[2,0,4].lb=1
-    gamm[4,1,4].lb=1
+    gamm[4,0,4].lb=1
+    gamm[2,1,4].lb=1
     gamm[2,2,4].lb=1
-    gamm[1,3,4].lb=1
-    gamm[0,4,4].lb=1
+    gamm[0,3,4].lb=1
+    gamm[1,4,4].lb=1
     gamm[2,5,4].lb=1
-    gamm[0,6,4].lb=1
-    gamm[4,0,7].lb=1
-    gamm[4,1,7].lb=1
+    gamm[1,6,4].lb=1
+    gamm[2,0,7].lb=1
+    gamm[3,1,7].lb=1
     gamm[2,2,7].lb=1
-    
+    gamm[0,3,7].lb=1
     gamm[0,4,7].lb=1
     gamm[2,5,7].lb=1
     gamm[1,6,7].lb=1
     gamm[4,0,8].lb=1
     gamm[4,1,8].lb=1
     gamm[2,2,8].lb=1
-    gamm[1,3,8].lb=1
+    gamm[0,3,8].lb=1
     gamm[0,4,8].lb=1
     gamm[2,5,8].lb=1
-    
+    gamm[1,6,8].lb=1
     gamm[4,0,9].lb=1
-    gamm[4,1,9].lb=1
+    gamm[2,1,9].lb=1
     gamm[2,2,9].lb=1
     gamm[0,3,9].lb=1
     gamm[1,4,9].lb=1
     gamm[2,5,9].lb=1
     gamm[0,6,9].lb=1
-    
-    gamm[3,1,10].lb=1
+    gamm[4,0,10].lb=1
+    gamm[4,1,10].lb=1
     gamm[2,2,10].lb=1
-    gamm[1,3,10].lb=1
+    gamm[0,3,10].lb=1
     gamm[0,4,10].lb=1
     gamm[2,5,10].lb=1
-    gamm[0,6,10].lb=1
+    gamm[1,6,10].lb=1
     gamm[4,0,11].lb=1
-    
+    gamm[4,1,11].lb=1
     gamm[2,2,11].lb=1
     gamm[0,3,11].lb=1
     gamm[1,4,11].lb=1
@@ -133,14 +133,7 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
     
     
     
-    lamb[0,3,0].lb=1
-    
-    
-    
-    
-    
-    
-    lamb[0,3,1].lb=1
+    lamb[1,3,0].lb=1
     
     
     
@@ -148,17 +141,23 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
     
     
     
+    lamb[0,4,1].lb=1
     
     
     
     
     
+    lamb[0,3,2].lb=1
     
     
-    lamb[1,4,3].lb=1
-    lamb[2,5,3].lb=1
+    lamb[0,6,2].lb=1
+    lamb[4,0,3].lb=1
+    
+    
+    
+    
+    
     lamb[1,6,3].lb=1
-    lamb[2,0,4].lb=1
     
     
     
@@ -166,38 +165,43 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
     
     
     
-    
-    
+    lamb[2,0,7].lb=1
+    lamb[3,1,7].lb=1
+    lamb[2,2,7].lb=1
     
     
     lamb[2,5,7].lb=1
+    lamb[1,6,7].lb=1
     
     
     
     
     
-    lamb[0,4,8].lb=1
     
     
-    lamb[4,0,9].lb=1
-    lamb[4,1,9].lb=1
+    
+    
     
     
     lamb[1,4,9].lb=1
     
-    lamb[0,6,9].lb=1
     
-    lamb[3,1,10].lb=1
     
-    lamb[1,3,10].lb=1
- 
- 
- 
- 
- 
- 
- 
-    lamb[1,4,11].lb=1
+    
+    
+    
+    
+    
+    lamb[1,6,10].lb=1
+    lamb[4,0,11].lb=1
+    
+    
+    
+    
+    
+    lamb[0,6,11].lb=1
+
+
     for g in Gi:
         for r in (list(set(Ri)^set(RGi[g]))):
             for d in Di:
@@ -301,8 +305,8 @@ from model_mip import *
 
 nGroups         = 9
 nScenarios      = 250
-seed            = 1
-flex            = 0.1
+seed            = 3
+flex            = 0.0
 time_limit      = 600
 
 beta            = 1.0
@@ -324,3 +328,5 @@ print_expected_minutes(input,results)
 print_expected_bed_util_percent(input,results)
 print_expected_que(input,results)
 print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f " %(nGroups,nScenarios,flex,beta, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]) )
+
+"""1: 1557.24, 2: 1650.15, 3:1516.1 """
