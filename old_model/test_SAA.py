@@ -1,8 +1,6 @@
 from functions_input import *
 from functions_output import *
 from model_mip import *
-import numpy as np
-
 
 def write_to_excel_model_SAA(beta,file_name,input_dict,output_dict,fixed_output_dict,run_fix_model):
     #filename = "myfile.xlsx"
@@ -89,14 +87,11 @@ def write_to_excel_model_SAA(beta,file_name,input_dict,output_dict,fixed_output_
     wb.save(file_name)
 
 num_groups                  =   9
-num_scenarios               =   3
-flex                        =   0.1
+num_scenarios               =   10
 beta                        =   0.6
-runs                        =   1
-seeds                       =   [i for i in range(1,runs +1)]
-#flexibilities               =   [0.0,0.05,0.10,0.15,0.20,0.25,0.30]
-flexibilities               =   [0.0,0.10]
-time_limit                  =   10
+seeds                       =   [i for i in range(1,16)]
+flexibilities               =   [0.0,0.05,0.10,0.15,0.20,0.25,0.30]
+time_limit                  =   1200
 
 MIP_gap_value               =   0.01
 MIP_gap_limit               =   True
@@ -106,12 +101,9 @@ input                       =   read_input(input_file_name)
 input                       =   change_ward_capacity(input, "MC",60*beta,49*beta)
 input                       =   change_ward_capacity(input, "IC",11*beta,6*beta)  
 
-excel_file_name            =   'input_output/SAA_test_'+str(num_groups)+'.xlsx'
-#initiate_excel_book(excel_file_name ,input)
-#write_new_run_header_to_excel(excel_file_name,input,sheet_number=0)
-
-
+excel_file_name            =   'input_output/SAA_w_fixed_'+str(num_groups)+'_b'+str(beta) + '_seed'+str(seeds[0])+'to'+str(seeds[-1])+ '.xlsx'
 results_fixed               =   {}
+
 for flex in flexibilities:
     for seed in seeds:
         print("nGroups: %i, nScenarios: %i, flex: %i,  seed: %i" %(num_groups, num_scenarios,flex, seed))
@@ -124,5 +116,3 @@ for flex in flexibilities:
             write_to_excel_model_SAA(beta,excel_file_name,input,results,results_fixed,True)
         else:
             write_to_excel_model_SAA(beta,excel_file_name,input,results,results_fixed,False)
-        #write_to_excel_model(excel_file_name,input,results)
-        #write_to_excel_model_SAA(excel_file_name,input,results)

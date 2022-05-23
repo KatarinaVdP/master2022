@@ -66,12 +66,12 @@ for cap in bed_caps:
         else:
             print('No scaling factors exists')
             break
-        for seed in seeds:
-            for ns in num_scenarios:
-                input               =   generate_scenarios(input, ns, seed)
-                for flex in flexibilities:
-                    #results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
-                    results, input          =   run_model_cutting_stock(input,flex,time_to_mip,print_optimizer = True)
+        for ns in num_scenarios:
+            for flex in flexibilities:
+                for seed in seeds:
+                    input               =   generate_scenarios(input, ns, seed)
+                    results, input          =   run_model_mip(input,flex,time_to_mip,expected_value_solution=False,print_optimizer = True)
+                    #results, input          =   run_model_cutting_stock(input,flex,time_to_mip,print_optimizer = True)
                     write_to_excel_problem_size(excel_file_name, results,flex,ns,seed,cap)
-                    print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]))
+                    print("nGroups: %i  nScenarios: %i  flex: %.2f  bed_cap_factor: %.2f  primal: %.1f  dual: %.1f MIPgap: %.3f runtime: %.1f "%(ng,ns,flex,cap, results["obj"], results["best_bound"], results["MIPGap"],results["runtime"]),ng)
             
