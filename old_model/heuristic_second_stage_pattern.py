@@ -136,11 +136,11 @@ def heuristic_second_stage_pattern_param_tuning(input_dict, results, start_tempe
         action = "NO MOVE" 
     best_sol = copy.deepcopy(results)
     
-    print("CHECK START SOLUTION")
+    """print("CHECK START SOLUTION")
     results_start           =   copy.deepcopy(best_sol)
     results_start           =   run_model_mip_fixed(input,results_start,600,print_optimizer = False,create_model_and_warmstart_file=False)
     string_to_write= ['Start_sol_preformance:  obj: ' + str(results_start['obj']) + 'best bound: '+str(results_start['best_bound']) + 'MIPgap: '+str(results_start['MIPGap'])+'runtime : ' + str(results_start['runtime'])]
-    print(string_to_write)
+    print(string_to_write)"""
     
     #----- Looping through temperature levels ----- 
     level = 1
@@ -290,16 +290,6 @@ def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, numbe
     input           =   read_input(input_file_name)
 
     #---- Increasing the capacity of bed wards to normal level
-    """if nGroups ==25:
-        input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
-        input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
-    elif nGroups ==9:
-        input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
-        input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
-    elif nGroups ==5:
-        input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
-        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)"""
-    
     input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
     input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
 
@@ -339,15 +329,6 @@ def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: flo
     input           =   read_input(input_file_name)
 
     #---- Increasing the capacity of bed wards to normal level
-    """if nGroups ==25:
-        input           =   change_ward_capacity(input, "MC",72.4*beta,56*beta)
-        input           =   change_ward_capacity(input, "IC",14.5*beta,6.1*beta) 
-    elif nGroups ==9:
-        input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
-        input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  
-    elif nGroups ==5:
-        input           =   change_ward_capacity(input, "MC",50.5*beta,42*beta)
-        input           =   change_ward_capacity(input, "IC",9.1*beta,5.6*beta)"""
     
     input           =   change_ward_capacity(input, "MC",60*beta,49*beta)
     input           =   change_ward_capacity(input, "IC",11*beta,6*beta)  

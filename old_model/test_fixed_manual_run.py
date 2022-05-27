@@ -304,10 +304,10 @@ from model_mip import *
 
 
 nGroups         = 9
-nScenarios      = 250
-seed            = 3
+nScenarios      = 2000
+seed            = 4
 flex            = 0.0
-time_limit      = 600
+time_limit      = 3600
 
 beta            = 1.0
 
