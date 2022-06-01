@@ -10,6 +10,7 @@ from functions_heuristic import *
 import pickle
 
 def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file, input_dict, last_output, time_limit, start_temperature, alpha, iter_max, end_temperature, print_optimizer = False,MIPgap_limit=False,MIPgap_value=0.01):
+    #SA-MIP heuristic
     input                       =   input_dict
     start_time                  =   time.time()
     best_sol                    =   last_output
@@ -149,6 +150,8 @@ def heuristic_second_stage_mip(model_file_name, warm_start_file_name, excel_file
     return best_sol, global_best_sol
 
 def run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_file, best_sol, start_time,print_swap=False):
+    #Making initial moves in the initial first stage solution in the SA-MIP heuristic
+    
     #----- Looping through and making all possible swap_fixed_with_flexible_UR_KA_EN swaps -----
     if print_swap:
         print("\n\nThe following changes are made due to swap_fixed_with_flexible_UR_KA_EN:\n\n")
@@ -186,7 +189,7 @@ def run_swap_fixed_with_flexible_UR_KA_EN(m, input, warm_start_file_name, excel_
     return m, result_dict, best_sol
 
 def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
-
+    #funcion called when changing the current first stage solution to another in a neighborhood
     if swap_type == "ext":
         var_name = "lambda"
     elif swap_type == "fix":
@@ -254,6 +257,7 @@ def change_bound_second_stage_mip(m, swap_found, getting_slot, giving_slot, swap
     return m
 
 def run_second_stage_mip(beta: float, output_file_name:str ,flexibility: float, nGroups: int, nScenarios: int, seed: int, EVS_time: int,first_fix_time: int, obj_estimation_time: int, temperature, alpha, iter_max, end_temperature,MIPgap_limit=False,MIPgap_value=0.01):
+    #run SA-MIP heuristic
     print("\n")
     run_or_create_fast_start    = False
     

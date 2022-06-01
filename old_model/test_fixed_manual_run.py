@@ -4,7 +4,10 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import numpy as np
 from functions_output import *
-import time
+from functions_input import *
+from functions_output import *
+from model_cutting_stock import *
+from model_mip import *
 
 def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, create_model_and_warmstart_file=False,MIPgap_limit=False): 
     #----- Sets ----- #  
@@ -295,12 +298,6 @@ def run_model_mip_fixed_manual(input_dict, time_limit, print_optimizer = False, 
             m.write('warmstart.mst')               
         result_dict =  save_results(m, input_dict, result_dict)
     return result_dict
-
-from random import seed
-from functions_input import *
-from functions_output import *
-from model_cutting_stock import *
-from model_mip import *
 
 
 nGroups         = 9

@@ -1,4 +1,3 @@
-from scipy.stats import poisson
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
@@ -7,8 +6,7 @@ from patterns import *
 from functions_output import *
 
 def save_results_cutting_stock(m, input_dict, result_dict):
-    #input = copy.deepcopy(input_dict)
-    #result_dict = copy.deepcopy(result_dict2)
+    #saving results from the cutting stock formulation model to a dictionary
     
     # ----- Copying the desicion variable values to result dictionary -----
     result_dict["gamm"] = [[[0 for _ in range(input_dict["nDays"])] for _ in range(input_dict["nRooms"])] for _ in range(input_dict["nSpecialties"])]
@@ -69,6 +67,8 @@ def save_results_cutting_stock(m, input_dict, result_dict):
     return result_dict
 
 def run_model_cutting_stock(input_dict, flexibility, time_limit,print_optimizer=False):
+    #run cutting stock formulation model
+    
     input=input_dict
     #----- Sets ----- #  
     nDays           =   input["nDays"]

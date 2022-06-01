@@ -8,6 +8,8 @@ from heuristic_greedy_construction import *
 import pickle 
 
 def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temperature, alpha, iter_max, end_temperature):
+    #SA-GCHD heuristic
+    
     input=input_dict
     start_time = time.time()
     best_sol = copy.deepcopy(results)
@@ -20,7 +22,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
     swap_ever_found = False
     days_in_cycle = int(input["nDays"]/input["I"])
     for d in range(days_in_cycle):
-        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = False)
+        swap_found, getting_slot, giving_slot, extended = swap_fixed_with_flexible_UR_KA_EN(d, input_dict, best_sol, print_swap = True)
         if swap_found:
             swap_ever_found = True
             swap_type = "flex"
@@ -109,6 +111,7 @@ def heuristic_second_stage_pattern(excel_file, input_dict, results, start_temper
     return best_sol, global_best_sol
 
 def heuristic_second_stage_pattern_param_tuning(input_dict, results, start_temperature, alpha, iter_max, end_temperature):
+    #SA-GCHD heuristic when code stripped for time consuming activities
     input=input_dict
     start_time = time.time()
     best_sol = copy.deepcopy(results)
@@ -135,12 +138,6 @@ def heuristic_second_stage_pattern_param_tuning(input_dict, results, start_tempe
     else:
         action = "NO MOVE" 
     best_sol = copy.deepcopy(results)
-    
-    """print("CHECK START SOLUTION")
-    results_start           =   copy.deepcopy(best_sol)
-    results_start           =   run_model_mip_fixed(input,results_start,600,print_optimizer = False,create_model_and_warmstart_file=False)
-    string_to_write= ['Start_sol_preformance:  obj: ' + str(results_start['obj']) + 'best bound: '+str(results_start['best_bound']) + 'MIPgap: '+str(results_start['MIPGap'])+'runtime : ' + str(results_start['runtime'])]
-    print(string_to_write)"""
     
     #----- Looping through temperature levels ----- 
     level = 1
@@ -205,7 +202,7 @@ def heuristic_second_stage_pattern_param_tuning(input_dict, results, start_tempe
     return best_sol, global_best_sol
 
 def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_slot, swap_type, extended, swap_back = False):
-    
+    #funcion called when changing the current first stage solution to another in a neighborhood
     if swap_type == "ext":
         var_name = "lamb"
     elif swap_type == "fix":
@@ -285,6 +282,8 @@ def change_bound_second_stage_pattern(results, swap_found, getting_slot, giving_
     return results
 
 def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature,check_start_solution=False):
+    #run SA-GCHD heuristic fast. Code stripped for time consuming activities. 
+    
     print("\n\n")
     input_file_name =   choose_correct_input_file(number_of_groups)
     input           =   read_input(input_file_name)
@@ -303,11 +302,11 @@ def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, numbe
     results         = categorize_slots(input, results)
     input           = generate_scenarios(input, nScenarios, seed)
     #--- Saving solution in pickle ---
-    saved_values            =   {}
+    """saved_values            =   {}
     saved_values["input"]   =   input
     saved_values["results"] =   results
     with open("model_solution.pkl","wb") as f:
-        pickle.dump(saved_values,f)
+        pickle.dump(saved_values,f)"""
     if check_start_solution:
         print("CHECK START SOLUTION")
         results_start           =   copy.deepcopy(results)
@@ -322,6 +321,8 @@ def run_second_stage_pattern_param_tuning(beta: float, flexibility: float, numbe
     return results, global_best_sol, input
 
 def run_second_stage_pattern(beta: float,output_file_name: str, flexibility: float, number_of_groups: int, nScenarios: int, seed: int, time_limit: int, temperature, alpha, iter_max, end_temperature,check_start_solution=False):
+    #run SA-GCHD heuristic
+    
     print("\n\n")
     run_or_create_fast_start = False
     input_file_name =   choose_correct_input_file(number_of_groups)

@@ -1,7 +1,5 @@
-import pandas as pd
 import math
 import itertools
-import numpy as np
 from functions_input import *
 
 def durations_per_specialty(input: dict):

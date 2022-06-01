@@ -4,6 +4,9 @@ from functions_output import *
 from model_mip import *
 import time
 
+
+# functions used in the SA-GCH-MIP heuristic
+
 #----- print functions for debugging -----#
 def print_assigned_pattern_in_scenario(input_dict: dict , assigned_pattern_matrix_rdc: list, scenario: int):
     print("Expected number of planned operation minutes per slot")
@@ -185,15 +188,6 @@ def calculate_total_bed_occupation_wdc(input_dict: dict, current_bed_occ_wdc: li
 
 def translate_heristic_results(input_dict: dict, result_dict: dict):
     # function that updates the result dictionary back to model values such that output functions are legal
-    
-    #--- left to update --- #
-    #result_dict["delt"]    
-    #result_dict["x"]
-    #result_dict["v"]
-    #result_dict["bed_occupation"]    _wd
-    #result_dict["flexSlot"]
-    #result_dict["fixedSlot"]
-    #result_dict["bed_occupation"]    _wdc ??? nessecary?
     '---parameters---'
     input               =   input_dict
     result              =   result_dict
@@ -566,8 +560,10 @@ def choose_best_pattern_room_day_temporary(input: dict,specialty_in_slot:list,ex
                                 best_day                =   d
                 return best_pattern, best_room, best_day        
 
-#----- Heuristics -----#
+#----- 2nd Stage Heuristics -----#
+#CGHS:
 def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug=False):
+    #GCHS
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are. filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging
@@ -690,6 +686,7 @@ def run_greedy_construction_heuristic(input_dict: dict, result_dict: dict, debug
     #print('Heuristic time:     %.1f s' %heuristic_time)
     
     return result_dict
+
 
 def run_greedy_construction_heuristic_smart_flex(input_dict: dict, result_dict: dict, debug=False):
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
@@ -1130,7 +1127,9 @@ def run_greedy_construction_heuristic_smart_fix_smart_flex(input_dict: dict, res
     
     return result_dict
 
+#CGHD:
 def run_greedy_construction_heuristic_smart_fix_smarter_flex(input_dict: dict, result_dict: dict, debug=False):
+    #GCHD
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are. filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging
@@ -1231,7 +1230,7 @@ def run_greedy_construction_heuristic_smart_fix_smarter_flex(input_dict: dict, r
     
     return result_dict
 
-'---ganske dårlige... hvorfor?--- 0.6 ich i corr'
+
 def run_greedy_construction_heuristic_smarter_fix(input_dict: dict, result_dict: dict, debug=False):
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are. filled first and then flexible slots scenario by scenario
@@ -1447,7 +1446,9 @@ def run_greedy_construction_heuristic_smarter_fix_smart_flex(input_dict: dict, r
     
     return result_dict
 
+#CGHP:
 def run_greedy_construction_heuristic_smarter_fix_smarter_flex(input_dict: dict, result_dict: dict, debug=False):
+    #CGHP
     #greedy construction heuristic which assignes the best avalibe legal pattern to the slot day by day
     #fixed slots are. filled first and then flexible slots scenario by scenario
     #it is possible to print each choice of flexible packing and scenario assignment for debugging

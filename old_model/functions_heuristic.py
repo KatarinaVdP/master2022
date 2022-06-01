@@ -6,6 +6,8 @@ from model_mip import *
 from functions_input import *
 from functions_output import *
 
+#funcrions used in the SA-framework
+
 def update_temperature(temperature, alpha):
     temperature = temperature * alpha
     return temperature

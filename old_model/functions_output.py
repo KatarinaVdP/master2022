@@ -366,6 +366,7 @@ def print_expected_bed_util_percent(input_dict, output_dict):
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
         print()
+        print()
 
 def print_expected_bed_util(input_dict, output_dict):
     
@@ -396,6 +397,7 @@ def print_expected_bed_util(input_dict, output_dict):
         print("        ", end="")
         for d in range(firstDayInCycle,firstDayInCycle+nDaysInCycle):
             print("-----",end="")
+        print()
         print()
 
 def print_expected_que(input_dict, output_dict):
